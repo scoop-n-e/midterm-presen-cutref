@@ -1,0 +1,140 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "NarrativeXL: a Large-scale Dataset for Long-Term Memory Models"
+  authors:
+    - "Arseny Moskvichev"
+    - "Ky-Vinh Mai"
+  year: 2023
+  venue: "EMNLP 2023 Findings"
+  paper_url: "https://aclanthology.org/2023.findings-emnlp.1005/"
+
+problem_statement:
+  background: "Although on paper many modern Large Language Models (LLMs) have maximal context lengths measured in tens of thousands of tokens, in practice, they often fail to access information plainly presented within those contexts and their performance generally deteriorates as inputs grow larger. Language modeling alone might not be the best approach to train and test language models with extremely long context windows."
+  
+  gap_or_challenge: "Current models struggle with truly long-context understanding, often failing to utilize information within their claimed context windows. Existing supervised long-term memory datasets are relatively rare and limited in scale. Notable datasets like NarrativeQA have crucial disadvantages: questions are based only on summaries (not full books), limited dataset size (~45,000 questions), and no natural learning progression. Creating brute-force supervised datasets has been prohibitively expensive, requiring tens of thousands of hours of human labor."
+  
+  research_objective: "This work creates a massive dataset (nearly a million questions) of extremely long-term memory problems (average context lengths from 54,334 to 87,051 words) for training and evaluating long-context LLMs. The dataset capitalizes on recent results showing that LLMs rival human labelers for local competence tasks, using this capability to create a large-scale dataset with questions that have known 'retention demand', indicating how long-term of a memory is needed to answer them."
+  
+  significance: "This dataset addresses critical limitations in training extremely-long-context LLMs by providing supervised data at unprecedented scale. It enables direct training rather than extrapolation from shorter sequences, offers natural curriculum learning opportunities through varying memory demands, and provides interpretable ways to measure long-term memory capacity and performance."
+
+tasks:
+  - task_name: "Read-Along Questions (Multiple-Choice)"
+    
+    task_overview: "This task evaluates a model's ability to recognize and recall scenes from a book as reading progresses, not just at the end. Questions are asked at specific points during reading in the form 'In what you've read so far, was there a scene where...'. The task tests online comprehension that develops continuously during reading. Each question has a clearly defined 'memory load' indicating how long ago the target scene was read, enabling measurement of forgetting curves and memory capacity."
+    
+    input_description: "The model receives a partially-read book (up to the question point) and a multiple-choice question with scene summaries as options. Answer options include true scene summaries from already-read portions, 'None of the above', lookahead scenes (from unread portions), other book scenes (with substituted character names), and distorted scenes (GPT-3.5 generated variations)."
+    
+    output_description: "The system selects the correct scene summary or 'None of the above' from typically 6 options. The same question may have different answers depending on when asked during reading. Output enables tracking performance across varying retention demands from a few thousand to over 100,000 tokens."
+  
+  - task_name: "Scene Summary Reconstruction (Freeform)"
+    
+    task_overview: "This task evaluates a model's ability to correct distorted scene summaries based on knowledge of the full book. Given a corrupted summary that maintains the book's setting but contains factual errors about events, the model must reconstruct the true summary. This tests flexible knowledge of the overall narrative structure and detailed memory of specific events, encouraging models to remember events rather than style or setting."
+    
+    input_description: "The model receives the complete book text and a distorted summary containing errors. The distorted summary is plausible and fits the book setting but describes incorrect events. Summaries are generated using GPT-3.5 to maintain stylistic consistency while changing factual content."
+    
+    output_description: "The system outputs the corrected summary that accurately reflects actual book events. Performance is measured using ROUGE scores and BertSCORE comparing reconstructed summaries to true summaries."
+  
+  - task_name: "Hierarchical Summary Reconstruction (Freeform)"
+    
+    task_overview: "This task extends scene reconstruction to multiple narrative scales, from individual scenes to complete book summaries. The model must correct distorted summaries at various hierarchical levels, encouraging flexible reasoning about narratives across different time scales. This tests the model's ability to maintain and access memories at different granularities."
+    
+    input_description: "The model receives the complete book and hierarchically-structured distorted summaries spanning different text scales. These range from scene-level summaries to chapter-level and full-book summaries, each containing factual errors while maintaining stylistic consistency."
+    
+    output_description: "The system outputs corrected summaries at the appropriate hierarchical level. This creates a natural curriculum from local to global narrative understanding."
+
+methodology:
+  method_name: "GPT-3.5-based Automatic Dataset Generation"
+  
+  approach_type: "neural"
+  
+  core_technique: "The methodology leverages GPT-3.5's local competence to create a massive long-term memory dataset. Books from Project Gutenberg are manually filtered to contain single connected narratives. Each book is split into ~3,000-symbol chunks with 300-symbol overlap, then summarized using GPT-3.5. For read-along questions, scene summaries are used as answer options with three types of distractors: lookahead scenes (from unread portions), other book scenes (with entity substitution), and distorted scenes (GPT-3.5 generated variations). Scene reconstruction questions map distorted summaries to true summaries. Hierarchical summarization creates summaries at multiple scales. Named entity substitution prevents simple memorization. Questions have explicit retention demands measuring memory requirements. The approach enables dataset expansion with minimal human labor while maintaining quality through systematic validation."
+  
+  base_models:
+    - "GPT-3.5 (for summary and question generation)"
+    - "BERT (for validation experiments)"
+    - "GPT-4 (for validation experiments)"
+    - "Claude v1.3 100k (for validation experiments)"
+    - "Longformer Encoder-Decoder (LED) (for baseline experiments)"
+  
+  key_innovations:
+    - "Automatic generation of nearly 1 million questions using GPT-3.5's local competence"
+    - "Read-along questions with explicit retention demand metrics for memory capacity diagnosis"
+    - "Three-tiered distractor generation (lookahead, other book, scene distortion) to prevent shortcuts"
+    - "Hierarchical summarization for multi-scale narrative understanding"
+    - "Decoupling of memory demand from total context length for better evaluation"
+    - "Named entity substitution to prevent simple memorization strategies"
+
+datasets:
+  - dataset_name: "NarrativeXL"
+    
+    characteristics: "Ultra-long context reading comprehension dataset based on 1,500 hand-curated fiction books from Project Gutenberg. Average document length ranges from 54,334 words (read-along) to 87,051 words (full book tasks). Contains approximately 150 scene-level summaries per book generated by GPT-3.5. Includes 726,803 multiple-choice questions with varying retention demands and 263,792 freeform reconstruction questions."
+    
+    usage: "Primary dataset for training and evaluating long-term memory models"
+    
+    size: "990,595 total questions across 1,500 books"
+    
+    domain: "fiction"
+    
+    is_new: true
+    
+    new_dataset_contribution: "Created the largest ultra-long-context reading comprehension dataset, an order of magnitude larger than alternatives. Introduced read-along questions with explicit retention demands, enabling memory capacity diagnosis. Developed automatic generation pipeline using GPT-3.5 that can be extended with minimal human labor."
+
+evaluation:
+  evaluation_strategy: "Multi-faceted validation through four experiments. First, testing for shortcut solutions by fine-tuning BERT on answer options alone (without context) to detect systematic biases. Second, evaluating memory impact using Claude v1.3 100k and GPT-4 on questions within their context windows. Third, human validation study with 25 workers evaluating 250 scene pairs for accuracy. Fourth, testing reconstruction difficulty by fine-tuning GPT-3 and LED on summary reconstruction without book context, comparing to GPT-4 with and without context."
+  
+  main_results: "BERT achieved only 0.524 accuracy on 6-category scene distortion questions without context (random: 0.167), indicating some bias but leaving room for memory-based improvement. Claude v1.3 100k achieved 0.53 accuracy and GPT-4 0.783 on questions with ≤8 scene retention (∼4000 words), validating that context helps. Human annotators correctly identified 238/250 true summaries (0.95 accuracy). GPT-4 with book context significantly outperformed baseline on summary reconstruction (R1F1: 0.576 vs 0.522), while fine-tuned models without context performed near baseline, confirming reconstruction requires book knowledge."
+  
+  metrics_used:
+    - "Accuracy"
+    - "ROUGE-1 F1"
+    - "ROUGE-2 F1"
+    - "ROUGE-L F1"
+    - "BertSCORE F1"
+    - "Binomial confidence intervals"
+  
+  human_evaluation_summary: "25 Amazon Mechanical Turk workers (US-based, master qualification, 99% approval rate) evaluated 250 randomly selected book scenes with true/false summary pairs. Workers correctly identified 238/250 true summaries (95% accuracy, 95% CI: [0.92, 0.97]), validating that GPT-3.5 generated summaries accurately represent book content."
+
+results_analysis:
+  key_findings:
+    - "Scene distortion questions show some systematic bias (BERT: 0.524 vs random: 0.167) but not enough for trivial solutions"
+    - "Models with long context windows still struggle: Claude v1.3 100k only 0.53 accuracy on questions within context"
+    - "GPT-4 with context significantly outperforms without context on reconstruction (0.576 vs 0.512 R1F1)"
+    - "Fine-tuned models cannot reconstruct summaries without book knowledge, performing near baseline"
+    - "Human validation confirms 95% accuracy in summary generation process"
+  
+  ablation_summary: "Comparing reconstruction models: GPT-4 with context achieves best performance (R1F1: 0.576), while LED and GPT-3 fine-tuned without context perform near baseline (0.53 and 0.504). GPT-4 without context also fails (0.512), confirming task requires book knowledge. Lookahead and other-book questions are symmetric by design, avoiding shortcut vulnerabilities of scene distortion questions."
+
+contributions:
+  main_contributions:
+    - "We create NarrativeXL, a dataset of 990,595 questions based on 1,500 books with average lengths of 54,334-87,051 words, an order of magnitude larger than existing alternatives. The dataset includes 726,803 multiple-choice read-along questions and 263,792 freeform reconstruction questions."
+    - "We introduce read-along questions with explicit retention demands, enabling natural curriculum learning and direct measurement of memory capacity through forgetting curves. This decouples memory demand from total context length for better evaluation."
+    - "We validate our data through four experiments showing questions adequately represent source material, can diagnose memory capacity, are not trivial for modern LLMs, and cannot be solved without book knowledge."
+    - "We provide code and generation scripts enabling further dataset expansion with minimal human labor, including scene summaries and named entity substitution dictionaries for creating additional task types."
+  
+  limitations:
+    - "Questions may be answerable using information retrieval approaches rather than true memory"
+    - "Data contamination possible if books appear in LLM training sets, though mitigated by entity substitution and summary-based questions"
+    - "No direct demonstration of improvement for ultra-long-context LLMs"
+    - "Focus on validation rather than training actual long-term memory models"
+
+narrative_understanding_aspects:
+  - "Reading Comprehension"  # Core task of understanding book content
+  - "Narrative QA"  # Question answering about narrative events
+  - "Story Summarization"  # Scene and hierarchical summary reconstruction
+  - "Plot / Storyline Extraction"  # Understanding narrative progression through read-along questions
+  - "Narrative Consistency Check"  # Identifying and correcting distorted summaries
+
+keywords:
+  - "long-term memory"
+  - "ultra-long context"
+  - "reading comprehension"
+  - "narrative understanding"
+  - "retention demand"
+  - "scene reconstruction"
+  - "hierarchical summarization"
+  - "curriculum learning"
+  - "Project Gutenberg"
+  - "GPT-3.5"
+
+notes: "This dataset represents a major advance in scale for long-context evaluation, being an order of magnitude larger than NarrativeQA while having substantially longer average document length (87,051 vs 50,000 words). The read-along question format with retention demands provides unique diagnostic capabilities for memory research."

@@ -1,0 +1,179 @@
+# Narrative Understanding Survey - Paper Summary Template
+
+metadata:
+  title: string  # 論文の正式タイトル
+  authors: list[string]  # 著者リスト
+  year: integer  # 発表年（例: 2024）
+  venue: string  # 発表媒体（会議名/ジャーナル名）
+  paper_url: string  # 論文のURL（optional）
+  
+problem_statement:
+  background: string  # 研究背景（2-3文）
+  # 例: "Narrative understanding is fundamental to human communication,
+  # encompassing our ability to comprehend stories, track causal chains,
+  # and infer implicit information from text..."
+  
+  gap_or_challenge: string  # 既存研究の問題点や未解決課題（3-4文）
+  # 例: "Current models treat narrative tasks in isolation, failing to capture
+  # the interconnected nature of story comprehension. They struggle with
+  # long-range dependencies and cannot maintain character states across
+  # extended narratives. Moreover, existing approaches lack explicit
+  # representations for causal structures inherent in stories..."
+  
+  research_objective: string  # この研究の目的（2-3文）
+  # 例: "This work aims to develop a unified framework for narrative understanding
+  # that jointly models multiple aspects of story comprehension. We propose
+  # to explicitly capture narrative structures including causal chains,
+  # character arcs, and temporal relations..."
+  
+  significance: string  # この研究の重要性・インパクト（optional、2-3文）
+  # 例: "Success in this area would enable more sophisticated dialogue systems,
+  # better educational AI assistants, and deeper analysis of literary texts.
+  # It also pushes the boundaries of current NLP in handling long contexts..."
+
+tasks:  # 複数タスクに対応（リスト形式）
+  - task_name: string  # タスクの名称（例: "Story Cloze Test", "NarrativeQA"）
+    
+    task_overview: string  # タスクの概要説明（2-4文）
+    # このタスクが何を評価/実現しようとしているのかを説明
+    # 例: "This task evaluates a model's ability to understand narrative coherence
+    # by predicting the correct ending from two alternatives. It specifically
+    # tests causal reasoning and commonsense inference within short narratives.
+    # The task requires understanding character motivations, temporal sequences,
+    # and implicit causality to select endings that maintain story consistency."
+    
+    input_description: string  # 入力の詳細な説明（2-3文）
+    # 例: "The model receives a four-sentence story context followed by 
+    # two possible ending sentences. Stories are everyday scenarios
+    # averaging 50 tokens in length..."
+    
+    output_description: string  # 出力の詳細な説明（2-3文）
+    # 例: "The system must select the correct ending that maintains narrative
+    # coherence and causal consistency. Output is a binary classification
+    # with associated confidence scores..."
+
+methodology:  # 提案手法の詳細
+  method_name: string  # 手法の名称（例: "Hierarchical Narrative Transformer"）
+  
+  approach_type: string  # アプローチの大分類
+  # 選択肢: neural | rule-based | hybrid | prompt-based | retrieval-based | other
+  
+  core_technique: string  # 核心的な技術の詳細説明（3-5文、最大300語程度）
+  # 例: "The proposed method employs a hierarchical transformer architecture
+  # that operates at multiple levels of narrative abstraction. At the sentence
+  # level, we use a modified BERT encoder to capture local semantic relationships.
+  # These sentence representations are then fed into a graph attention network
+  # that models inter-sentence dependencies and narrative flow. We incorporate
+  # external commonsense knowledge from ConceptNet through a gated fusion
+  # mechanism, enabling the model to make inferences about implicit events..."
+  
+  base_models: list[string]  # ベースとなる既存モデル（optional）
+  # 例: ["BERT-large", "RoBERTa", "GPT-2"]
+  
+  key_innovations: list[string]  # 技術的な新規性（各項目1-2文、3-5項目）
+  # 例:
+  # - "Novel attention mechanism for tracking entity states across narrative arcs"
+  # - "Integration of external knowledge graphs for causal reasoning"
+  # - "Multi-task learning framework combining generation and classification"
+  # - "Dynamic memory network for maintaining story context"
+
+datasets:  # 複数データセットに対応（リスト形式）
+  - dataset_name: string  # データセット名
+    # 例: "ROCStories"
+    
+    characteristics: string  # 特徴の説明（2-3文）
+    # 例: "Short commonsense stories with average length of 5 sentences,
+    # focusing on everyday events with clear causal chains. Each story
+    # includes two candidate endings, one correct and one incorrect."
+    
+    usage: string  # このデータセットの使用方法（1-2文）
+    # 例: "Used for training and evaluation of story completion task"
+    # 例: "Pre-training corpus for narrative language model"
+    # 例: "Evaluation only for zero-shot transfer experiments"
+    
+    size: string  # データサイズ（optional）
+    # 例: "98K stories", "45K QA pairs", "1.2M sentences"
+    
+    domain: string  # ドメイン（optional）
+    # 選択肢: fiction | news | scripts | children_stories | social_media | mixed | other
+    
+    is_new: boolean  # 新規作成データセットか
+    
+    new_dataset_contribution: string  # 新規作成の場合の貢献（optional、2-3文）
+    # 例: "We collected 50K narratives with fine-grained annotations for
+    # causal relations and character emotional arcs. The dataset enables
+    # evaluation of multi-aspect narrative understanding."
+
+evaluation:  # 評価設定
+  evaluation_strategy: string  # 全体的な評価戦略（2-4文）
+  # 例: "We conduct comprehensive evaluation across three dimensions:
+  # task performance, generalization capability, and interpretability.
+  # All models are evaluated on official test sets using standard metrics,
+  # with statistical significance tested via bootstrap resampling."
+  
+  main_results: string  # 主要な実験結果（4-6文、詳細に）
+  # 例: "Our model achieves 87.3% accuracy on Story Cloze Test, outperforming
+  # BERT-base by 4.2% and GPT-2 by 6.8%, approaching human performance (92.1%).
+  # On NarrativeQA, we obtain BLEU-4 score of 41.7 and F1 of 58.3, with
+  # particularly strong performance on why-questions (F1: 62.1). The model
+  # maintains high accuracy even on longer narratives (>500 tokens), showing
+  # only 2.3% degradation compared to 8.7% for baseline models."
+  
+  metrics_used: list[string]  # 使用した評価指標
+  # 例: ["Accuracy", "F1-score", "BLEU-4", "ROUGE-L", "Perplexity"]
+  
+  human_evaluation_summary: string  # 人手評価の要約（optional、2-3文）
+  # 例: "Human judges rated 200 model outputs on coherence and causal validity
+  # (5-point scale). Our model scored 4.2/5.0 on coherence, significantly
+  # higher than baselines (3.5/5.0), with inter-rater agreement κ=0.78."
+
+results_analysis:
+  key_findings: list[string]  # 重要な発見（各項目1-2文、3-4項目）
+  # 例:
+  # - "Explicit modeling of narrative structure improves performance by 5-8% across all tasks"
+  # - "Performance drops sharply for causal relations spanning more than 10 sentences"
+  # - "External knowledge helps commonsense reasoning but can hurt fictional narratives"
+  
+  ablation_summary: string  # アブレーション研究の要約（optional、2-3文）
+  # 例: "Graph attention is the most critical component (5.2% drop when removed),
+  # followed by hierarchical encoding (3.8%). Knowledge integration shows
+  # task-dependent effects."
+
+contributions:
+  main_contributions: list[string]  # 主要な貢献（各項目2-3文、3-4項目）
+  # 例:
+  # - "We propose the first unified framework for narrative understanding that
+  #    jointly handles multiple tasks through dynamic graph representations.
+  #    This approach enables zero-shot transfer to new narrative tasks."
+  # - "We introduce NarrativeGraph, a novel representation that explicitly
+  #    models causal chains, character arcs, and temporal relations in stories.
+  #    Empirical results show this leads to more interpretable reasoning."
+  # - "Our comprehensive analysis reveals that current models struggle with
+  #    maintaining consistency beyond 1000 tokens, particularly for implicit
+  #    causal relations and character motivations."
+  
+  limitations: list[string]  # 研究の限界（各項目1-2文、2-3項目）
+  # 例:
+  # - "The approach is currently limited to third-person narratives in English."
+  # - "Computational cost scales quadratically with story length."
+
+narrative_understanding_aspects: list[string]  # 扱うNarrative Understandingの側面
+# 例（以下から該当するものを選択）:
+#   - "Story Cloze / Next Event Prediction"  
+#   - "Character / Entity Understanding"
+#   - "Narrative Consistency Check"
+#   - "Story Summarization"
+#   - "Narrative Question Answering"
+#   - "Plot / Storyline Extraction"
+#   - "Causal Reasoning in Narratives"
+#   - "Temporal Understanding"
+#   - "Story Generation"
+#   - "Story Infilling"
+#   - "Narrative Assessment"
+
+keywords: list[string]  # 分類用キーワード（5-10個）
+# 例: ["story understanding", "causal reasoning", "graph neural networks", 
+#      "narrative coherence", "character tracking", "transformer", 
+#      "multi-task learning", "story completion"]
+
+notes: string  # その他の重要な情報（optional、自由記述）

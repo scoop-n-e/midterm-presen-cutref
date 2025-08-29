@@ -1,0 +1,143 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Diversity Enhanced Narrative Question Generation for StoryBooks"
+  authors:
+    - "Hokeun Yoon"
+    - "JinYeong Bak"
+  year: 2023
+  venue: "EMNLP 2023"
+  paper_url: "https://aclanthology.org/2023.emnlp-main.31/"
+
+problem_statement:
+  background: "Question generation from given contexts can enhance comprehension, engagement, assessment, and overall efficacy in learning or conversational environments. Generating narrative questions is particularly important for developing reading comprehension skills in children, as it requires learners to combine knowledge and reason about relations, entities, and events across contexts."
+  
+  gap_or_challenge: "Despite recent advancements in question generation, the challenge of enhancing or measuring the diversity of generated questions often remains unaddressed. Current approaches tend to rely on automatic evaluation of semantic similarity with golden questions, often overlooking the potential for diverse aspects of questions. When generating multiple questions, existing methods either focus on explicit questions only or are restricted by heuristic approaches that limit diversity."
+  
+  research_objective: "This paper introduces a multi-question generation model (mQG) capable of generating multiple, diverse, and answerable questions by focusing on context and questions. The model aims to generate diverse narrative questions while maintaining semantic correctness and answerability, specifically targeting educational applications for storybooks."
+  
+  significance: "A system that can generate diverse and multiple narrative questions can serve as a valuable enhancement to educational resources, aiding in student engagement and promoting deeper understanding of study materials. This is particularly important for children's education where narrative questions help develop better reading comprehension skills."
+
+tasks:
+  - task_name: "Multi-Question Generation for Narrative Comprehension"
+    
+    task_overview: "This task evaluates a model's ability to generate multiple diverse narrative questions from storybook contexts. The task focuses on generating both explicit questions (with answers directly found in reading materials) and implicit questions (requiring deductive reasoning). The model must generate questions across seven wh-word types (what, when, where, which, who, why, how) while ensuring diversity in type, syntax, and content. Questions should be contextually relevant, answerable, and cover different aspects of the narrative."
+    
+    input_description: "The model receives a context from storybook sections, a question type (wh-word), and previously generated questions from the same context as reference. Contexts are paragraph-level sections from storybooks designed for students from kindergarten to eighth grade."
+    
+    output_description: "The system outputs multiple narrative questions per context, with each question corresponding to a specific wh-word type. Generated questions are classified as explicit, implicit, or unanswerable by an evaluation model. The output aims for 28 questions per section (4 per question type) with high diversity and answerability."
+
+methodology:
+  method_name: "Multi-Question Generation Model (mQG)"
+  
+  approach_type: "neural"
+  
+  core_technique: "mQG is built upon BART and employs a maximum question similarity loss (LMQS) to promote similar representations between reference questions and target questions during training. The model uses a recursive generation framework where previously generated questions are fed back as input for subsequent generation steps. The encoder takes three inputs: question type, context, and ground-truth questions from the same context. Mean pooling layers convert question representations to sentence-level representations. The LMQS loss encourages diverse question generation by making representations of different questions similar while maintaining semantic correctness. During inference, the recursive framework allows generation of multiple questions while considering previously generated ones."
+  
+  base_models:
+    - "BART-large"
+    - "DeBERTa-base (for answerability evaluation)"
+  
+  key_innovations:
+    - "Maximum question similarity loss (LMQS) to promote diversity while maintaining semantic correctness"
+    - "Recursive generation framework that feeds previously generated questions back as input"
+    - "Answerability evaluation model trained on SQuAD2.0 to classify questions as explicit, implicit, or unanswerable"
+    - "Training approach that references ground-truth questions from the same context to enhance diversity"
+
+datasets:
+  - dataset_name: "FairytaleQA"
+    
+    characteristics: "Educational dataset based on storybooks for students from kindergarten to eighth grade. Contains narrative question-answer pairs annotated with seven question types capturing narrative elements/relations. Questions are labeled as explicit or implicit based on whether answers can be directly found in context."
+    
+    usage: "Primary dataset for training and evaluation of the multi-question generation model"
+    
+    size: "278 books with 9,595 QA pairs (after removing multi-paragraph questions)"
+    
+    domain: "children_stories"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "TellMeWhy"
+    
+    characteristics: "Free-form why-questions related to events in short sections from ROCStories. Contains approximately 28.82% implicit questions. Created using template-based transformations with crowdsourced answers."
+    
+    usage: "Zero-shot evaluation to test generalization to why-questions"
+    
+    size: "1,134 sections with 10,689 questions (test split)"
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "SQuAD1.1"
+    
+    characteristics: "Comprehensive benchmark focusing on machine comprehension with articles from Wikipedia. Contains only explicit questions covering a wide range of topics."
+    
+    usage: "Zero-shot evaluation to test out-of-domain generalization"
+    
+    size: "2,429 sections with 12,010 questions (test split)"
+    
+    domain: "mixed"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "Comprehensive evaluation using both automatic metrics and human evaluation. Quality is measured using Rouge-L, BERTScore, and BLEURT by finding the highest semantic similarity score between generated and ground-truth questions. Diversity is measured using Self-BLEU score. Answerability is evaluated using a DeBERTa-based model fine-tuned on SQuAD2.0. Human evaluation assesses diversity across three dimensions (type, syntax, content) and quality on two dimensions (appropriateness, answerability)."
+  
+  main_results: "On FairytaleQA, mQG generates 28 questions per section with 23.08 answerable questions, achieving 58.90 Rouge-L F1, 0.9394 BERTScore, 0.5698 BLEURT, and 0.6389 Self-BLEU (lower is better for diversity). This significantly outperforms baselines including QAG (53.77 Rouge-L, 15.95 answerable) and EQG (41.05 Rouge-L, 3.80 answerable). Human evaluation shows mQG ranks first in 77% of cases for type diversity, 70.5% for syntax diversity, and 60% for content diversity. Zero-shot evaluation on TellMeWhy achieves 56.17 Rouge-L with 2.10 answerable questions, and on SQuAD1.1 achieves 45.38 Rouge-L with 20.15 answerable questions."
+  
+  metrics_used:
+    - "Rouge-L F1"
+    - "BERTScore F1"
+    - "BLEURT"
+    - "Self-BLEU (diversity)"
+    - "Answerability rate"
+    - "Human evaluation scores"
+  
+  human_evaluation_summary: "Five annotators evaluated 40 sections comparing mQG with QAG and EQG baselines. For diversity, mQG was ranked first in 77% (type), 70.5% (syntax), and 60% (content) of cases. For quality, all models achieved similar appropriateness (4.79/5) and answerability (4.47/5) scores compared to ground truth (4.71/4.76)."
+
+results_analysis:
+  key_findings:
+    - "mQG generates the highest number of answerable questions (23.08 per section) compared to baselines"
+    - "The recursive framework and LMQS loss significantly improve diversity (Self-BLEU 0.6389 vs 0.7529 without)"
+    - "Setting 4 questions per type shows optimal trade-off between quality and diversity"
+    - "Model successfully generates both explicit and implicit questions across different domains"
+    - "Zero-shot performance demonstrates strong generalization to out-of-domain datasets"
+  
+  ablation_summary: "Removing LMQS increases Self-BLEU from 0.6389 to 0.7006 (less diverse). Removing both LMQS and reference questions further reduces diversity (Self-BLEU 0.7529) and decreases Rouge-L from 58.90 to 54.76. The recursive framework is essential for maintaining both quality and diversity."
+
+contributions:
+  main_contributions:
+    - "We expand the scope of question generation by generating comprehensive sets of questions regardless of answer knowledge, subsequently categorizing them as answerable or non-answerable through an evaluation model."
+    - "We introduce mQG, a novel model trained using maximum question similarity loss (LMQS) with a recursive referencing process for generating diverse questions while preserving semantic correctness."
+    - "We introduce an answerability evaluation model capable of classifying questions as implicit, explicit, or unanswerable, enabling comprehensive assessment of generated questions."
+  
+  limitations:
+    - "Quality of subsequent questions may be adversely impacted by poor quality of previously generated questions in recursive framework"
+    - "Number of questions limited by maximum token threshold"
+    - "Potential misclassification by evaluation model leading to unanswerable questions being categorized as answerable"
+    - "Relatively low inter-annotator agreement in human evaluation"
+
+narrative_understanding_aspects:
+  - "Narrative QA"  # Generating questions about story content
+  - "Free-Form QA"  # Generating questions requiring causal and abstract reasoning
+  - "Question Generation (QG)"  # Automatic generation of narrative questions
+  - "Reading Comprehension"  # Questions to assess story understanding
+
+keywords:
+  - "narrative question generation"
+  - "multi-question generation"
+  - "diversity in NLG"
+  - "educational NLP"
+  - "storybook comprehension"
+  - "recursive generation"
+  - "maximum question similarity"
+  - "answerability evaluation"
+
+notes: "This work specifically targets educational applications for children's storybooks, making it particularly relevant for narrative understanding in educational contexts. The recursive generation framework and diversity-focused training represent novel approaches to multi-question generation."

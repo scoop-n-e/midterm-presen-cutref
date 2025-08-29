@@ -1,0 +1,150 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Multi-level Contrastive Learning for Script-based Character Understanding"
+  authors:
+    - "Dawei Li"
+    - "Hengyuan Zhang"
+    - "Yanran Li"
+    - "Shiping Yang"
+  year: 2023
+  venue: "EMNLP 2023"
+  paper_url: "https://aclanthology.org/2023.emnlp-main.366/"
+
+problem_statement:
+  background: "Character comprehension is a popular research topic in literary, psychological and educational research. To fully understand characters, individuals must empathize with characters based on personal experiences, construct profiles according to characters' identities, and inference about characters' future actions. Script-based character understanding focuses on learning characters from scripts (written text for plays, movies, or broadcasts)."
+  
+  gap_or_challenge: "Script-based character understanding faces two main challenges. First, text type - scripts mainly consist of multi-party conversations where multiple characters interact, making it non-trivial for PLMs to comprehend characters based on fine-grained conversation information. Second, text length - scripts are typically very long with billions of words, with character information distributed globally throughout the entire script. PLMs are ineffective in capturing such global information due to sensitiveness of context modeling and input length limitations."
+  
+  research_objective: "This work proposes a multi-level contrastive learning framework to capture characters' global information in a fine-grained manner. The framework addresses both the text type challenge (through summary-conversation contrastive learning) and text length challenge (through cross-sample contrastive learning) to learn comprehensive character representations from scripts."
+  
+  significance: "This research advances character understanding in scripts, which is essential for narrative comprehension, educational applications, and understanding complex multi-party interactions in long-form texts. The work demonstrates significant improvements over strong baselines including ChatGPT-3.5, showing the current limitations of LLMs in global and in-depth character understanding tasks."
+
+tasks:
+  - task_name: "Coreference Resolution"
+    
+    task_overview: "Given a conversation in scripts containing multiple utterances and character mention entities, the objective is to assemble all mention entities that refer to the same character into clusters. This task evaluates the model's ability to identify when different mentions refer to the same character across a script."
+    
+    input_description: "A conversation from scripts containing multiple utterances with n character mention entities (c1, c2, ..., cn). The mentions may use different names, pronouns, or descriptions to refer to the same character."
+    
+    output_description: "Clusters of mention entities where each cluster contains all mentions referring to the same character. The output is evaluated using clustering metrics like B3, CEAFφ4, and BLANC."
+  
+  - task_name: "Character Linking"
+    
+    task_overview: "This task requires accurately classifying each mention entity to a character in a pre-defined character set. Unlike coreference resolution which clusters mentions, character linking maps each mention to a specific known character identity."
+    
+    input_description: "Same as coreference resolution - conversations with multiple character mention entities. Additionally, a pre-defined character set Z = {z1, z2, ..., zm} representing known characters in the script."
+    
+    output_description: "Classification of each mention entity to a character in the pre-defined set. Evaluated using Macro and Micro F1 scores."
+  
+  - task_name: "Character Guessing"
+    
+    task_overview: "This task focuses on identifying the speaker for each utterance in scripts where speaker names are masked. Each utterance within a scene is segmented with speakers masked and replaced with special tokens. The same speaker within a scene uses the same special token."
+    
+    input_description: "Script scenes with segmented utterances where speaker names are replaced with special tokens (P0, P1, P2, etc.). The same speaker is represented by the same token within a scene."
+    
+    output_description: "Predicted character identities for each special token representing a speaker. Evaluated using Macro and Micro F1 scores."
+
+methodology:
+  method_name: "Multi-level Contrastive Learning Framework"
+  
+  approach_type: "neural"
+  
+  core_technique: "The framework combines two novel contrastive losses to capture both fine-grained and global character information. First, a summary-conversation contrastive loss aligns representations of the same character from different text fields (summaries and conversations), treating them as different views of the same target. This addresses the text type challenge by leveraging auxiliary summary data. Second, a cross-sample contrastive loss aligns the same character's representations across different samples within a batch, overcoming input length limitations to learn global character information. The framework uses pre-trained language models (SpanBERT, Longformer, BigBird) as encoders, with attention-based layers to share character-level information. A two-stage training paradigm is employed: stage 1 combines supervised loss with both contrastive losses for post-training, and stage 2 uses only supervised loss for task-specific fine-tuning."
+  
+  base_models:
+    - "SpanBERT (base and large)"
+    - "Longformer (base and large)"
+    - "BigBird (base and large)"
+    - "C2 (combines coreference and linking)"
+    - "ChatGPT-3.5 (baseline comparison)"
+  
+  key_innovations:
+    - "Summary-conversation contrastive learning to capture fine-grained character information from multiple text perspectives"
+    - "Cross-sample contrastive learning to overcome input length limitations and learn global character representations"
+    - "Two-stage training paradigm combining multi-task learning with task-specific fine-tuning"
+    - "Attention-based character information sharing layers"
+    - "Framework compatible with multiple PLM architectures"
+
+datasets:
+  - dataset_name: "Character Identification"
+    
+    characteristics: "TV show dataset for coreference resolution and character linking tasks. Contains multiparty conversations from TV shows with annotated character mentions and references."
+    
+    usage: "Used for training and evaluation of coreference resolution and character linking tasks"
+    
+    size: "Latest released version (specific numbers not provided in paper)"
+    
+    domain: "scripts"  # TV show scripts
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "TVSHOWGUESS"
+    
+    characteristics: "TV show dataset for character guessing task. Contains scenes from TV shows including 'The Big Bang Theory' and 'Friends' with masked speaker identities. Scripts are very long (528,832 tokens for TBBT example) with character information distributed globally."
+    
+    usage: "Used for training and evaluation of character guessing task"
+    
+    size: "Multiple TV shows with train/dev/test splits following original dataset separation"
+    
+    domain: "scripts"  # TV show scripts
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "Comprehensive evaluation across three character understanding tasks using task-specific metrics. For coreference resolution, clustering metrics (B3, CEAFφ4, BLANC) from CoNLL'12 shared task are used. For character linking and guessing, classification metrics (Macro and Micro F1) are employed. Statistical significance testing (p ≤ 0.01) is performed. Additional analyses include ablation studies, evidence type analysis, visualization of character embeddings using T-SNE, and case studies."
+  
+  main_results: "The framework achieves significant improvements across all tasks and models. On coreference resolution: SpanBERT-large achieves 85.42% B3 F1 (vs 83.69% baseline), C2-large reaches 86.24% (vs 85.94%). On character linking: improvements of 1-2% in both Micro and Macro F1. On character guessing: BigBird-P-large achieves 77.68% Micro F1 (vs 75.43%), Longformer-P-large reaches 78.92% (vs 77.58%). ChatGPT-3.5 performs worst on all tasks (e.g., 44.05 Macro F1 on character guessing), indicating current LLMs struggle with global character understanding."
+  
+  metrics_used:
+    - "B3 (precision, recall, F1)"
+    - "CEAFφ4 (precision, recall, F1)"
+    - "BLANC (precision, recall, F1)"
+    - "Micro F1"
+    - "Macro F1"
+  
+  human_evaluation_summary: null  # No human evaluation reported
+
+results_analysis:
+  key_findings:
+    - "Both contrastive losses contribute to performance, with summary-conversation loss showing larger individual impact than cross-sample loss"
+    - "Two-stage training outperforms one-stage multi-task training, confirming importance of task-specific fine-tuning"
+    - "Framework particularly effective for samples requiring Global & In-depth evidence (2.4-2.7% improvement) vs Local & Textual evidence (1.1-1.6%)"
+    - "Visualization shows more compact clustering of character embeddings with the framework"
+    - "ChatGPT-3.5 fails dramatically on character understanding, especially for global comprehension tasks"
+  
+  ablation_summary: "Removing summary-conversation loss causes larger performance drop than removing cross-sample loss. Both losses together achieve best results. Two-stage training outperforms one-stage by 1-2% across metrics. Optimal task ratios: λ=1.0, α=1.0, β=1.0 for supervised, summary-conv, and cross-sample losses respectively."
+
+contributions:
+  main_contributions:
+    - "We identify two critical challenges for character understanding in scripts (text type and text length) and propose a multi-level contrastive learning framework to address them effectively."
+    - "We demonstrate significant performance improvements across multiple datasets and tasks, showing the framework's effectiveness and compatibility with various PLM architectures."
+    - "Through extensive analysis including evidence type breakdown, embedding visualization, and case studies, we provide insights into script-based character understanding and reveal current limitations of LLMs in this domain."
+  
+  limitations:
+    - "Framework depends on pre-trained large language models requiring gradient information for parameter tuning"
+    - "Unclear how well framework fits to 3B+ encoder-decoder PLMs or decoder-only LLMs"
+    - "Requires well-organized script datasets with summaries (though auto-generated summaries shown to work)"
+    - "Still room for improvement in character understanding tasks"
+
+narrative_understanding_aspects:
+  - "Character / Entity Understanding"  # Core focus on character comprehension
+  - "Reading Comprehension"  # Understanding character relationships and identities from text
+  - "Narrative Consistency Check"  # Coreference resolution ensures consistent character tracking
+
+keywords:
+  - "script-based character understanding"
+  - "multi-level contrastive learning"
+  - "coreference resolution"
+  - "character linking"
+  - "character guessing"
+  - "multi-party conversation"
+  - "long document understanding"
+  - "summary-conversation contrastive"
+  - "cross-sample contrastive"
+
+notes: "This work highlights significant limitations of current LLMs (including ChatGPT-3.5) in global character understanding tasks, where they perform worse than all specialized models. The proposed framework effectively addresses the unique challenges of script-based character understanding through innovative use of contrastive learning at multiple levels."

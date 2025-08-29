@@ -1,0 +1,138 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "OpenToM: A Comprehensive Benchmark for Evaluating Theory-of-Mind Reasoning Capabilities of Large Language Models"
+  authors:
+    - "Hainiu Xu"
+    - "Runcong Zhao"
+    - "Lixing Zhu"
+    - "Jinhua Du"
+    - "Yulan He"
+  year: 2024
+  venue: "ACL 2024"
+  paper_url: "https://aclanthology.org/2024.acl-long.466/"
+
+problem_statement:
+  background: "Theory-of-Mind (ToM), the awareness that others perceive the world differently and the capability of keeping track of such differences, is at the core of social interactions. Studies in cognitive science have designed numerous false-belief tests to investigate human ToM capabilities, such as the Sally-Anne Test."
+  
+  gap_or_challenge: "Prevalent Neural Theory-of-Mind (N-ToM) benchmarks have several shortcomings, including the presence of ambiguous and artificial narratives, absence of personality traits and preferences, a lack of questions addressing characters' psychological mental states, and limited diversity in the questions posed. Characters in existing benchmarks do not have personality traits or preferences, and their actions are not motivated."
+  
+  research_objective: "We construct OpenToM, a new benchmark for assessing N-ToM with (1) longer and clearer narrative stories, (2) characters with explicit personality traits, (3) actions that are triggered by character intentions, and (4) questions designed to challenge LLMs' capabilities of modeling characters' mental states of both the physical and psychological world."
+  
+  significance: "This work provides a comprehensive benchmark that reveals state-of-the-art LLMs thrive at modeling certain aspects of mental states in the physical world but fall short when tracking characters' mental states in the psychological world."
+
+tasks:
+  - task_name: "Theory-of-Mind Reasoning with Location Questions"
+    
+    task_overview: "Location (Loc) questions test characters' perception of entity locations. The benchmark includes two versions: Loccoarse asks whether an entity is at its initial location, while Locfine inquires about the entity's explicit location. This tests both first-order ToM (character's perception) and second-order ToM (character's belief about another character's mental state)."
+    
+    input_description: "A complete narrative with two protagonists (mover and observer), an entity-of-interest, containers, and locations. Narratives explicitly include character preferences, personality traits, intentions, and whether actions were witnessed."
+    
+    output_description: "Binary or ternary classification answers about entity locations from different character perspectives. Models must deduce information accessible to each character and answer accordingly."
+  
+  - task_name: "Multi-Hop Reasoning Questions"
+    
+    task_overview: "Multi-Hop (MHop) questions require 3-hop reasoning by adding reasoning steps on top of location questions. These include questions about container fullness changes and entity accessibility, testing understanding of social commonsense (e.g., not taking things from others' belongings without permission)."
+    
+    input_description: "Same narrative structure as location questions, with additional focus on container states and social norms."
+    
+    output_description: "Binary/ternary classification answers requiring multi-step reasoning about physical state changes and social accessibility."
+  
+  - task_name: "Attitude Questions for Psychological Mental States"
+    
+    task_overview: "Attitude (Att) questions challenge LLMs' capability to interpret characters' psychological mental states. Models must deduce the observer's potential attitude towards the mover's action based on preferences and witnessed events."
+    
+    input_description: "Narratives with explicit character preferences, personality traits (considerate/inconsiderate/negativistic), and actions that may conflict with observer preferences."
+    
+    output_description: "Classification of observer's attitude (positive/negative/neutral) towards mover's action, requiring social commonsense and understanding of accessible information."
+
+methodology:
+  method_name: "OpenToM Benchmark Construction with Human-in-the-Loop Pipeline"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "Four-stage human-in-the-loop generation pipeline: (1) Character Personification Process - assigning personality traits (considerate/inconsiderate/negativistic) and preferences to characters, with false beliefs about each other's preferences to mitigate spurious correlations; (2) Intention and Enaction Generation - using GPT-3.5-Turbo to generate character intentions based on personality and preferences; (3) Story Plot Construction - creating three-paragraph narratives with preferences, initial world state, and main events; (4) Human Annotation and Revision - quality inspection and manual revision to reduce lexical overlaps and ambiguities. Questions are formulated as binary/ternary classification tasks with both human-annotated and rule-based labels."
+  
+  base_models:
+    - "GPT-3.5-Turbo (for narrative generation)"
+    - "GPT-4-Turbo (for extra-long narratives)"
+    - "Llama2-Chat (7B, 13B, 70B)"
+    - "Mixtral-8x7B-Instruct"
+    - "GPT-3.5-Turbo (evaluation)"
+    - "GPT-4-Turbo (evaluation)"
+  
+  key_innovations:
+    - "Characters with explicit personality traits and preferences that motivate actions"
+    - "Mitigating spurious correlations through false beliefs about preferences"
+    - "Questions covering both physical world and psychological mental states"
+    - "Explicit inclusion of whether observer witnessed mover's action"
+    - "Social commonsense integration in accessibility questions"
+
+datasets:
+  - dataset_name: "OpenToM"
+    
+    characteristics: "696 narratives (596 standard + 100 extra-long) with personified characters, motivated actions, and 23 questions per narrative covering first-order and second-order ToM. Average 194.3 tokens for standard, 491.6 for long narratives. Characters have personality traits and preferences."
+    
+    usage: "Primary benchmark for evaluating N-ToM capabilities"
+    
+    size: "696 narratives with 16,008 total questions"
+    
+    domain: "fiction"
+    
+    is_new: true
+    
+    new_dataset_contribution: "First N-ToM benchmark with personified characters, motivated actions, and questions addressing psychological mental states alongside physical world understanding. Includes explicit personality traits and preferences that drive character actions."
+
+evaluation:
+  evaluation_strategy: "Zero-shot evaluation with macro-averaged F1 scores across binary/ternary classification tasks. Testing includes vanilla prompting, Chain-of-Thought (CoT), and SimulatedToM (SimToM) techniques. Fine-tuning baseline using Llama2-Chat-13B. Human performance measured with 3 annotators on 100 narratives. Analysis includes faithfulness testing, character role performance gaps, and psychological state understanding."
+  
+  main_results: "GPT-4-Turbo achieves best overall performance but still falls short of human level. First-order Location: GPT-4-Turbo 0.643 F1 vs human 0.990. Multi-Hop: GPT-4-Turbo 0.658 F1 vs human 0.855. Attitude: GPT-4-Turbo 0.544 F1 vs human 0.862. Fine-tuning dramatically improves Location (0.978) and Multi-Hop (0.936) but limited improvement on Attitude (0.547)."
+  
+  metrics_used:
+    - "Macro-averaged F1 score"
+    - "Unfaithful Rate (for consistency checking)"
+    - "Inter-annotator agreement"
+    - "Performance gap between character roles"
+  
+  human_evaluation_summary: "100 narratives annotated by 3 independent annotators. High inter-annotator agreement demonstrates minimal subjectivity. Human performance: Location 0.990-0.993 F1, Multi-Hop 0.770-0.855 F1, Attitude 0.862 F1."
+
+results_analysis:
+  key_findings:
+    - "LLMs show unfaithfulness in Location questions with contradictory answers between coarse and fine granularity"
+    - "Performance gap between modeling mover vs observer mental states varies by question type"
+    - "LLMs struggle with attitude questions due to spurious correlations with personality traits"
+    - "CoT improves Location and Multi-Hop but not Attitude questions"
+    - "Over 95% of GPT-4-Turbo errors on attitude questions correlate with mover personality"
+  
+  ablation_summary: "Joint vs Separate prompting for Location questions shows Joint approach reduces unfaithful rate for GPT models. Character role analysis reveals mover mental states easier for Multi-Hop, harder for second-order Location. Personality correlation analysis shows LLMs erroneously associate mover traits with observer attitudes."
+
+contributions:
+  main_contributions:
+    - "We construct OpenToM, a comprehensive N-ToM benchmark with natural narratives, personified characters with explicit personality traits and preferences, motivated actions, and diversified questions challenging understanding of both physical and psychological perception."
+    - "We conduct extensive evaluation revealing that state-of-the-art LLMs excel at modeling physical world mental states but fail at psychological mental states, with GPT-4-Turbo achieving only 0.544 F1 on attitude questions vs 0.862 human performance."
+    - "We identify key shortcomings including unfaithfulness in reasoning (contradictory answers), sensitivity to character roles, and spurious correlations between personality traits and emotional states."
+  
+  limitations:
+    - "Limited to evaluated LLMs due to computational constraints"
+    - "Narratives generated by LLMs may contain biases"
+    - "Character emotions limited to directly deducible from single actions"
+    - "All narratives follow linear chronological order"
+
+narrative_understanding_aspects:
+  - "Character / Entity Understanding"  # Character personality, preferences, and mental states
+  - "Reading Comprehension"  # Understanding narrative events and character actions
+  - "Free-Form QA"  # Theory-of-Mind reasoning questions
+  - "Narrative Consistency Check"  # Faithfulness in location reasoning
+
+keywords:
+  - "Theory-of-Mind"
+  - "Neural Theory-of-Mind"
+  - "false belief"
+  - "social commonsense"
+  - "psychological mental states"
+  - "character personality"
+  - "narrative comprehension"
+  - "benchmark"
+  - "large language models"
+
+notes: "This work represents a significant advance in N-ToM benchmarking by introducing realistic character motivations and psychological dimensions. The finding that LLMs struggle with attitude questions despite strong performance on physical world questions highlights a critical gap in current models' social intelligence."

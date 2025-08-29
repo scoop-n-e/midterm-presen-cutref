@@ -1,0 +1,139 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Affective and Dynamic Beam Search for Story Generation"
+  authors:
+    - "Tenghao Huang"
+    - "Ehsan Qasemi"
+    - "Bangzheng Li"
+    - "He Wang"
+    - "Faeze Brahman"
+    - "Muhao Chen"
+    - "Snigdha Chaturvedi"
+  year: 2023
+  venue: "EMNLP 2023 Findings"
+  paper_url: "https://aclanthology.org/2023.findings-emnlp.789/"
+
+problem_statement:
+  background: "Stories have been a central part of human cultures for millennia, shaping societies, identities, and beliefs. However, the question of why some stories captivate us while others leave us indifferent remains intriguing. While humans can skillfully craft interesting narratives, even the most recent AI models cannot compose stories that can engage the reader for long enough."
+  
+  gap_or_challenge: "While large language models (LLMs) such as GPT have been de facto winners in generating coherent text, their prowess in creating narratives that captivate human interest leaves much to be desired. LLMs' coherence is mainly rooted in their training objective that incentivizes text likelihood which is not necessarily correlated with human quality judgements or writing style. The concept of 'interesting stories' is highly subjective and context-dependent. Previous research increases 'interest' by structural planning but ignores that text complexity and quality also raise interestingness."
+  
+  research_objective: "We address the task of automatically generating interesting stories. We propose Affective Story Generator (AFFGEN) that controls text coherence and leverages words' affective dimensions to promote text interestingness. Our method is based on two key ideas: occasionally exploring larger beams can help generate lower probability but potentially more interesting words, and switching between large and small beams helps maintain the balance between coherence and interestingness."
+  
+  significance: "Automatically generating interesting stories could potentially help cognitive studies by revealing patterns that make stories interesting. From an application perspective, this capability could revolutionize fields like entertainment, education, and therapy. The work enables generation of narratives with intriguing twists that captivate reader interest while maintaining coherence."
+
+tasks:
+  - task_name: "Interesting Story Generation"
+    
+    task_overview: "This task evaluates a model's ability to generate interesting five-sentence stories from a single sentence prompt. The task requires generating narratives that captivate human interest through affective content and intriguing twists while maintaining coherence. The model must balance between using high-likelihood words for coherence and lower-probability but more affectively charged words for interestingness. The generated stories should contain an intriguing twist at an appropriate position to enhance engagement."
+    
+    input_description: "The model receives a single sentence prompt (s1) representing the first sentence of a story. The prompt is drawn from everyday commonsense scenarios. The model must generate the remaining four sentences to complete a five-sentence story."
+    
+    output_description: "The system outputs a sequence of generated sentences (s2, s3, ..., s5) forming a complete story. One sentence serves as the intriguing twist. Output is evaluated on coherence (UNION, RUBER scores), interestingness (arousal scores), and human judgments on emotional engagement, empathy, and overall preference."
+
+methodology:
+  method_name: "Affective Story Generator (AFFGEN)"
+  
+  approach_type: "neural"
+  
+  core_technique: "AFFGEN operates in two stages: first identifying the position for the intriguing twist using a data-driven approach based on the WritingPrompts dataset, then generating the story using different decoding strategies. For regular sentences, standard beam search maintains coherence. For the intriguing twist sentence, AFFGEN employs Dynamic Beam Sizing using a contextual k-arm bandit model (LinUCB algorithm) that dynamically switches between beam sizes (10, 30, 60) based on context features including arousal score, event trigger likelihood, sequence length, and perplexity. The bandit optimizes a payoff function balancing arousal (interestingness), perplexity (coherence), and computational cost. Affective Reranking then selects the best candidate based on arousal scores and valence contrast with the preceding narrative. This combination encourages selection of lower-probability but more affectively charged words."
+  
+  base_models:
+    - "GPT-2 (fine-tuned on ROCStories)"
+    - "GPT-3 (used as stronger baseline)"
+    - "RoBERTa (for event trigger prediction)"
+  
+  key_innovations:
+    - "Dynamic Beam Sizing using contextual multi-arm bandit model for adaptive beam size selection"
+    - "Affective Reranking prioritizing sentences based on arousal and valence contrast"
+    - "Data-driven approach for identifying optimal intriguing twist position using WritingPrompts dataset"
+    - "Payoff function balancing arousal, perplexity, and computational efficiency"
+    - "Context features including arousal score, event trigger likelihood, and perplexity for beam size decision"
+
+datasets:
+  - dataset_name: "ROCStories"
+    
+    characteristics: "Large collection of 100k five-sentence 'commonsense' stories about everyday events. Stories are short, making manual assessment of narrative quality feasible during human evaluation. Average story length allows testing of model's ability to learn from everyday life stories and improvise them to be interesting."
+    
+    usage: "Used for training the base storyteller and evaluation. 1k stories held out each for validation and testing. First sentence of each story used as prompt."
+    
+    size: "100k five-sentence stories"
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "WritingPrompts"
+    
+    characteristics: "Collection of human-written stories used to learn distribution D(n) for probability of observing intriguing twist at nth sentence. Contains longer narratives with identifiable turning points and climactic moments."
+    
+    usage: "Used to train data-driven approach for identifying intriguing twist position"
+    
+    size: "Not specified"
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "Comprehensive evaluation using both automatic metrics and human judgments. Automatic evaluation measures perplexity, UNION score for story generation quality, RUBER score for dialog quality, and arousal scores for affective content. Human evaluation on Amazon Mechanical Turk with 100 story pairs assessed by three annotators each on five criteria: coherence, emotional engagement, empathy, interestingness, and overall preference. Additional comparison with ChatGPT using expert annotators. Ablation studies test importance of dynamic beam sizing and affective reranking."
+  
+  main_results: "AFFGEN-3 achieves arousal score of 0.53 (vs GPT-3: 0.46), maintaining comparable coherence (UNION: 0.029 vs 0.028, RUBER: 0.1547 vs 0.1541). Human evaluation shows AFFGEN-3 significantly outperforms GPT-3: coherence (50.5% wins), emotional engagement (53.0%), empathy (53.8%), interestingness (54.9%), overall preference (52.7%). Against ChatGPT, AFFGEN shows lower coherence (14.5% wins) but higher emotional engagement (55.5%), empathy (40.8%), and interestingness (45.3%). Ablation studies confirm dynamic beam sizing crucial for balancing coherence and interestingness."
+  
+  metrics_used:
+    - "Perplexity (PPL)"
+    - "UNION score"
+    - "RUBER score"
+    - "Arousal score (per-token)"
+    - "Human judgments (5 criteria)"
+    - "Inter-annotator agreement (0.58)"
+  
+  human_evaluation_summary: "100 story pairs evaluated by Master annotators on AMT, three annotators per pair. AFFGEN-3 significantly outperforms GPT-3 across all criteria (p<0.05 except coherence p<0.1). Against ChatGPT, expert annotators found AFFGEN less coherent but more empathy-evoking and interesting. Judges noted AFFGEN stories have mood shifts, unexpected twists, and emotional expressiveness."
+
+results_analysis:
+  key_findings:
+    - "Dynamic beam sizing enables generation of more interesting content without sacrificing coherence"
+    - "Larger beam sizes used more frequently at beginning of sentences where interesting words typically appear"
+    - "Model transitions between beam sizes ~30% of the time, showing adaptive behavior"
+    - "Affective reranking particularly important for arousal scores (-0.070 without it)"
+    - "Stories with intriguing twists and plot complications rated more emotionally engaging"
+  
+  ablation_summary: "Static beam sizes show trade-offs: AFFGEN60 produces more arousing stories (+0.047) but less coherent (-0.005 UNION). Without affective reranking, arousal drops dramatically (-0.070). Dynamic beam sizing crucial for balancing interestingness and coherence. Model uses larger beams for first few tokens, smaller beams later."
+
+contributions:
+  main_contributions:
+    - "We propose the task of generating interesting stories, addressing a key limitation of current LLMs in narrative generation."
+    - "We introduce AFFGEN, a novel framework combining Dynamic Beam Sizing using contextual bandits and Affective Reranking to generate stories with intriguing twists while maintaining coherence."
+    - "We demonstrate through automatic and human evaluations that AFFGEN significantly outperforms strong baselines (GPT-2, GPT-3) in generating affectively charged and interesting narratives."
+    - "We provide comprehensive ablation studies and analysis revealing how dynamic beam exploration and affective content selection contribute to story interestingness."
+  
+  limitations:
+    - "Assumes single intriguing twist sentence sufficient to enhance story interestingness"
+    - "Simple data-driven approach for twist position selection without considering narrative context"
+    - "Discretized beam sizes restrict exploration of continuous beam size space"
+    - "Limited to short (five-sentence) fictional narratives in English"
+    - "No bias or toxicity removal methods employed"
+
+narrative_understanding_aspects:
+  - "Story Generation"  # Core task of generating interesting narratives
+  - "Character / Entity Understanding"  # Stories involve character emotions and empathy
+  - "Plot / Storyline Extraction"  # Identifying and generating intriguing twists
+  - "Narrative Assessment"  # Evaluating story interestingness and engagement
+
+keywords:
+  - "story generation"
+  - "affective computing"
+  - "dynamic beam search"
+  - "contextual multi-arm bandit"
+  - "narrative interestingness"
+  - "intriguing twists"
+  - "emotional engagement"
+  - "arousal and valence"
+  - "LinUCB algorithm"
+
+notes: "This work introduces a novel decoding strategy that successfully balances coherence and interestingness in story generation. The use of contextual bandits for beam size selection represents an innovative approach to adaptive decoding. Human evaluations confirm the method generates more emotionally engaging stories with intriguing twists."

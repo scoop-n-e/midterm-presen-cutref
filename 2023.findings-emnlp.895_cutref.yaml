@@ -1,0 +1,147 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "PARROT: Zero-Shot Narrative Reading Comprehension via Parallel Reading"
+  authors:
+    - "Chao Zhao"
+    - "Anvesh Rao Vijjini"
+    - "Snigdha Chaturvedi"
+  year: 2023
+  venue: "EMNLP 2023 Findings"
+  paper_url: "https://aclanthology.org/2023.findings-emnlp.895/"
+
+problem_statement:
+  background: "Narratives have long been recognized as a valuable resource for linguistic, scientific, cultural, and social learning. Narrative comprehension is considered a fundamental aspect of human intelligence and an important tool for cognitive development and meaning-making. With this motivation, previous research has tackled the task of narrative reading comprehension, which involves automatically comprehending a given narrative and answering questions related to it."
+  
+  gap_or_challenge: "In comparison to general text comprehension, which typically focuses on understanding named entities and factual information, narrative comprehension presents unique challenges. It requires understanding foundational narrative elements including events along with their temporal and causal connections; settings such as time, place, and environment; as well as characters, including their motivations, desires, emotions, and relationships. Despite the availability of extensively annotated data for general text reading comprehension, there is currently a lack of sufficient annotated data in the narrative domain, and it is not optimal to directly use models trained on general text data for narrative reading comprehension."
+  
+  research_objective: "We present PARROT, a zero-shot approach for narrative reading comprehension through parallel reading, which involves two parallel narratives that tell the same story. By leveraging one narrative as a source of supervision signal to guide the understanding of the other, PARROT abstracts the textual content and develops genuine narrative understanding. The approach uses masked language modeling with selective span masking of narrative elements and parallel reading to foster deep comprehension skills."
+  
+  significance: "This research enables data-efficient learning approaches for narrative reading comprehension without requiring extensive annotated data. The approach advances understanding of how parallel reading can enhance comprehension abilities and provides a framework for zero-shot narrative understanding that achieves performance comparable to fully supervised models."
+
+tasks:
+  - task_name: "Zero-Shot Narrative Reading Comprehension"
+    
+    task_overview: "This task evaluates a model's ability to comprehend narratives and answer questions without any task-specific fine-tuning data. The model must understand various narrative elements including characters, events, temporal and causal relationships, settings, and character motivations. The task requires both extractive abilities (exact match, paraphrase understanding) and abstractive reasoning (multi-hop reasoning, understanding character motivations, event causality). Questions range from simple factual queries to complex inference requiring deep narrative understanding."
+    
+    input_description: "The model receives a narrative text (book plot summary or children's story) and a natural language question about the narrative. During pre-training, the model receives two parallel narratives telling the same story with different rendering styles, along with masked statements derived from questions. Narratives average 150-659 tokens in length."
+    
+    output_description: "The system generates concise answers to questions, ranging from entity mentions to explanatory phrases. During pre-training, the model predicts masked narrative elements. During inference, questions are transformed into masked statements and the model fills in the masks to produce answers. Answers are evaluated using ROUGE scores against reference answers."
+
+methodology:
+  method_name: "PARROT (Parallel Reading for Zero-Shot Narrative Comprehension)"
+  
+  approach_type: "neural"
+  
+  core_technique: "PARROT employs a two-stage approach. First, selective span masking identifies and masks important narrative elements in one narrative, including: (1) Named entities (9 types: Person, Location, GPE, Facility, Organization, Time, Date, Event, Products) to identify characters and settings; (2) Semantic roles (5 types: Direction, Location, Time, Purpose, Cause, Manner) to capture event-related information; (3) Verb and adjective phrases to understand events and characterizations. Second, parallel reading uses a longer parallel narrative as evidence to predict masked spans in the shorter narrative. The model is pre-trained using T5-base with masked language modeling loss. During inference, questions are transformed into masked statements using QA2D, preserving question-type information through special tokens (who, what, when, where, why, how). This maintains consistency between pre-training and inference formats, enabling zero-shot application."
+  
+  base_models:
+    - "T5-base (Raffel et al., 2020)"
+    - "T5-large, T5-XL, T5-XXL, UL2-20B (for scaling experiments)"
+  
+  key_innovations:
+    - "Selective span masking targeting diverse narrative elements instead of random masking"
+    - "Parallel reading strategy using two narratives of the same story for abstraction"
+    - "Question-to-masked-statement transformation preserving question-type information"
+    - "Filtering at sentence and span levels to ensure answerability from parallel narrative"
+    - "Mapping between question types and masked span types for consistent formatting"
+
+datasets:
+  - dataset_name: "NarraSum"
+    
+    characteristics: "Dataset of 122K parallel narrative pairs obtained from plot descriptions of movies and TV episodes. After processing yields 57.4K paired narratives and 154.5K question-answer pairs. Average lengths of shorter and longer narratives are 125 and 926 tokens respectively. Each narrative pair includes 2.7 masked spans on average."
+    
+    usage: "Used for pre-training PARROT with parallel reading"
+    
+    size: "57.4K paired narratives, 154.5K QA pairs"
+    
+    domain: "mixed"  # movies and TV shows
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "NarrativeQA"
+    
+    characteristics: "Plot summaries from books and movie scripts. For evaluation, only book-derived instances used to avoid overlap with pre-training data. Average narrative length is 659 tokens. Contains complex questions requiring deep comprehension."
+    
+    usage: "Evaluation only (test set)"
+    
+    size: "10,557 question-answer pairs (test set)"
+    
+    domain: "mixed"  # books and movies
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "FairytaleQA"
+    
+    characteristics: "Narratives derived from children's stories with questions annotated for narrative elements. Average narrative length is 150 tokens. Questions categorized by type (who, what, when, where, why, how) and narrative elements (character, setting, action, causal, prediction, outcome, feeling)."
+    
+    usage: "Evaluation only (test set)"
+    
+    size: "1,007 question-answer pairs (test set)"
+    
+    domain: "children_stories"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "Zero-shot evaluation on two narrative comprehension benchmarks without any fine-tuning. Performance measured using ROUGE scores (ROUGE-1, ROUGE-2, ROUGE-L) between predicted and gold answers. Human evaluation conducted via Amazon Mechanical Turk with 100 test instances per dataset, rated by three annotators on 1-5 Likert scale. Comparisons made with IR baseline, automatically generated QA models (AE-QG), large language models (ChatGPT, Vicuna-13B), and fully supervised models as upper bounds. Out-of-domain evaluation performed by training supervised models on one dataset and testing on another."
+  
+  main_results: "PARROT achieves ROUGE-L of 48.10 on FairytaleQA (89.0% of supervised performance) and 55.32 on NarrativeQA (85.8% of supervised). Significantly outperforms all zero-shot baselines (p<0.01). In out-of-domain setting, PARROT shows competitive performance on FairytaleQA (48.10 vs 49.10 supervised) and superior performance on NarrativeQA (55.32 vs 44.59 supervised). Human evaluation shows PARROT scores 2.71 (FairytaleQA) and 3.10 (NarrativeQA) compared to ChatGPT's 2.49 and 2.86. Scaling to larger models (up to UL2-20B) shows gradual improvement approaching and surpassing fine-tuned baselines."
+  
+  metrics_used:
+    - "ROUGE-1"
+    - "ROUGE-2"
+    - "ROUGE-L"
+    - "Human evaluation (1-5 Likert scale)"
+    - "Inter-annotator agreement (Gwet's gamma: 0.7003)"
+  
+  human_evaluation_summary: "100 test instances per dataset evaluated by three AMT Master annotators on 1-5 scale. PARROT consistently outperforms baselines with scores of 2.71 (FairytaleQA) and 3.10 (NarrativeQA). Inter-annotator agreement of 0.7003 indicates substantial agreement. Annotators compensated at $14/hour."
+
+results_analysis:
+  key_findings:
+    - "Parallel reading significantly improves performance: PARROT outperforms PARROTsingle by 8% on FairytaleQA and 5.7% on NarrativeQA"
+    - "Performance improvement most significant for abstractive questions requiring deep comprehension"
+    - "Diverse masking strategy crucial: Named entities alone insufficient, semantic roles and constituency phrases provide substantial gains"
+    - "Model performs competitively on character identification (who) and activities (what), larger gaps on emotional states and outcome prediction"
+    - "As abstractiveness increases, gap between single and parallel reading widens, demonstrating parallel reading's value"
+  
+  ablation_summary: "Incremental masking shows: random masking provides no improvement; named entities alone achieve 35.1/48.7 ROUGE-L; adding semantic roles reaches 45.6/54.8; full model with constituency phrases achieves 48.6/55.7. Question type distribution: what (41.7%), who (25.6%), when (13.4%), where (10.4%), why (5.6%), how (3.3%). Named entities dominated by PERSON (72%) and ORG (16.1%)."
+
+contributions:
+  main_contributions:
+    - "We present PARROT, a novel zero-shot approach for narrative reading comprehension that leverages parallel reading of two narratives telling the same story to develop genuine understanding without requiring annotated training data."
+    - "We introduce a selective span masking strategy targeting diverse narrative elements (named entities, semantic roles, constituency phrases) specifically designed for narrative comprehension, going beyond traditional factual information extraction."
+    - "We demonstrate that parallel reading enables models to abstract textual content and comprehend underlying narrative meaning, achieving 89% and 86% of supervised performance on two benchmarks while outperforming supervised models in out-of-domain settings."
+  
+  limitations:
+    - "Selective masking may not adequately encompass intricate elements like event prediction and user emotion"
+    - "Reliance on specific NLP modules for span identification and question transformation"
+    - "Focus limited to narrative question answering, not extensively explored for other tasks like summarization"
+    - "Experiments conducted only on English datasets"
+
+narrative_understanding_aspects:
+  - "Narrative QA"  # Core task of narrative question answering
+  - "Character / Entity Understanding"  # Understanding characters, motivations, relationships
+  - "Reading Comprehension"  # Deep comprehension of narrative content
+  - "Plot / Storyline Extraction"  # Understanding events and causal connections
+  - "Free-Form QA"  # Open-ended question answering requiring inference
+
+keywords:
+  - "zero-shot learning"
+  - "narrative comprehension"
+  - "parallel reading"
+  - "masked language modeling"
+  - "selective span masking"
+  - "narrative elements"
+  - "question transformation"
+  - "T5"
+  - "semantic roles"
+  - "constituency parsing"
+
+notes: "This work introduces an innovative approach to narrative comprehension that mimics human parallel reading strategies. The selective masking of narrative-specific elements combined with parallel reading enables genuine understanding without annotated data, achieving remarkable zero-shot performance."

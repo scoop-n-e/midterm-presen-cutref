@@ -1,0 +1,127 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Document-Level Multi-Event Extraction with Event Proxy Nodes and Hausdorff Distance Minimization"
+  authors:
+    - "Xinyu Wang"
+    - "Lin Gui"
+    - "Yulan He"
+  year: 2023
+  venue: "ACL 2023"
+  paper_url: "https://aclanthology.org/2023.acl-long.563/"
+
+problem_statement:
+  background: "Document-level multi-event extraction aims to extract structural information from documents automatically. Most recent approaches involve two steps: modeling entity interactions and decoding entity interactions into events. These approaches struggle with capturing global dependencies between multiple events in a document."
+  
+  gap_or_challenge: "Existing approaches ignore a global view of inter-dependency of multiple events. They decode events by iteratively merging related entities as arguments, which suffers from error propagation and is computationally inefficient. Moreover, the same entity may be involved in multiple events with different argument roles, making it difficult to distinguish various events and link entities to event-specific argument roles."
+  
+  research_objective: "This work aims to develop an alternative approach for document-level multi-event extraction with event proxy nodes and Hausdorff distance minimization. The proposed method captures global information through proxy nodes representing pseudo-events and directly optimizes the difference between predicted and ground-truth events using Hausdorff distance."
+  
+  significance: "Success in this area would enable more sophisticated event extraction systems with better performance and efficiency. The approach addresses error propagation issues in existing iterative decoding methods and provides a more computationally efficient solution for extracting multiple interconnected events from documents."
+
+tasks:
+  - task_name: "Document-Level Multi-Event Extraction"
+    
+    task_overview: "This task evaluates a model's ability to extract multiple events from a document where each event is represented by a cluster of arguments that may scatter across multiple sentences. The task requires identifying event types and linking entities to event-specific argument roles. Unlike sentence-level event extraction, events are not associated with specific trigger words or phrases. Multiple events in the same document may share common entities with different argument roles."
+    
+    input_description: "The model receives a document containing multiple sentences with entity mentions. Documents may contain one or more events of different types. Entity mentions need to be identified and associated with appropriate event-specific argument roles."
+    
+    output_description: "The system outputs a list of events, where each event consists of an event type and a set of entity-argument pairs. Each entity is assigned an event-specific argument role. The output must handle entities that participate in multiple events with potentially different roles."
+
+methodology:
+  method_name: "Proxy Nodes Clustering Network (ProCNet)"
+  
+  approach_type: "neural"
+  
+  core_technique: "The proposed method employs event proxy nodes that represent pseudo-events in a new event-level metric space. A heterogeneous graph is constructed with proxy nodes, entity nodes, and context nodes. Proxy nodes are interconnected to enable information exchange among potential events. A Hypernetwork Graph Neural Network (GNN-FiLM) is used to update proxy node representations, allowing each proxy node to have unique aggregation functions. The Hausdorff distance between the set of predicted events and ground-truth events is minimized directly during training. This approach replaces iterative decoding with parallel computation, enabling global optimization without error propagation issues common in sequential decoding methods."
+  
+  base_models:
+    - "BERT"
+    - "GNN-FiLM (Graph Neural Network with Feature-wise Linear Modulation)"
+  
+  key_innovations:
+    - "Introduction of event proxy nodes that capture global information among events in a document"
+    - "Use of Hausdorff distance minimization for direct global optimization of event extraction"
+    - "Hypernetwork-based GNN allowing each proxy node to have unique message-passing functions"
+    - "Parallel processing of all proxy nodes and arguments, avoiding sequential error propagation"
+    - "Mapping entities to different event-level metric spaces based on associated proxy nodes"
+
+datasets:
+  - dataset_name: "ChFinAnn"
+    
+    characteristics: "Chinese financial documents containing event annotations. The dataset includes 32,040 documents with five event types related to financial events. Documents contain an average of 71% single-event and 29% multi-event instances."
+    
+    usage: "Used for training, development, and testing of the multi-event extraction model"
+    
+    size: "32,040 documents (25,632 train, 3,204 dev, 3,204 test)"
+    
+    domain: "news"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "DuEE-Fin"
+    
+    characteristics: "Chinese financial documents with 13 event types. The dataset contains more complex event structures than ChFinAnn with 67% single-event and 33% multi-event documents."
+    
+    usage: "Used for evaluation of the model's generalization capability across different event types"
+    
+    size: "11,900 documents (6,515 train, 500 dev, 1,171 test)"
+    
+    domain: "news"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "Comprehensive evaluation using micro-averaged precision, recall, and F1-score at the role level. For each predicted event, the most similar ground-truth event of the same type is selected without replacement. Performance is evaluated separately for single-event and multi-event documents. Runtime efficiency is also measured comparing training time per epoch and convergence time."
+  
+  main_results: "ProCNet achieves 83.0% F1-score on ChFinAnn, outperforming the previous best baseline ReDEE by 1.1%. On DuEE-Fin, it obtains 75.6% F1-score, surpassing ReDEE by 1.2%. The model shows strong performance on both single-event (89.6% F1 on ChFinAnn) and multi-event scenarios (75.6% F1 on ChFinAnn). ProCNet is 0.5x-44.8x faster per epoch and 0.6x-45.4x faster to convergence compared to baselines. The model particularly excels on event types with clear entity boundaries but shows limitations on events requiring long-distance dependency modeling."
+  
+  metrics_used:
+    - "Precision"
+    - "Recall"
+    - "F1-score"
+    - "Training time per epoch"
+    - "Convergence time"
+  
+  human_evaluation_summary: null
+
+results_analysis:
+  key_findings:
+    - "Event proxy nodes successfully capture global information among multiple events in documents"
+    - "Hausdorff distance minimization enables direct global optimization without iterative decoding"
+    - "The approach significantly reduces training time while improving extraction performance"
+    - "Model struggles with long-distance dependencies spanning more than 40 sentences"
+  
+  ablation_summary: "Removing Hypernetwork causes 1% F1 drop, showing importance of unique aggregation functions. Without proxy nodes, F1 drops to 4.4%, verifying their critical role. Removing Hausdorff distance minimization causes F1 to drop to 18.3%, confirming its importance for global alignment."
+
+contributions:
+  main_contributions:
+    - "We propose a new framework for document-level multi-event extraction using event proxy nodes in an event-level metric space. This approach captures global interactions among events without relying on sequential decoding strategies."
+    - "We introduce Hausdorff distance minimization as the learning objective to directly optimize the difference between predicted and ground-truth event sets. This enables simultaneous consideration of all events and their arguments while avoiding error propagation."
+    - "Experimental results demonstrate state-of-the-art performance with significant training efficiency improvements. The model achieves better F1-scores while requiring only a fraction of the training time compared to existing approaches."
+  
+  limitations:
+    - "The number of proxy nodes needs to be pre-set as a hyperparameter"
+    - "Limited capability in capturing long-term dependencies across many sentences"
+    - "Performance degrades on documents with more than 40 sentences"
+
+narrative_understanding_aspects:
+  - "Reading Comprehension"  # Extracting and understanding multiple events from documents
+  - "Character / Entity Understanding"  # Tracking entities across events with different roles
+  - "Plot / Storyline Extraction"  # Extracting structured event information
+
+keywords:
+  - "document-level event extraction"
+  - "multi-event extraction"
+  - "event proxy nodes"
+  - "Hausdorff distance"
+  - "graph neural networks"
+  - "hypernetwork"
+  - "global optimization"
+  - "entity-argument extraction"
+
+notes: "This paper addresses multi-event extraction without explicit event triggers, which differs from traditional event extraction setups. The approach is particularly innovative in using proxy nodes and Hausdorff distance for global optimization rather than sequential decoding."

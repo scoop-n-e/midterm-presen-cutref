@@ -1,0 +1,155 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "A Causal Approach for Counterfactual Reasoning in Narratives"
+  authors:
+    - "Feiteng Mu"
+    - "Wenjie Li"
+  year: 2024
+  venue: "ACL 2024"
+  paper_url: "https://aclanthology.org/2024.acl-long.354/"
+
+problem_statement:
+  background: "Counterfactual reasoning in narratives (CRN) is commonly known as predicting how alternative events, contrary to what actually happened, might have resulted in different outcomes. Even though it is considered a crucial component of intelligent systems, only a few resources have been devoted to CRN."
+  
+  gap_or_challenge: "Current approaches either rely on dataset-specific heuristics that abuse unique patterns like minimum editing, limiting their generality, or fine-tune PLMs to learn the conditional distribution p(y'|c,x',S), which is notorious for exploiting artifacts instead of learning to robustly reason about counterfactuals. Models often directly copy or paraphrase the original outcome without acknowledging the counterfactual condition, resulting in predicted counterfactual outcomes that conflict with the counterfactual condition."
+  
+  research_objective: "We propose a basic VAE module for counterfactual reasoning in narratives. We further introduce a pre-trained classifier and external event commonsense to mitigate the posterior collapse problem in the VAE approach, and improve the causality between the counterfactual condition and the generated counterfactual outcome."
+  
+  significance: "This research provides a general framework for counterfactual reasoning in narratives that is applicable to multiple tasks, addressing the limitations of dataset-specific methods and improving causality preservation in generated counterfactual outcomes."
+
+tasks:
+  - task_name: "TimeTravel (Counterfactual Story Rewriting)"
+    
+    task_overview: "This task requires rewriting a story ending to be consistent with a counterfactual condition while maintaining minimal edits to the original ending. Given a narrative S=(c,x,y) where c is context, x is condition, and y is outcome, the model must generate y' when x is perturbed to x'. The major challenge is the trade-off between generating natural stories and modifying the original ending with minimal edits."
+    
+    input_description: "The model receives the original narrative (context c, original condition x, original outcome y) and a counterfactual condition x'. The context is the first sentence, condition is the second sentence, and outcome is sentences 3-5 from five-sentence ROCStories."
+    
+    output_description: "The system generates a counterfactual outcome y' that is consistent with the counterfactual condition x' while minimally editing the original outcome y. Performance is measured using BLEU, BertScore, ENTScore, and HMean metrics."
+  
+  - task_name: "PossibleStories"
+    
+    task_overview: "This task considers that for the same context, if the current situation is different, the final consequence may be different. Originally a multiple-choice dataset, it has been adapted for text generation where the model must generate counterfactual endings based on counterfactual questions."
+    
+    input_description: "The model receives the original context c, original ending y, and a counterfactual question x'. The original condition x is set as 'what's the most likely story ending?' for generation adaptation."
+    
+    output_description: "The system generates a counterfactual ending y' according to (c,x,y,x'). Performance is evaluated using BLEU, BertScore, and ENTScore metrics."
+
+methodology:
+  method_name: "Causal VAE with Classifier and Event Commonsense"
+  
+  approach_type: "neural"
+  
+  core_technique: "The method uses a structural causal model (SCM) where latent variable z represents unobserved background knowledge. A VAE framework approximates the posterior distribution p(z|c,x',y',S) with q(z|·). The basic VAE objective is enhanced with two strategies: (1) A pre-trained classifier f([c,x,y]) that estimates whether output y entails condition x, trained on dataset-specific positive/negative examples and frozen during generation training. Uses Gumbel-softmax for gradient backpropagation. (2) External event causality from COMeT that retrieves and selects relevant events through multi-hop reasoning on an event graph, providing explicit background for counterfactual generation. BART is used as the backbone, with z concatenated to context vectors for generation."
+  
+  base_models:
+    - "BART (backbone for generation)"
+    - "RoBERTa-large (for classifier)"
+    - "COMeT (for event commonsense)"
+  
+  key_innovations:
+    - "Variational framework that learns implicit background knowledge for counterfactual scenarios"
+    - "Pre-trained classifier to ensure generated outcomes entail their conditions"
+    - "Event causality retrieval and multi-hop reasoning for explicit causal background"
+    - "Cyclic KL annealing to avoid posterior collapse"
+    - "In-batch contrastive learning for p(c,x'|z,S)"
+
+datasets:
+  - dataset_name: "TimeTravel"
+    
+    characteristics: "Counterfactual story rewriting dataset built on ROCStories corpus. Contains five-sentence stories where s1 is context, s2 is condition, s3:5 is outcome. Human annotators rewrite condition x to x' and minimally edit outcome y to y'."
+    
+    usage: "Primary evaluation dataset for counterfactual story generation"
+    
+    size: "97k additional examples with only x' but no y' for data augmentation experiments"
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "PossibleStories"
+    
+    characteristics: "Built on ROCStories, considers different consequences for same context with different situations. Originally multiple-choice, adapted for generation with context, original ending, counterfactual question, and candidate options."
+    
+    usage: "Secondary evaluation dataset for counterfactual generation"
+    
+    size: "Not specified in detail"
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "ROCStories"
+    
+    characteristics: "Large set of five-sentence commonsense stories used as the foundation for both TimeTravel and PossibleStories datasets."
+    
+    usage: "Base corpus for counterfactual datasets"
+    
+    size: "Large set (exact size not specified)"
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "Comprehensive evaluation using automatic metrics and human evaluation. For TimeTravel: BLEU, BertScore, ENTScore, and HMean metrics. For PossibleStories: BLEU, BertScore, and ENTScore. Manual evaluation uses pairwise comparisons for Minimal-Edits and Coherence (TimeTravel) or Similarity and Coherence (PossibleStories). Ablation studies examine contributions of classifier and event causality. Data augmentation experiments test practicality of generated counterfactual stories."
+  
+  main_results: "On TimeTravel: achieves 61.1 HMean, outperforming BART (58.3) and competitive with Llama2(7B) (60.9). ENTScore of 56.2 shows improved causality. On PossibleStories: achieves 46.9 ENTScore, outperforming BART (42.9) and Llama2(7B) (45.1). Human evaluation shows wins in Coherence but mixed results in Minimal-Edits. Data augmentation with 97k pseudo examples improves BART to 70.1 ENTScore."
+  
+  metrics_used:
+    - "BLEU"
+    - "BertScore"
+    - "ENTScore"
+    - "HMean (2·BLEU·ENTScore/(BLEU+ENTScore))"
+    - "Human evaluation (Minimal-Edits, Coherence, Similarity)"
+    - "Fleiss's kappa (inter-rater agreement)"
+  
+  human_evaluation_summary: "100 cases sampled for pairwise comparisons with three annotators. TimeTravel: Wins over ablated variants in Coherence (28.0% vs w/o Clas, 37.3% vs w/o Event) but loses in Minimal-Edits. Against ChatGPT: 52.3% win in Minimal-Edits but 47.0% loss in Coherence. Fleiss's kappa: 0.43-0.56. PossibleStories: Better Coherence than ablated variants, competitive with chat models."
+
+results_analysis:
+  key_findings:
+    - "VAE module alone provides 2.1 ENTScore gain over BART baseline"
+    - "Pre-trained classifier more important than event knowledge for improving causality"
+    - "Linear interpolation of prior/posterior z shows posterior information crucial for generation"
+    - "Generated pseudo examples effective for data augmentation: 70.1 ENTScore with full pseudo set"
+    - "Method achieves best trade-off between similarity (BLEU) and coherence (ENTScore)"
+    - "Issue of paraphrasing original outcome still exists but less than baseline methods"
+  
+  ablation_summary: "w/o Classifier: -1.6 ENTScore on TimeTravel, -1.3 on PossibleStories. w/o Event: -1.0 ENTScore on TimeTravel, -0.9 on PossibleStories. VAE only: +2.1 ENTScore over BART baseline. Classifier contributes more than event causality."
+
+contributions:
+  main_contributions:
+    - "We formulate counterfactual reasoning in narratives in a variational framework that learns implicit background knowledge for unobserved counterfactual scenarios."
+    - "We introduce a pre-trained classifier that ensures generated outcomes entail their conditions, improving causality between counterfactual conditions and outcomes."
+    - "We incorporate external event causality through multi-hop reasoning on event graphs, providing explicit causal background for generation."
+    - "We demonstrate the practicality of generated counterfactual stories through data augmentation experiments, showing significant improvements when used as pseudo training data."
+  
+  limitations:
+    - "Based on small-scale datasets and models (BART), cannot outperform large language models"
+    - "Paraphrasing issue still exists due to exposure bias and limited model scale"
+    - "Posterior collapse problem not completely eliminated despite mitigation strategies"
+    - "Method requires task-specific classifier training"
+
+narrative_understanding_aspects:
+  - "Story Generation"  # Core task of counterfactual story generation
+  - "Narrative Consistency Check"  # Ensuring causality between conditions and outcomes
+  - "Free-Form QA"  # Counterfactual reasoning about alternative scenarios
+
+keywords:
+  - "counterfactual reasoning"
+  - "narrative generation"
+  - "variational autoencoder"
+  - "causal mechanism"
+  - "structural causal model"
+  - "event commonsense"
+  - "posterior collapse"
+  - "minimal edits"
+  - "data augmentation"
+
+notes: "This work provides a principled causal approach to counterfactual narrative generation, addressing key challenges in maintaining causality while generating plausible alternative outcomes. The VAE framework with classifier and commonsense enhancements offers a general solution applicable to multiple tasks."

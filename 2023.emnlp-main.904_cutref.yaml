@@ -1,0 +1,200 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "GNAT: A General Narrative Alignment Tool"
+  authors:
+    - "Tanzir Pial"
+    - "Steven Skiena"
+  year: 2023
+  venue: "EMNLP 2023"
+  paper_url: "https://aclanthology.org/2023.emnlp-main.904/"
+
+problem_statement:
+  background: "Algorithmic sequence alignment identifies similar segments shared between pairs of documents, and is fundamental to many NLP tasks. Sequence alignment is a common operation in many NLP tasks, with representative applications including identifying spelling and OCR errors in documents, quantifying post-publication edits in news article titles, and plagiarism detection."
+  
+  gap_or_challenge: "It is difficult to recognize similarities between distant versions of narratives such as translations and retellings, particularly for summaries and abridgements which are much shorter than the original novels. Edit distance fails when applied to distant narrative texts that are semantically but not textually similar, since neither character nor word-level changes capture the semantic meaning. Much of the existing work has been domain-specific or focused on global alignments, and lacks rigorous statistical measures of significance."
+  
+  research_objective: "We develop a general approach to narrative alignment coupling the Smith-Waterman algorithm from bioinformatics with modern text similarity metrics. We show that the background of alignment scores fits a Gumbel distribution, enabling us to define rigorous p-values on the significance of any alignment."
+  
+  significance: "This research enables more sophisticated event extraction systems with better performance and efficiency for narrative texts. It provides a foundation for meaningful analyses over vast differences in scale, from short gene-to-gene comparisons to full genome-to-genome alignment, applied to the narrative text domain."
+
+tasks:
+  - task_name: "Summary-to-Book Alignment"
+    
+    task_overview: "This task evaluates a model's ability to match summaries with their corresponding books from a set of candidates. The task requires aligning text segments of vastly different lengths - short summary sentences with potentially entire chapters or large sections of books. It tests the model's capability to capture semantic similarity across significant scale mismatches."
+    
+    input_description: "The model receives a summary (averaging 61.5 sentences) and a set of 50 candidate books (1 related, 49 unrelated). Summaries are segmented into sentences while books can be segmented into sentences, paragraphs, or equal-sized chunks."
+    
+    output_description: "The system outputs a ranking of the 50 books based on maximum alignment scores. Success is measured by whether the correct book is ranked first. The output includes metrics like Mean Reciprocal Rank (MRR) and percent fidelity."
+  
+  - task_name: "Translated Book Alignment"
+    
+    task_overview: "This task evaluates the ability to identify whether two English books are independent translations of the same foreign language work. The task requires recognizing semantic similarities between texts that may use completely different word choices and sentence structures while conveying the same narrative content."
+    
+    input_description: "The model receives pairs of full-length English translations of books. These translations are from the same foreign language source but created independently, resulting in different vocabulary and phrasing while maintaining the same story."
+    
+    output_description: "The system outputs alignment scores and classifications distinguishing related translation pairs from unrelated book pairs. Performance is measured using ROC curves and AUC scores."
+  
+  - task_name: "Plagiarism Detection"
+    
+    task_overview: "This task evaluates the model's ability to detect plagiarized segments within documents where text from source documents has been inserted using various obfuscation strategies. The task requires identifying local alignments between source and suspicious documents despite attempts to disguise the plagiarism through paraphrasing, summarization, or translation."
+    
+    input_description: "The model receives pairs of documents from the PAN-13 dataset where segments from source documents are inserted into target documents using automated obfuscation strategies including no obfuscation, random obfuscation, translation obfuscation, and summary obfuscation."
+    
+    output_description: "The system identifies high-scoring local alignments indicating plagiarized segments. Output includes precision, recall, and F1 scores for different obfuscation types."
+  
+  - task_name: "Short Story Alignment (Fables)"
+    
+    task_overview: "This task evaluates sentence-level alignment between different versions of the same short stories (Aesop's fables). Each fable has been independently rewritten, requiring the model to match semantically equivalent sentences despite different wording. The task includes human-annotated ground truth for evaluation."
+    
+    input_description: "The model receives pairs of independently written versions of the same fable, each containing 5-15 sentences. The versions use different vocabulary and sentence structures while telling the same underlying story."
+    
+    output_description: "The system outputs sentence-to-sentence alignments, allowing many-to-many mappings. Performance is evaluated against human annotations using precision, recall, and F1 scores."
+
+methodology:
+  method_name: "GNAT (General Narrative Alignment Tool)"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "GNAT adapts the Smith-Waterman (SW) local alignment algorithm from bioinformatics for narrative text alignment. The method uses dynamic programming with affine gap penalties to find optimal local alignments between text segments. Five different similarity scoring functions are evaluated: SBERT embeddings (semantic similarity via cosine distance), Jaccard index (bag-of-words overlap), TF-IDF, GloVe mean embeddings, and Hamming distance. To unify these diverse metrics, similarity scores are normalized using z-scores from distributions of unrelated text pairs and converted via logistic sigmoid. The statistical significance of alignments is computed by fitting alignment scores to a Gumbel distribution, enabling rigorous p-value calculation. The method handles texts at multiple granularities (sentences, paragraphs, chapters) and can align documents of vastly different lengths."
+  
+  base_models:
+    - "SBERT (Sentence-BERT)"
+    - "GloVe embeddings"
+  
+  key_innovations:
+    - "Adaptation of Smith-Waterman algorithm with affine gap penalties for semantic text alignment"
+    - "Statistical significance testing using Gumbel distribution fitting for narrative alignments"
+    - "Unified similarity scoring framework normalizing diverse metrics to common scale using z-scores"
+    - "Multi-granularity alignment supporting sentence, paragraph, and chapter-level segmentation"
+    - "Empirical validation that alignment scores of unrelated narrative texts follow Gumbel distribution"
+
+datasets:
+  - dataset_name: "RelBook"
+    
+    characteristics: "Collection of 36 non-English books from Project Gutenberg that have multiple independent English translations. Each book pair consists of two full-length translations of the same foreign language work, averaging 4668 sentences per book."
+    
+    usage: "Used for evaluating the model's ability to identify related translation pairs"
+    
+    size: "36 book pairs, 6.56 million total words"
+    
+    domain: "fiction"
+    
+    is_new: true
+    
+    new_dataset_contribution: "Manually curated dataset of book pairs with independent English translations from Project Gutenberg, enabling evaluation of semantic alignment across different translation choices."
+  
+  - dataset_name: "Classics Stories"
+    
+    characteristics: "Pairs of abridged versions of classic novels extracted from two books containing shortened adaptations of Dickens' works for young readers. Contains multiple retellings of the same stories with different levels of detail."
+    
+    usage: "Used for aligning different abridgements of the same classic novels"
+    
+    size: "14 story pairs, 146.9K total words"
+    
+    domain: "fiction"
+    
+    is_new: true
+    
+    new_dataset_contribution: "Curated pairs of independently abridged versions of classic novels, enabling study of alignment across different adaptation styles."
+  
+  - dataset_name: "SummaryBook"
+    
+    characteristics: "Pairs of book summaries from Masterplots matched with full texts from Project Gutenberg. Summaries average 61.5 sentences while books average 5166 sentences, creating extreme length mismatch."
+    
+    usage: "Used for evaluating alignment between short summaries and full-length books"
+    
+    size: "464 book-summary pairs, 542K words (summaries), 47.35M words (books)"
+    
+    domain: "fiction"
+    
+    is_new: true
+    
+    new_dataset_contribution: "Intersection of Masterplots summaries with Project Gutenberg books using metadata matching, creating a large-scale dataset for extreme length-mismatch alignment."
+  
+  - dataset_name: "Fables"
+    
+    characteristics: "Seven different compilations of Aesop's Fables from Project Gutenberg, each containing independent 5-15 sentence versions of classic fables. Includes human annotations of sentence-level alignments with 80.42% inter-annotator agreement."
+    
+    usage: "Used for sentence-level alignment evaluation with human ground truth"
+    
+    size: "152 fable pairs, 39K words"
+    
+    domain: "fiction"
+    
+    is_new: true
+    
+    new_dataset_contribution: "Manually annotated dataset of sentence-level alignments between different versions of Aesop's fables, providing ground truth for fine-grained alignment evaluation."
+  
+  - dataset_name: "PAN-13"
+    
+    characteristics: "Plagiarism detection dataset containing 10,000 document pairs from ClueWeb 2009 corpus with automated obfuscation strategies. Text segments from source documents are inserted into target documents using various obfuscation methods."
+    
+    usage: "Used for evaluating plagiarism detection capabilities"
+    
+    size: "10,000 document pairs (5,000 train, 5,000 test)"
+    
+    domain: "mixed"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "Comprehensive evaluation across four distinct application domains with varying text lengths and alignment challenges. For translated books, ROC curves and AUC scores measure ability to distinguish related from unrelated pairs. For summary-to-book alignment, Mean Reciprocal Rank (MRR) and ranking accuracy evaluate retrieval performance. For plagiarism detection, precision, recall, and F1 scores are computed for different obfuscation types. For fables, performance is evaluated against human annotations using precision, recall, and F1. Statistical significance is assessed using Gumbel distribution fitting with p-values."
+  
+  main_results: "On translated book alignment, SBERT+SW achieves 0.99 AUC, with Jaccard close at 0.94 AUC. For summary-to-book alignment, SBERT+SW achieves 90.6% accuracy in ranking the correct book first, with 0.94 MRR. On PAN-13 plagiarism detection, the system achieves 0.85 F1 on summary obfuscation, substantially outperforming competition winners (0.35, 0.46, 0.61). For fable alignment, SBERT+SW achieves 0.67 F1, outperforming ChatGPT (0.46 F1) and sequential baseline (0.40 F1). The Gumbel distribution closely fits alignment score distributions with location μ=1.29, scale β=0.30."
+  
+  metrics_used:
+    - "AUC (Area Under Curve)"
+    - "Mean Reciprocal Rank (MRR)"
+    - "Precision"
+    - "Recall"
+    - "F1-score"
+    - "Percent Fidelity"
+    - "P-values"
+  
+  human_evaluation_summary: "For the Fables dataset, two human annotators manually aligned sentence pairs with 80.42% agreement and Cohen's Kappa of 0.746, indicating substantial agreement. Human annotations serve as ground truth for evaluating automatic alignment methods."
+
+results_analysis:
+  key_findings:
+    - "SBERT embeddings consistently outperform other similarity metrics across all tasks, though Jaccard proves surprisingly competitive for book translation pairs"
+    - "Alignment scores of unrelated narrative texts follow Gumbel distribution, enabling rigorous statistical significance testing"
+    - "Performance improves when aligning summary sentences to larger book segments (chunks/paragraphs vs sentences)"
+    - "The method excels at summary obfuscation detection in plagiarism, leveraging SBERT's semantic similarity capabilities"
+    - "GNAT significantly outperforms ChatGPT on fable alignment (0.67 vs 0.46 F1), demonstrating advantages of specialized alignment algorithms"
+  
+  ablation_summary: "Comparing similarity metrics: SBERT achieves 0.99 AUC vs Jaccard 0.94, TF-IDF 0.78, GloVe 0.85, Hamming 0.63 on book translation. Segmentation size analysis shows SBERT performance improves from 85.8% (sentence) to 90.6% (chunk) for summary-book alignment. Without z-score normalization, metrics with different ranges cannot be fairly compared."
+
+contributions:
+  main_contributions:
+    - "We develop and evaluate sequence alignment methods for distant but semantically similar texts, proposing a general method for computing statistical significance of text alignments in any domain. We demonstrate that alignment scores of unrelated narrative texts are well-modeled by a Gumbel distribution, providing rigorous p-values for putative alignments."
+    - "We propose and evaluate five distinct distance metrics for narrative document alignment over a range of relative and absolute sizes. We show SBERT generally outperforms other metrics, though Jaccard proves surprisingly competitive on tasks like book translation identification, while losing sensitivity over larger text blocks."
+    - "We demonstrate GNAT's effectiveness across four distinct application domains with varying text lengths: summary-to-book (90.6% accuracy), translated books (0.99 AUC), plagiarism detection (0.85 F1 on summary obfuscation, outperforming competition winners), and short story alignment (0.67 F1, outperforming ChatGPT)."
+    - "We release GNAT as an open-source tool with associated web interface, along with four new datasets for narrative alignment research: RelBook (translated books), Classics Stories (abridgements), SummaryBook (extreme length mismatch), and annotated Fables (sentence-level ground truth)."
+  
+  limitations:
+    - "Smith-Waterman algorithm has quadratic time and space complexity, limiting scalability for very long texts"
+    - "SBERT embedding computation is resource-intensive, especially for long sequences without GPU access"
+    - "Current implementation limited to languages supported by available embedding models"
+    - "Maximum token limits of embedding models require chunking and averaging for longer text segments"
+
+narrative_understanding_aspects:
+  - "Reading Comprehension"  # Aligning semantically similar narrative content
+  - "Narrative Summarisation"  # Summary-to-book alignment task
+  - "Narrative Consistency Check"  # Detecting related translations and versions
+  - "Plot / Storyline Extraction"  # Identifying corresponding narrative segments
+
+keywords:
+  - "narrative alignment"
+  - "Smith-Waterman algorithm"
+  - "SBERT embeddings"
+  - "Gumbel distribution"
+  - "statistical significance"
+  - "text similarity"
+  - "plagiarism detection"
+  - "translation alignment"
+  - "sequence alignment"
+  - "local alignment"
+
+notes: "This work bridges bioinformatics sequence alignment techniques with NLP, providing the first general-purpose narrative alignment tool with rigorous statistical significance testing. The tool is particularly notable for handling extreme length mismatches and semantic similarity without explicit text overlap."

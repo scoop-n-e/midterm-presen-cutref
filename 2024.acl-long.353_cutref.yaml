@@ -1,0 +1,225 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Generating Contrastive Narratives Using the Brownian Bridge Process for Narrative Coherence Learning"
+  authors:
+    - "Feiteng Mu"
+    - "Wenjie Li"
+  year: 2024
+  venue: "ACL 2024"
+  paper_url: "https://aclanthology.org/2024.acl-long.353/"
+
+problem_statement:
+  background: "Narrative reasoning is an account of the development of events, along with explanations of how and why these events happened, which has provoked a variety of applications, including commonsense causal reasoning and abductive reasoning. A major challenge for narrative reasoning is to evaluate narrative coherence."
+  
+  gap_or_challenge: "Existing methods mainly focus on devising self-supervised tasks with positive samples from large-scale real narratives and negative samples created by sampling-based strategies. However, these strategies are generally coarse-grained and superficial, such as shuffling, masking, or using model-completed sequences. The resulting negatives face problems of low quality, such as being irrelevant or repetitive, making them less representative and easily distinguishable."
+  
+  research_objective: "We devise two strategies for mining hard negatives, including (1) crisscrossing a narrative and its contrastive variants; and (2) event-level replacement. To obtain contrastive variants, we utilize the Brownian Bridge process to guarantee the quality of generated contrastive narratives."
+  
+  significance: "This research addresses critical limitations in narrative coherence learning by generating high-quality hard negatives that are similar to real narratives but actually less coherent. The method enables more effective contrastive learning for narrative reasoning tasks."
+
+tasks:
+  - task_name: "Multi-Choice Narrative Reasoning Tasks"
+    
+    task_overview: "These tasks evaluate narrative coherence learning across various datasets including COPA, e-Care, αNLI, Cloze, Swag, HellaSwag. The model must select the most coherent option from multiple choices given a context. The tasks test commonsense reasoning, causal reasoning, and narrative understanding abilities."
+    
+    input_description: "The model receives a context and multiple option candidates. For datasets like COPA, the input includes a premise and two alternatives with a causal relation. For Swag/HellaSwag, it includes a partial sentence and multiple completion options."
+    
+    output_description: "The system selects the most coherent option using the trained coherence evaluator (CohEval). The output is the selected option with highest coherence score. Performance is measured by accuracy."
+  
+  - task_name: "TimeTravel (Counterfactual Story Generation)"
+    
+    task_overview: "This task requires generating counterfactual story endings that minimally edit an original ending while maintaining coherence with a modified context. Given an original story and a counterfactual context modification, the model must generate an appropriate alternative ending."
+    
+    input_description: "The model receives an original story with events, a counterfactual modification to the context (changing one event), and the original ending that needs to be rewritten to fit the new context."
+    
+    output_description: "The system generates a counterfactual ending using MCMC-based sampling with CohEval as coherence guidance. The output is evaluated using BLEU4, BertScore, ENTScore, and human evaluation for fluency, coherence, and minimal edits."
+
+methodology:
+  method_name: "Contrastive Narrative Learning with Brownian Bridge Process"
+  
+  approach_type: "neural"
+  
+  core_technique: "The method consists of two main components: (1) Generating contrastive narratives using the Brownian Bridge process, which models narrative evolution as a continuous trajectory in latent space. Given start and end events, the method samples different intermediate trajectories from the Brownian Bridge density distribution, then decodes them into narratives with BART. A masked prompt (85% mask ratio) encourages generation of similar events to the original. (2) Creating hard negatives through two strategies: crisscrossing (exchanging prefixes/suffixes of a narrative with its contrastive variants) and event-level replacement (replacing individual events with similar alternatives from a pre-computed event pool). The coherence evaluator (CohEval) is trained using contrastive learning with RoBERTa as the backbone."
+  
+  base_models:
+    - "BART (for contrastive narrative generation)"
+    - "RoBERTa (for coherence evaluation)"
+    - "SimCSE (for event similarity computation)"
+  
+  key_innovations:
+    - "Brownian Bridge process for generating high-quality contrastive narratives with same start/end points"
+    - "Crisscrossing strategy to create hard negatives by exchanging narrative segments"
+    - "Event-level replacement as complementary perturbation strategy"
+    - "Masked prompt during generation to maintain similarity while ensuring diversity"
+    - "Two-stage approach: trajectory sampling in latent space followed by conditional decoding"
+
+datasets:
+  - dataset_name: "RocStories"
+    
+    characteristics: "Dataset containing abundant event commonsense knowledge with five-sentence stories. Used as training corpus with 20k randomly selected samples as positive sample set D+."
+    
+    usage: "Primary training data for contrastive narrative generation and coherence learning"
+    
+    size: "20k samples selected from full dataset"
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "COPA"
+    
+    characteristics: "Choice of Plausible Alternatives dataset testing commonsense causal reasoning with premise and two alternative outcomes/causes."
+    
+    usage: "Evaluation dataset for multi-choice narrative coherence"
+    
+    size: "1000 examples (500 test)"
+    
+    domain: "mixed"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "e-Care"
+    
+    characteristics: "Dataset for exploring explainable causal reasoning with context and causal relation choices."
+    
+    usage: "Evaluation dataset (validation set used as test set not released)"
+    
+    size: "Not specified"
+    
+    domain: "mixed"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "αNLI"
+    
+    characteristics: "Abductive Natural Language Inference dataset requiring selection of most plausible explanations."
+    
+    usage: "Evaluation dataset for abductive reasoning"
+    
+    size: "Not specified"
+    
+    domain: "mixed"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "Cloze"
+    
+    characteristics: "Story Cloze Test requiring selection of correct story ending from two options."
+    
+    usage: "Evaluation dataset for story completion"
+    
+    size: "Not specified"
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "Swag"
+    
+    characteristics: "Situations With Adversarial Generations dataset for grounded commonsense inference."
+    
+    usage: "Evaluation dataset for commonsense reasoning"
+    
+    size: "Not specified"
+    
+    domain: "mixed"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "HellaSwag"
+    
+    characteristics: "More challenging version of Swag with adversarially filtered wrong answers."
+    
+    usage: "Evaluation dataset (validation set used as test set not released)"
+    
+    size: "Not specified"
+    
+    domain: "mixed"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "TimeTravel"
+    
+    characteristics: "Counterfactual story rewriting dataset requiring minimal edits to story endings based on context changes."
+    
+    usage: "Evaluation dataset for text generation with coherence guidance"
+    
+    size: "Not specified"
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "Comprehensive evaluation on multiple tasks in zero-shot setting. For multi-choice tasks, accuracy is measured. For TimeTravel generation, automatic metrics (BLEU4, BertScore, ENTScore, HMean) and human evaluation (Fluency, Min-Edits, Coherence) are used. Ablation studies examine the contribution of different negative sampling strategies (MER for event replacement only, MCC for crisscrossing only). Comparison with LLMs using one-shot prompting and other contrastive methods."
+  
+  main_results: "On multi-choice tasks, CohEval achieves 77.8% on COPA, 71.9% on e-Care, 67.6% on αNLI, 77.6% on Cloze, 67.4% on Swag, 44.9% on HellaSwag, outperforming all contrastive training baselines. On TimeTravel, achieves HMean of 39.77, outperforming EDUCAT (37.82). Human evaluation shows wins over EDUCAT in Fluency (27.0%), Coherence (33.7%), with comparable Min-Edits."
+  
+  metrics_used:
+    - "Accuracy (multi-choice tasks)"
+    - "BLEU4"
+    - "BertScore"
+    - "ENTScore"
+    - "HMean"
+    - "Human evaluation (Fluency, Min-Edits, Coherence)"
+  
+  human_evaluation_summary: "100 cases evaluated by three annotators for TimeTravel. CohEval wins over EDUCAT: Fluency 27.0% vs 13.7%, Coherence 33.7% vs 4.7%, Min-Edits 23.0% vs 24.7%. Fleiss's kappa: 0.488 (Fluency), 0.507 (Min-Edits), 0.428 (Coherence). For contrastive narrative quality, BB method shows comparable performance to ChatGLM2 and superior to ablated variants."
+
+results_analysis:
+  key_findings:
+    - "Crisscrossing strategy (MCC) generally outperforms event-level replacement (MER) alone"
+    - "Combining both negative sampling strategies achieves best performance"
+    - "Masked prompt ratio of 0.85 optimal for generating similar yet diverse contrastive narratives"
+    - "Generated negatives have ENTScore of 65.9 (crisscrossing) and 54.5 (replacement) vs 94.6 for positives"
+    - "60 retained contrastive narratives per example provides optimal performance"
+    - "t-SNE visualization shows CohEval successfully separates positive and negative examples"
+  
+  ablation_summary: "Without prompt: -4.6% average drop; Without trajectory: -5.1% drop; Infilling baseline: -7.1% drop. MER alone achieves higher BLEU4 but lower ENTScore than MCC, indicating trade-off between similarity and coherence evaluation. Crisscrossing with random narratives performs significantly worse than with BB-generated contrastive narratives."
+
+contributions:
+  main_contributions:
+    - "We propose to use the Brownian Bridge process to generate high-quality contrastive narratives that maintain the same start and end points as the original narrative while having different intermediate events."
+    - "We devise two complementary strategies for creating hard negatives: crisscrossing narratives with their contrastive variants and event-level replacement, which together improve narrative coherence learning."
+    - "We develop CohEval, a general narrative coherence evaluator trained entirely through self-supervised contrastive learning that achieves strong performance across multiple downstream tasks."
+  
+  limitations:
+    - "Assumes contrastive narratives must have same start and end events as original, which may not reflect reality"
+    - "Cannot surpass ChatGPT performance due to resource limitations"
+    - "Method is discriminative while LLMs are generative, leading to different advantages"
+    - "Limited to smaller pre-trained models due to computational constraints"
+
+narrative_understanding_aspects:
+  - "Narrative Consistency Check"  # Core focus on coherence evaluation
+  - "Story Generation"  # Counterfactual story generation via TimeTravel
+  - "Free-Form QA"  # Abductive and causal reasoning tasks
+  - "Reading Comprehension"  # Story completion and understanding tasks
+
+keywords:
+  - "contrastive learning"
+  - "narrative coherence"
+  - "Brownian Bridge process"
+  - "hard negatives"
+  - "counterfactual generation"
+  - "crisscrossing"
+  - "event-level replacement"
+  - "coherence evaluation"
+  - "self-supervised learning"
+
+notes: "This work introduces an innovative approach to generating hard negatives for narrative coherence learning. The use of Brownian Bridge process to model narrative trajectories in latent space is particularly novel, enabling generation of high-quality contrastive examples without human annotation."
