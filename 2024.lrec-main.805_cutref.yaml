@@ -1,0 +1,147 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Interpreting Themes from Educational Stories"
+  authors:
+    - "Yigeng Zhang"
+    - "Fabio A. González"
+    - "Thamar Solorio"
+  year: 2024
+  venue: "LREC-COLING"
+  paper_url: "https://aclanthology.org/2024.lrec-main.805/"
+
+problem_statement:
+  background: "Reading comprehension is a crucial research focus in the NLP community. Recent advances in Machine Reading Comprehension (MRC) have mostly centered on literal comprehension, referring to surface-level understanding of content. From an educational research standpoint, reading comprehension is divided into three levels: literal, inferential/interpretive, and critical/evaluative."
+  
+  gap_or_challenge: "Current NLP research does not explicitly regard reading comprehension from different levels or distinguish between them, with the majority of MRC research focusing on the literal level. In real-world learning environments, mere word decoding and literal matching are inadequate. Recognizing the inherent meaning of a text or its implied information remains an area of ongoing study."
+  
+  research_objective: "This work concentrates on a novel research problem: interpreting themes from text using NLP methods. This topic falls within the second level, interpretive comprehension. A theme goes beyond a simple summary of the story's plot or character actions. Instead, it reflects deeper insights and conveys the key message that is implied within the context."
+  
+  significance: "The task requires NLP models not only to process the context but also make inferences and interpret the theme or main idea, which is often not explicitly stated in the text. This work serves as an initial call to the community, urging further exploration and reflection on MRC issues from different levels."
+
+tasks:
+  - task_name: "Theme Keyword Identification"
+    
+    task_overview: "This task assigns a predefined theme keyword from a collection to a piece of the story. Theme keywords are educational values from positive psychology, with annotations on 6 higher-level classes of character virtues and 24 fine-grained character strengths. The task is formulated as a typical multi-class text classification problem where the model must identify the appropriate virtue or strength that best represents the story's theme."
+    
+    input_description: "Educational stories from various sources and cultural backgrounds (average 284 words, median 201 words). Stories include fables, folk stories, idiom stories, and miscellaneous educational narratives."
+    
+    output_description: "A theme keyword from either 6 character virtues (Wisdom and Knowledge, Humanity, Transcendence, Justice, Courage, Temperance) or 24 character strengths (e.g., Creativity, Curiosity, Love, Kindness, Bravery, etc.)."
+
+  - task_name: "Story-Theme Matching"
+    
+    task_overview: "This task matches one story with the correct theme sentence or vice versa. It is formulated as a text retrieval problem where given a story (query), the retrieval model should find the best matching theme sentence from a collection of all theme sentences. The task can also be reversed for theme-story retrieval."
+    
+    input_description: "A story as query and a collection of N theme sentences as documents (or vice versa for theme-story retrieval)."
+    
+    output_description: "Ranking of theme sentences (or stories) with the correct match ideally ranked at the top position."
+
+  - task_name: "Story Reading Comprehension on Themes"
+    
+    task_overview: "This task is solely targeted at understanding the main idea of the given context through multiple-choice questions. Given a story, the model must identify the correct theme from a collection of one correct answer and N distractor themes. The task is uniquely designed around theme interpretation rather than typical MRC fact-checking."
+    
+    input_description: "A story x and a set of options A = {a1, a2, ..., ak, ..., aN+1}, where one option is the correct theme sentence y and others are distractors."
+    
+    output_description: "Selection of the correct theme from multiple choices, either as a classification probability or generated option letter."
+
+  - task_name: "Theme Generation"
+    
+    task_overview: "This task investigates theme interpretation as a text-generation problem. Models generate theme sentences given a story with the prompt 'The main idea of this story is:'. The task evaluates whether LLMs can produce accurate and reasonable theme interpretations comparable to human-written themes."
+    
+    input_description: "A story with prefix 'Story:' and suffix task description 'The main idea of this story is:'."
+    
+    output_description: "Generated theme sentence(s) that capture the main idea or moral of the story."
+
+methodology:
+  method_name: "Multi-Method Evaluation Framework"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "The framework employs various approaches across different tasks. For theme keyword identification, methods include TF-IDF with SVM, bag-of-word-vectors with GloVe and SVM, TextCNN, BERT, and Flan-T5 with prompt tuning. For story-theme matching, techniques include BM25, Dense Passage Retriever (DPR), Sentence-BERT, MPnet, and Cross-Encoder with MiniLM. Reading comprehension uses BERT, MPnet, and Flan-T5 with different distractor selection strategies (random, different virtue class, same virtue class). Theme generation employs Flan-T5 (finetuned), OPT-175B, and ChatGPT with human evaluation for quality assessment."
+  
+  base_models:
+    - "BERT"
+    - "Flan-T5"
+    - "TextCNN"
+    - "MPnet"
+    - "MiniLM"
+    - "OPT-175B"
+    - "ChatGPT (February 2023)"
+    - "Sentence-BERT"
+  
+  key_innovations:
+    - "First dataset specifically designed for interpretive comprehension of themes in narrative text"
+    - "Comprehensive task formulation across multiple NLP abstractions (classification, retrieval, QA, generation)"
+    - "Hierarchical annotation scheme using character virtues and strengths from positive psychology"
+    - "Multi-stage human annotation and auditing process for theme keywords"
+    - "Human evaluation framework for assessing generated themes against original human-written themes"
+
+datasets:
+  - dataset_name: "EduStory"
+    
+    characteristics: "580 story-theme pairs (451 unique after filtering duplicates) from educational stories. Stories average 284 words (median 201). Sources include Aesop's Fables (59%), ancient China (5.1%), ancient India (4%), contemporary (7.8%), and miscellaneous (24.2%). Genres include fables, folk stories, idiom stories, and inspiring narratives. Theme keywords annotated at virtue level (6 categories) and strength level (24 categories) with multi-annotator labels."
+    
+    usage: "Primary dataset for all theme interpretation tasks"
+    
+    size: "580 story-theme pairs (451 unique stories)"
+    
+    domain: "mixed"  # Educational stories from various cultural backgrounds
+    
+    is_new: true
+    
+    new_dataset_contribution: "First dataset specifically created for interpretive/inferential comprehension of themes in narrative text. Provides hierarchical theme annotations based on positive psychology taxonomy, includes stories from diverse cultural origins, and features multi-annotator labels showing interpretation diversity. Unlike existing MRC datasets focusing on literal comprehension, EduStory targets implicit theme understanding."
+
+evaluation:
+  evaluation_strategy: "Multi-metric evaluation across tasks. Theme identification uses macro F1 score. Story-theme matching employs Mean Reciprocal Rank (MRR). Reading comprehension uses accuracy. Theme generation assessed through human evaluation with scoring (0-2 scale for reasonableness) and best interpretation voting. Inter-annotator agreement measured using Cohen's Kappa (κ=0.30 initial, resolved through iterative auditing)."
+  
+  main_results: "Theme identification: BERT achieves best F1 21.5% (virtue) and 11.6% (strength). Story-theme matching: MPnet achieves MRR 0.40 (story-theme) and 0.43 (theme-story). Reading comprehension: BERT achieves 68% accuracy with random distractors. Theme generation: ChatGPT receives 77% of best interpretation votes when generating freely, 53% when restricted to single sentence. Human judges rate ChatGPT-generated themes higher than original themes in 50% of cases."
+  
+  metrics_used:
+    - "Macro F1 score"
+    - "Mean Reciprocal Rank (MRR)"
+    - "Accuracy"
+    - "Human evaluation scores (0-2 scale)"
+    - "Best interpretation percentage"
+    - "Cohen's Kappa"
+  
+  human_evaluation_summary: "Initial annotation Cohen's Kappa κ=0.30 reflecting subjective nature of theme interpretation. Iterative auditing process with multiple auditors to resolve disagreements. For theme generation, three judges evaluate 10 held-out stories, scoring themes 0-2 for reasonableness and selecting best interpretations. ChatGPT achieves 50/60 human eval score vs 36/60 for original themes."
+
+results_analysis:
+  key_findings:
+    - "Low performance across all models indicates theme interpretation is significantly more challenging than literal comprehension"
+    - "Ambiguous interpretation of theme keywords presents major challenge - even human annotators show low initial agreement"
+    - "Bi-encoders (MPnet) outperform other retrieval methods for story-theme matching"
+    - "Cross-encoding (BERT) provides best performance for multiple-choice comprehension"
+    - "ChatGPT demonstrates strong capability but sometimes defaults to summarization rather than theme interpretation"
+  
+  ablation_summary: "Distractor selection strategy impacts reading comprehension - different virtue categories make task easier (BERT 67% accuracy) than same virtue (72%) or random (74%). In generation, single-sentence restriction reduces ChatGPT's advantage over original themes (53% vs 77% best interpretation)."
+
+contributions:
+  main_contributions:
+    - "First work emphasizing importance of advancing NLP models beyond literal comprehension to address interpretive/inferential aspects of reading comprehension."
+    - "Introduction of EduStory dataset with 580 educational story-theme pairs from diverse cultural origins, annotated with hierarchical theme keywords based on positive psychology."
+    - "Comprehensive task formulation for theme interpretation across multiple NLP abstractions: classification, retrieval, multiple-choice QA, and generation."
+    - "Extensive empirical evaluation showing current state-of-the-art models struggle with theme interpretation, with best performance achieving only 21.5% F1 for virtue classification."
+  
+  limitations:
+    - "Dataset imbalance with majority of stories from Western culture (59% Aesop's Fables)"
+    - "Limited stories from regions like Oceania and Africa"
+    - "Some stories contain outdated values incompatible with modern sensibilities"
+    - "Theme annotations reflect subjective human interpretation rather than absolute truths"
+    - "Simple prompting strategies used - more sophisticated techniques could improve performance"
+
+narrative_understanding_aspects:
+  - "other"  # Theme interpretation - interpretive/inferential comprehension
+
+keywords:
+  - "interpretive comprehension"
+  - "theme interpretation"
+  - "educational stories"
+  - "narrative understanding"
+  - "machine reading comprehension"
+  - "positive psychology"
+  - "character virtues"
+  - "theme generation"
+  - "multi-level comprehension"
+
+notes: "Dataset and code available at https://github.com/RiTUAL-UH/EduStory. Work highlights significant gap between literal and interpretive comprehension capabilities of current NLP models."

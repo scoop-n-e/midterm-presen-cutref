@@ -1,0 +1,129 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Event Knowledge Incorporation with Posterior Regularization for Event-Centric Question Answering"
+  authors:
+    - "Junru Lu"
+    - "Gabriele Pergola"
+    - "Lin Gui"
+    - "Yulan He"
+  year: 2023
+  venue: "arXiv"
+  paper_url: "https://github.com/LuJunru/EventQAviaPR"
+
+problem_statement:
+  background: "Question answering has been extensively explored on entity-centric corpora where QA pairs are centered on knowledge about entities. Recently, attempts have been made to develop QA models requiring reasoning of event semantic relations such as temporal, causal, and event hierarchical relations. Events form various semantic relations and existing event-centric QA datasets annotate event triggers in paragraphs, questions and answers."
+  
+  gap_or_challenge: "The main challenge of event-centric QA is the need to perform reasoning of event semantic relations in the given context. This is more difficult compared to entity-centric QA which typically relies on statistical correlations between question entities and entities in text. PLMs can easily learn entity knowledge in self-supervised manner but encoding complex event semantic knowledge in PLMs is far more challenging."
+  
+  research_objective: "This work proposes a simple yet effective strategy to incorporate event knowledge extracted from event trigger annotations via posterior regularization to improve event reasoning capability of mainstream QA models for event-centric QA. The approach defines event-related knowledge constraints based on event trigger annotations and uses them to regularize posterior answer output probabilities."
+  
+  significance: "The proposed approach effectively injects event knowledge into existing pre-trained language models and achieves strong performance compared to existing QA models in answer evaluation on two event-centric QA datasets, TORQUE and ESTER."
+
+tasks:
+  - task_name: "Event-Centric Extractive Question Answering"
+    
+    task_overview: "Answer extraction from text passages for event-centric questions requiring reasoning about event semantic relations. The task involves identifying answer spans containing event triggers that hold specified semantic relations (temporal, causal, hierarchical, etc.) with question events. Models must understand event relations and identify relevant answer events in context."
+    
+    input_description: "Text passage paired with event-centric question. Event triggers annotated in passages, questions and answers. For ESTER: passage (3-4 sentences), question with relation type label. For TORQUE: passage (2 sentences), temporal event questions. Input formatted as {<s>question</s></s>passage} for RoBERTa."
+    
+    output_description: "Labeled sequence with 'I' or 'O' tags for each token indicating if token is part of answer span. For TORQUE: list of event triggers. For ESTER: text spans from passages."
+  
+  - task_name: "Event-Centric Generative Question Answering"
+    
+    task_overview: "Generate answers for event-centric questions in free-form text. The task requires generating text containing answer events that hold specified semantic relations with question events. Models must understand event relations and generate appropriate answer text."
+    
+    input_description: "Text passage paired with event-centric question. For ESTER only (no generative TORQUE). Input formatted as {t:question\\npassage} for T5 with relation type as prompt."
+    
+    output_description: "Generated text containing answer events. Multiple answers separated by ';' token. Format: {answer1; answer2; ...}"
+
+methodology:
+  method_name: "Posterior Regularization for Event-Centric QA"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "The framework uses posterior regularization to inject event knowledge constraints. For extractive QA: Define sentence-level event knowledge constraint f(xs,y) assessing if sentence contains answer event. Predict if event ek is answer event using g'(ek)=σ(Wg*ek+bg). Compute sentence regularization score f'(xs,y) via weighted aggregation of event classification results using attention. Update answer probability: p(Y^|x)=p(Y0|x)exp{f'(x,Y)}. For generative QA: Define token-level constraint f(yi) with rewards τ1 for answer events, penalties τ2 for irrelevant events. Instead of direct probability adjustment, define reward&penalty term rt and associated loss LRP. Overall loss combines main QA loss with constraint losses weighted by hyperparameters λ1 (extractive) and λ2 (generative)."
+  
+  base_models:
+    - "RoBERTa-large (extractive QA)"
+    - "UnifiedQA-T5-large (generative QA)"
+  
+  key_innovations:
+    - "Sentence-level event knowledge constraints for extractive QA"
+    - "Token-level reward and penalty mechanism for generative QA"
+    - "Hierarchical constraint design (token-level g(ek) and sentence-level f(xs,y))"
+    - "Attention-weighted aggregation of event classification results"
+    - "Indirect regularization via additional loss term for generative QA"
+
+datasets:
+  - dataset_name: "ESTER"
+    characteristics: "1.9k TempEval3 news snippets with 3-4 consecutive sentences, at least 7 event triggers per snippet. 6k crowd-sourced answerable event-centric questions. Five event relation types: Causal (43.1%), Conditional (21.3%), Counterfactual (7.1%), Sub-event (15.6%), Co-reference (12.9%). Average 1-2 answers per question except Sub-event (3+ answers)."
+    usage: "Both extractive and generative QA evaluation"
+    size: "4,547 training, 301 development, 1,170 test instances"
+    domain: "news"
+    is_new: false
+    new_dataset_contribution: null
+  
+  - dataset_name: "TORQUE"
+    characteristics: "30.4k temporal event-centric questions for 3.2k news passages from TE3 corpus. 2-sentence snippets. Hard-coded questions about 'past', 'ongoing', 'future' events plus user-generated temporal relation questions. Answers are lists of single event triggers."
+    usage: "Extractive QA evaluation only"
+    size: "24,523 training, 1,483 development, 4,468 test instances"
+    domain: "news"
+    is_new: false
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "Evaluation on development sets due to unavailable test set ground truth. Metrics for ESTER: FT1 (unigram overlap), HIT@1 (top answer contains same trigger as leftmost gold), EM (exact match). Metrics for TORQUE: token-level macro F1, EM, consistency C (percentage of contrast groups with F1≥80%). Unified I-O tagging schema with balancing weights. Comparison against fine-tuned baselines and TranCLR (state-of-the-art on ESTER)."
+  
+  main_results: "Extractive QA - ESTER: PR achieves FT1=74.0%, HIT@1=81.7%, EM=18.3% (vs baseline 73.7%, 77.4%, 15.3%). TORQUE: PR achieves F1=76.2%, EM=50.8%, C=37.5% (vs baseline 75.8%, 50.8%, 36.1%). Generative QA - ESTER: PR achieves FT1=71.4%, HIT@1=86.7%, EM=26.0% (vs baseline 66.8%, 87.2%, 24.4%). Outperforms TranCLR on HIT@1 for extractive QA."
+  
+  metrics_used:
+    - "FT1 (token F1)"
+    - "HIT@1"
+    - "Exact Match (EM)"
+    - "Macro F1"
+    - "Consistency metric C"
+  
+  human_evaluation_summary: null  # No human evaluation reported
+
+results_analysis:
+  key_findings:
+    - "I-O tagging schema brings 4.9% FT1 and 10.7% HIT@1 improvement on ESTER"
+    - "PR provides consistent improvements across metrics and datasets"
+    - "Sentence-level constraints incorporate higher-level linguistic information than token-level approaches"
+    - "Marginal improvement on TORQUE due to short single-token answers"
+    - "Ablation shows similar performance with/without event trigger positions during inference"
+    - "Temperature parameters τ1 and τ2 impact generative QA performance"
+  
+  ablation_summary: "Ro-L PR (-trig) ablation removing event trigger information during inference shows nearly identical performance (ESTER: 17.6 vs 18.3 EM, TORQUE: 37.7 vs 37.5 C), indicating model learns to identify events independently. Grid search for τ1 and τ2 parameters reported in appendix."
+
+contributions:
+  main_contributions:
+    - "First work to apply posterior regularization with event knowledge for event-centric QA."
+    - "Novel sentence-level event knowledge constraints for extractive QA using hierarchical design with token-level and sentence-level components."
+    - "Token-level reward and penalty mechanism for generative QA that indirectly regularizes answer generation probabilities."
+    - "Demonstration that event trigger annotations can effectively improve QA performance without being required during inference."
+  
+  limitations:
+    - "Separate G functions needed for extractive and generative settings despite unified framework"
+    - "Marginal improvements on TORQUE dataset with single-token answers"
+    - "Models only consider explicitly annotated event triggers, not implicit event information"
+    - "Future work could explore event arguments and relations, external event knowledge graphs"
+    - "Reinforcement learning could automatically learn meta G function"
+
+narrative_understanding_aspects:
+  - "Narrative QA"  # Event-centric QA with temporal, causal, hierarchical relations
+  - "other"  # Event semantic relation reasoning
+
+keywords:
+  - "event-centric question answering"
+  - "posterior regularization"
+  - "event knowledge incorporation"
+  - "event triggers"
+  - "sentence-level constraints"
+  - "token-level constraints"
+  - "extractive QA"
+  - "generative QA"
+  - "event semantic relations"
+
+notes: "Code and models available at https://github.com/LuJunru/EventQAviaPR. Evaluation performed on development sets as test set ground truth unavailable. Event trigger annotations required during training but not inference."

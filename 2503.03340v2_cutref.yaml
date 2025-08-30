@@ -1,0 +1,140 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "EnigmaToM: Improve LLMs' Theory-of-Mind Reasoning Capabilities with Neural Knowledge Base of Entity States"
+  authors:
+    - "Hainiu Xu"
+    - "Siya Qi"
+    - "Jiazheng Li"
+    - "Yuxiang Zhou"
+    - "Jinhua Du"
+    - "Caroline Catmur"
+    - "Yulan He"
+  year: 2025
+  venue: "arXiv"
+  paper_url: "https://github.com/seacowx/EnigmaToM"
+
+problem_statement:
+  background: "Theory-of-Mind (ToM), the ability to understand that others have perceptions and mental states different from one's own, is fundamental to effective communication and social interaction. ToM reasoning can be first-order, involving understanding another's mental state, or higher-order, requiring recursive thinking about others' beliefs. Higher-order ToM reasoning is particularly vital in real-world contexts such as negotiation."
+  
+  gap_or_challenge: "While existing ToM reasoning methods show promise with perceptual perspective-taking, they often rely excessively on off-the-shelf LLMs, reducing their efficiency and limiting their applicability to high-order ToM reasoning. Methods like SimulatedToM and DWM depend heavily on LLM capabilities. SymbolicToM lacks efficiency as depth of ToM reasoning increases and constructs belief graphs using less powerful models, limiting generalizability."
+  
+  research_objective: "This work presents EnigmaToM, a novel neuro-symbolic framework that enhances ToM reasoning by integrating a Neural Knowledge Base of entity states (Enigma) for (1) a psychology-inspired iterative masking mechanism that facilitates accurate perspective-taking and (2) knowledge injection that elicits key entity information."
+  
+  significance: "EnigmaToM significantly improves ToM reasoning across LLMs of varying sizes, particularly excelling in high-order reasoning scenarios. The framework addresses intractability of high-order ToM reasoning with linear complexity O(m) versus SymbolicToM's O(Σ m!/(m-i)!). It achieves up to 0.160±0.003 and 0.148±0.004 average improvements for third- and fourth-order ToM reasoning respectively."
+
+tasks:
+  - task_name: "Theory-of-Mind Question Answering"
+    
+    task_overview: "Given a sequence of events involving multiple characters and queries about characters' beliefs, determine the most likely belief from potential beliefs. Tasks can involve first-order reasoning (understanding another's mental state) or higher-order reasoning (recursive thinking about others' beliefs about beliefs). Perspective-taking is crucial, identifying observable events by characters and removing unobservable ones."
+    
+    input_description: "Sequence of events E = {ϵi}n_i=1 involving multiple characters C = {cj}m_j=1, and a query qc regarding the belief of a particular character c ∈ C. Events can be concise actions (ToMi), multi-turn dialogues (FANToM), or longer sequences (HiToM). Questions formatted as free-form generation or multiple-choice."
+    
+    output_description: "The most likely belief b*c from all potential beliefs Bc. For ToMi: choose between two possible answers. For HiToM: multiple-choice selection. For FANToM: both free-form and multiple-choice responses wrapped in special <answer> tokens."
+
+methodology:
+  method_name: "EnigmaToM (Entity-Guided Masking Theory-of-Mind)"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "Neuro-symbolic framework with three main components: (1) Neural Knowledge Base (Enigma) - Fine-tuned Llama3.1-8B on OpenPI2.0 dataset (25,600 entity state changes) to generate structured entity-state information. Query with entity-attribute-guided approach. (2) Knowledge Injection (KI) - Augment events with fine-grained entity state details to compensate for reporting bias. E_aug = ⊕(ϵi ⊕ ŝϵi) where ŝϵi excludes spatial info. (3) Iterative Masking (IM) - Psychology-inspired mechanism for perspective-taking. Construct spatial scene graphs: omniscient GE_aug and character-centric Gc. Apply masking G_masked_c1:k = GE_aug ⊗ ⊗Gcj for k-order ToM. Transforms high-order ToM to first-order through iterative belief application. Linear complexity O(m) vs permutation problem in alternatives."
+  
+  base_models:
+    - "Llama3.1-8B (Enigma base)"
+    - "Llama3.3-70B (Enigma scaling)"
+    - "Qwen2.5-7B/72B"
+    - "Llama3.1-8B/Llama3.3-70B"
+    - "Gemma2-9B/27B"
+    - "GPT-4o"
+  
+  key_innovations:
+    - "Neural Knowledge Base for entity state generation and tracking"
+    - "Iterative masking mechanism grounded in psychology theories"
+    - "Linear complexity O(m) for high-order ToM reasoning"
+    - "Knowledge injection to address reporting bias"
+    - "Spatial scene graphs for perspective-taking"
+    - "ToM order reduction through recursive belief modeling"
+
+datasets:
+  - dataset_name: "ToMi"
+    characteristics: "Disambiguated version with concise event sequences. False belief test scenarios with location changes and character movements. Average 9.85 events per sequence."
+    usage: "Evaluation of first and second-order ToM reasoning"
+    size: "114 questions per 100-sequence subset (5 subsets total)"
+    domain: "fiction"
+    is_new: false
+    new_dataset_contribution: null
+  
+  - dataset_name: "HiToM"
+    characteristics: "Long sequences of concise events testing up to fourth-order ToM reasoning. Average 26.49 events per sequence. Complex multi-character scenarios with nested beliefs."
+    usage: "Evaluation of high-order ToM reasoning (up to 4th order)"
+    size: "614 questions per 100-sequence subset (5 subsets total)"
+    domain: "fiction"
+    is_new: false
+    new_dataset_contribution: null
+  
+  - dataset_name: "FANToM"
+    characteristics: "Dialogue-based dataset with multi-turn utterances. Average 23.14 utterances per sequence. Tests both free-form and multiple-choice ToM reasoning."
+    usage: "Evaluation of dialogue-based ToM reasoning"
+    size: "577 questions per 50-dialogue subset (5 subsets total)"
+    domain: "fiction"
+    is_new: false
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "Controlled experiments with 5 random subsets per dataset (seeds: 12, 42, 96, 2012, 2024). Zero-shot prompting with greedy decoding (temperature=0). Question formatting: ToMi as free-form generation choosing between two answers, HiToM as multiple-choice, FANToM following original paper format. Evaluation includes ablation studies removing KI and IM components separately. Analysis of high-order ToM performance, scaling effects of both LLMs and Enigma models."
+  
+  main_results: "ToMi: EnigmaT achieves 0.825±0.030 (Qwen2.5-7B) vs vanilla 0.722±0.045. HiToM: EnigmaP reaches 0.733±0.017 (GPT-4o) vs vanilla 0.521±0.006. FANToM: EnigmaT achieves 0.610±0.021 (Llama3.3-70B) vs vanilla 0.486±0.022. High-order ToM: Average improvement of 0.160±0.003 (3rd order) and 0.148±0.004 (4th order). Ablation: Removing IM causes -0.165 (ToMi), -0.172 (HiToM), -0.103 (FANToM) drops. EnigmaT_70B improves ToMi (+5.3% accuracy) but decreases FANToM (-7.3% due to longer responses)."
+  
+  metrics_used:
+    - "Accuracy (mean and variance over 5 runs)"
+    - "Relative advantage vs baselines"
+    - "F1-score for entity recognition (0.910 ToMi, 0.923 FANToM)"
+    - "Relevance and accuracy scores for Enigma outputs"
+  
+  human_evaluation_summary: null  # No human evaluation reported
+
+results_analysis:
+  key_findings:
+    - "EnigmaToM particularly effective with smaller LLMs (Qwen2.5-7B exceeds 72B baseline)"
+    - "EnigmaP better for event-based datasets, EnigmaT for dialogue-based"
+    - "Increasing advantage as ToM order increases (up to 4th order)"
+    - "Linear complexity O(m) vs O(Σ m!/(m-i)!) for SymbolicToM"
+    - "Knowledge injection critical for FANToM but less for ToMi/HiToM"
+    - "Scaling Enigma from 8B to 70B improves ToMi but hurts FANToM"
+    - "LLMs highly accurate at entity recognition (F1>0.91)"
+  
+  ablation_summary: "Iterative Masking (IM) crucial: removal causes -0.165 (ToMi), -0.172 (HiToM), -0.103 (FANToM) average drops. Knowledge Injection (KI) dataset-dependent: less critical for ToMi/HiToM where larger LLMs handle reporting bias, but indispensable for FANToM where it compresses sparse dialogue information. EnigmaT_70B vs EnigmaT_8B: improves ToMi accuracy by 5.3% with only 2.075 token increase, but decreases FANToM by 7.3% with 21.544 token increase causing hallucination."
+
+contributions:
+  main_contributions:
+    - "EnigmaToM: First neuro-symbolic framework leveraging Neural Knowledge Base for ToM reasoning with linear complexity."
+    - "Iterative masking mechanism grounded in psychology reducing belief graphs from O(Σ m!/(m-i)!) to O(m) complexity."
+    - "Demonstration that EnigmaToM improves ToM reasoning up to fourth order across diverse LLMs."
+    - "Entity-state knowledge injection mechanism addressing reporting bias in event descriptions."
+    - "Comprehensive evaluation showing particular effectiveness with smaller LLMs and high-order reasoning."
+  
+  limitations:
+    - "Limited to perception-based ToM reasoning, not emotions/intentions/desires"
+    - "Neural Knowledge Base could incorporate richer entity relationships"
+    - "Error propagation risk in iterative masking for complex dependencies"
+    - "Requires accurate entity recognition as prerequisite"
+    - "Symbolic masking may need enhancement for non-linear event dependencies"
+
+narrative_understanding_aspects:
+  - "Character / Entity Understanding"  # Entity state tracking and character perception modeling
+  - "Free-Form QA"  # Theory-of-Mind questions about beliefs
+  - "other"  # Perspective-taking and belief reasoning
+
+keywords:
+  - "theory-of-mind"
+  - "perspective-taking"
+  - "neural knowledge base"
+  - "entity states"
+  - "iterative masking"
+  - "neuro-symbolic"
+  - "high-order reasoning"
+  - "belief graphs"
+  - "spatial scene graphs"
+  - "knowledge injection"
+
+notes: "Code and Enigma model available at https://github.com/seacowx/EnigmaToM and https://huggingface.co/SeacowX/Enigma. Framework achieves linear complexity for high-order ToM through innovative masking mechanism. Particularly effective for complex narrative understanding tasks."

@@ -1,0 +1,109 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "On Narrative Question Answering Skills"
+  authors:
+    - "Emil Kalbaliyev"
+    - "Kairit Sirts"
+  year: 2024
+  venue: "NAACL (Short Paper)"
+  paper_url: "https://aclanthology.org/2024.naacl-short.73/"
+
+problem_statement:
+  background: "Narrative Question Answering is an important task for evaluating and improving reading comprehension abilities in both humans and machines. Understanding narratives requires comprehension of foundational narrative elements that are not only explicitly stated but also implied in the text, which necessitates 'reading between the lines'."
+  
+  gap_or_challenge: "There is a lack of consensus on the skill taxonomy that would enable systematic and comprehensive assessment and learning of the various aspects of Narrative Question Answering. Existing task-level skill views oversimplify the multidimensional nature of tasks, while question-level taxonomies face issues in evaluation and methodology. Some taxonomies concentrate solely on challenging skills, omitting others. Other taxonomies group skills in a manner that a question can be attributed to several skills within the same dimension, creating challenges during skill evaluation."
+  
+  research_objective: "This work introduces a more inclusive skill taxonomy that synthesizes and redefines narrative understanding skills from previous taxonomies and includes a generation skill dimension from the answering perspective. The taxonomy aims to enable systematic and comprehensive assessment of Narrative Question Answering skills."
+  
+  significance: "The proposed taxonomy addresses problems in existing taxonomies by providing accurate definitions for implicit and explicit questions, incorporating clearly distinguishable skills within skill dimensions, and introducing answer generation skills. This enables focused and fair multidimensional skill assessment."
+
+tasks:
+  - task_name: "Narrative Question Answering Skill Assessment"
+    
+    task_overview: "Narrative Question Answering entails responding to questions based on a narrative context. The task requires understanding foundational narrative elements, forming abstract representations, integrating information across the document, and generating coherent answers. This task assesses various complex reading comprehension abilities through a structured skill taxonomy."
+    
+    input_description: "Narrative text (stories, fables, etc.) paired with questions that require understanding of explicit and implicit information, local and global context, narrative elements (characters, events, settings), and generation of extractive or generative answers."
+    
+    output_description: "Answers to narrative questions that demonstrate skills across four dimensions: narrative elements (character/event/setting), representation scope (local/global), knowledge gap filling (explicit/implicit), and generation (extractive/generative)."
+
+methodology:
+  method_name: "Comprehensive Narrative QA Skill Taxonomy"
+  
+  approach_type: "other"  # Taxonomy development
+  
+  core_technique: "The taxonomy synthesizes skills from previous work (Xu et al., 2022; Sang et al., 2022) and introduces new dimensions. It structures skills around four orthogonal dimensions: (1) Narrative Elements - character questions (identity, traits, relationships), event questions (actions, causal/temporal relations), setting questions (place, time, environment); (2) Representation Scope - local (single story section) vs global (multiple sections requiring summarization); (3) Knowledge Gap Filling - explicit (directly stated) vs implicit (requiring inference and commonsense); (4) Generation - extractive (span-based) vs generative (requiring additional words). Each question maps to exactly one skill per dimension, enabling clear skill attribution and assessment."
+  
+  base_models: null  # This is a taxonomy paper, not a modeling paper
+  
+  key_innovations:
+    - "First comprehensive taxonomy combining understanding and answering skills for Narrative QA"
+    - "Redefinition of explicit/implicit based on information conveyed rather than answer format"
+    - "Introduction of generation skill dimension distinguishing extractive from generative answers"
+    - "Orthogonal skill dimensions ensuring each question has single skill per dimension"
+    - "Synthesis of previous taxonomies addressing their limitations"
+
+datasets:
+  - dataset_name: "FairytaleQA"
+    
+    characteristics: "Dataset mentioned as example containing narrative questions. Includes stories like 'Little Thumbelina' with questions requiring various skill combinations."
+    
+    usage: "Example dataset for demonstrating skill taxonomy application"
+    
+    size: null  # Not specified in paper
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "The paper presents a theoretical framework for skill assessment rather than empirical evaluation. The taxonomy enables focused assessment of individual dimensions in isolation and fair evaluation where every skill feature within each dimension holds equal significance. Future work involves annotating existing datasets and constructing new datasets based on the taxonomy for conducting focused assessments."
+  
+  main_results: "No empirical results presented. The paper provides a theoretical taxonomy with examples showing how questions map to different skill combinations (e.g., 'How tall is Thumbelina?' maps to character/local/explicit/extractive, while 'Why did Thumbelina feel comfortable?' maps to event/global/implicit/generative)."
+  
+  metrics_used: null  # No empirical evaluation
+  
+  human_evaluation_summary: null  # No human evaluation conducted
+
+results_analysis:
+  key_findings:
+    - "Task-level skills fail to capture multidimensionality of Narrative QA"
+    - "Previous taxonomies either omit crucial skills or have overlapping skill definitions"
+    - "Narrative comprehension taxonomies address some issues but limited to two dimensions"
+    - "Xu et al. (2022) incorrectly defines implicit/explicit based on answer format rather than information type"
+    - "Proposed taxonomy enables distinguishable skills within each dimension"
+  
+  ablation_summary: null  # No ablation studies
+
+contributions:
+  main_contributions:
+    - "Introduction of comprehensive skill taxonomy for Narrative Question Answering that synthesizes and redefines skills from existing taxonomies while incorporating generation skill dimension."
+    - "Redefinition of explicit vs implicit questions based on information conveyed in narrative rather than answer format, addressing inaccuracies in previous work."
+    - "Framework with four orthogonal skill dimensions (narrative elements, representation scope, knowledge gap filling, generation) where each question maps to single skill per dimension."
+    - "Theoretical foundation for focused and fair multidimensional skill assessment and motivation for skill-learning method development."
+  
+  limitations:
+    - "Focus on distinguishable skills within dimensions, not considering linguistic skills"
+    - "Limited to Narrative Question Answering, not other narrative comprehension tasks"
+    - "References primarily from English studies though skills applicable across languages"
+    - "Free-form nature of Narrative QA poses challenges for evaluation of text generation"
+
+narrative_understanding_aspects:
+  - "Narrative Question Answering"
+  - "Character / Entity Understanding"
+  - "other"  # Skill taxonomy and assessment framework
+
+keywords:
+  - "narrative question answering"
+  - "skill taxonomy"
+  - "reading comprehension"
+  - "narrative elements"
+  - "explicit vs implicit"
+  - "extractive vs generative"
+  - "representation scope"
+  - "knowledge gap filling"
+  - "skill assessment"
+
+notes: "Paper introduces theoretical taxonomy without empirical evaluation. Examples from 'Little Thumbelina' demonstrate skill mapping. Work supported by Estonian Research Council Grant PSG721."

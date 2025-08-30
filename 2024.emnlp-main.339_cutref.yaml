@@ -1,0 +1,159 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Story Embeddings – Narrative-Focused Representations of Fictional Stories"
+  authors:
+    - "Hans Ole Hatzel"
+    - "Chris Biemann"
+  year: 2024
+  venue: "EMNLP"
+  paper_url: "https://aclanthology.org/2024.emnlp-main.339/"
+  
+problem_statement:
+  background: "Narrative understanding has received much attention recently, with approaches testing models on narrative-based question answering or cloze evaluations. Researchers often use the terms narrative and story without clear distinction in the fictional context."
+  
+  gap_or_challenge: "There is a lack of approaches that focus on story embeddings prioritizing narrative - 'what' is happening rather than surface-level 'how' it is told. Existing models fail to capture narrative similarity across different formulations of the same story. Current methods either focus on entity names as shortcuts or lack the ability to identify structurally similar stories with different settings, characters, or shortened versions."
+  
+  research_objective: "This work seeks to address story embeddings with a focus on narrative, creating representations that prioritize what is happening rather than how it is being told. The approach aims to develop embeddings where reformulations of the same story result in similar representations, enabling better narrative retrieval and understanding."
+  
+  significance: "The approach can help explore vast datasets of stories with applications in recommender systems and computational analysis of literature. It enables identification of retellings and adaptations while focusing on narrative structure rather than surface features."
+
+tasks:
+  - task_name: "Story Similarity Retrieval"
+    
+    task_overview: "This task evaluates a model's ability to retrieve narratively similar stories from large collections. The system must identify different formulations of the same story, including cross-language versions, movie remakes, and retellings. The task tests whether embeddings can capture narrative similarity while being robust to changes in setting, character names, and story length."
+    
+    input_description: "The model receives story summaries as input texts. These summaries can be from different sources including Wikipedia cross-language versions, movie remakes, or literary retellings, with lengths ranging from 10 to 50 sentences."
+    
+    output_description: "The system produces embedding vectors representing each story. Similar narratives should have high cosine similarity while different stories should have low similarity. Retrieval is performed using cosine distance ranking."
+
+methodology:
+  method_name: "StoryEmb"
+  
+  approach_type: "neural"
+  
+  core_technique: "StoryEmb is a Mistral-7B causal language model fine-tuned for similarity tasks using contrastive learning. The model uses E5, an adapter-finetuned variant of Mistral-7B, as the foundation. Training employs Gradient Cache to enable large batch sizes (1000 positive pairs with in-batch negatives) on limited hardware. The approach uses contrastive MSE-loss for similarity training with LoRA adapters (rank=16, α=32). A key innovation is the data augmentation strategy from Tell-Me-Again dataset, where entity names are pseudonymized (replaced consistently within each summary) to prevent the model from using names as shortcuts. The model adds a query prefix 'Retrieve stories with a similar narrative to the given story:' to align with E5's evaluation setup."
+  
+  base_models:
+    - "Mistral-7B"
+    - "E5 (adapter-finetuned Mistral-7B)"
+  
+  key_innovations:
+    - "Pseudonymization-based data augmentation to reduce reliance on entity names as similarity shortcuts"
+    - "Contrastive learning approach optimized for narrative similarity rather than surface-level features"
+    - "Focus on story summaries as representations of narrative structure"
+    - "Training on cross-language Wikipedia summaries to capture narrative consistency across formulations"
+    - "Adapter-based fine-tuning preserving base model capabilities while specializing for narrative similarity"
+
+datasets:
+  - dataset_name: "Tell-Me-Again"
+    
+    characteristics: "Contains roughly 30,000 stories with up to 5 different summaries each, extracted from multiple Wikipedia language versions and automatically translated to English. Includes both original and pseudonymized versions where entity names are systematically replaced."
+    
+    usage: "Primary training and evaluation dataset for the story embedding model"
+    
+    size: "~30,000 stories with multiple summaries each"
+    
+    domain: "mixed"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+    
+  - dataset_name: "Movie Remake Dataset"
+    
+    characteristics: "Small collection of 266 summaries from multiple remakes of the same movies, extracted from Wikipedia. Shows more variation than cross-language summaries as remakes often have different settings and character details."
+    
+    usage: "Evaluation dataset for testing domain adaptation and generalization"
+    
+    size: "266 summaries"
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+    
+  - dataset_name: "Retellings Dataset"
+    
+    characteristics: "Collection of 13 clusters totaling 30 story summaries of literary retellings and their originals. Retellings often change stories in major ways while retaining themes. Created using ChatGPT suggestions validated through manual web searches."
+    
+    usage: "Evaluation dataset for testing retrieval of stories with major narrative variations"
+    
+    size: "30 story summaries in 13 clusters"
+    
+    domain: "fiction"
+    
+    is_new: true
+    
+    new_dataset_contribution: "First dataset specifically designed to test retrieval of literary retellings with varying degrees of narrative similarity. Enables evaluation of models' ability to identify thematically related stories with different narrative structures."
+    
+  - dataset_name: "ROCStories"
+    
+    characteristics: "Dataset of five-sentence common-sense stories for the Story Cloze Task. Systems must select the correct ending from two options - one coherent and one incoherent but surface-level consistent."
+    
+    usage: "Evaluation for narrative understanding capabilities"
+    
+    size: null
+    
+    domain: "mixed"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "Comprehensive evaluation across multiple retrieval tasks and narrative understanding. Retrieval tasks use P@1 (accuracy), P@N (precision at N where N is number of gold items), MAP, NDCG, and R-Precision metrics. For segment retrieval, both LLM judges (GPT-4) and human annotators rate narrative similarity on 1-10 scale. Story Cloze evaluation uses unconventional embedding distance approach without classification head."
+  
+  main_results: "StoryEmb achieves state-of-the-art on Tell-Me-Again dataset with P@N of 65.89% on pseudonymized and 85.90% on original texts. On movie remakes, achieves P@1 of 83.26%, improving 20+ points over prior work. Model shows superior generalization with only 6-point drop on remakes vs 17-point drop for Sentence-T5. On retellings, reaches P@1 of 60% (unaugmented variant). For ROCStories, achieves 89.2% accuracy using zero-shot embedding distance approach. Human evaluation shows StoryEmb retrieves more narratively similar segments (6.6/10) than E5 (5.8/10)."
+  
+  metrics_used:
+    - "P@1 (Precision at 1)"
+    - "P@N (Precision at N)"
+    - "MAP (Mean Average Precision)"
+    - "NDCG"
+    - "R-Precision"
+    - "Narrative similarity scores (1-10 scale)"
+    - "Accuracy (Story Cloze)"
+  
+  human_evaluation_summary: "First author annotated 100 segment pairs for narrative similarity on 1-10 scale. StoryEmb-retrieved similar segments scored 6.6/10 vs 5.8/10 for E5. For dissimilar segments, StoryEmb scored 3.6/10 vs 4.6/10 for E5, showing better discrimination."
+
+results_analysis:
+  key_findings:
+    - "Pseudonymization data augmentation dramatically improves performance on texts without entity name overlap"
+    - "Model trained on augmented data performs better even on non-pseudonymized texts, preventing overfitting to entity names"
+    - "StoryEmb shows superior generalization to movie remakes compared to Sentence-T5 despite similar Tell-Me-Again performance"
+    - "Attribution analysis confirms model places less emphasis on proper nouns and more on verbs after augmentation"
+  
+  ablation_summary: "Comparison of augmented vs non-augmented training shows clear benefits of pseudonymization. Non-augmented model reaches only 47.63% P@1 on pseudonymized Tell-Me-Again vs 82.6% for augmented model. Additional training steps for non-augmented model show minimal improvement."
+
+contributions:
+  main_contributions:
+    - "First approach to creating narrative-focused story embeddings that prioritize plot structure over surface features. Demonstrates that contrastive learning on pseudonymized summaries effectively captures narrative similarity."
+    - "Introduction of data augmentation strategy using entity name replacement that prevents models from using names as shortcuts. Shows this technique improves performance on both pseudonymized and original texts."
+    - "State-of-the-art results on multiple narrative retrieval tasks including Tell-Me-Again and movie remake datasets. Demonstrates 20+ point improvement over prior work on remake identification."
+    - "Novel evaluation approach for Story Cloze using embedding distances without task-specific training. Achieves 89.2% accuracy demonstrating narrative understanding capabilities."
+  
+  limitations:
+    - "Representations lack interpretability compared to schema-based narrative modeling approaches"
+    - "Attribution analysis limited to single sentences due to computational constraints"
+    - "Unable to evaluate on ROCStories test set as it is privately held"
+
+narrative_understanding_aspects:
+  - "Story Cloze / Next Event Prediction"
+  - "Narrative Consistency Check"
+  - "other"  # Story similarity and retrieval
+
+keywords:
+  - "story embeddings"
+  - "narrative similarity"
+  - "contrastive learning"
+  - "data augmentation"
+  - "story retrieval"
+  - "narrative understanding"
+  - "pseudonymization"
+  - "cross-language summaries"
+  - "movie remakes"
+  - "literary retellings"
+
+notes: "Model and retelling dataset released alongside code. Demonstrates that focusing on narrative structure rather than surface features enables better identification of story similarities across different formulations."

@@ -1,0 +1,127 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "LLMLINK: Dual LLMs for Dynamic Entity Linking on Long Narratives with Collaborative Memorisation and Prompt Optimisation"
+  authors:
+    - "Lixing Zhu"
+    - "Jun Wang"
+    - "Yulan He"
+  year: 2025
+  venue: "COLING"
+  paper_url: null  # Not provided in the paper
+
+problem_statement:
+  background: "When reading book-length narratives or episodic stories, people typically spread reading over non-consecutive days, maintaining memory of main characters and their descriptions rather than revisiting earlier sections. Authors facilitate this with clear divisions (chapters, scenes). Humans comprehend long narratives using stratified processing: local context for identifying narrative elements, global context for linking characters to those stored in memory."
+  
+  gap_or_challenge: "Current models don't fully capture this episodic reading process. Fine-tuning LLMs faces quadratic scaling challenges with Transformer attention. Existing approaches remain focused on supervised fine-tuning or one-off prediction, which poses challenges for long contexts. Most methods rely on expanding context by prepending conversation history, leading to high token consumption. Mechanisms are needed to enable rewinding and enhancing character descriptions in memorisation."
+  
+  research_objective: "This work develops a dynamic approach for coreference resolution in chunked long narratives by deploying dual Large Language Models. The study assigns specialized LLMs to local named entity recognition and distant coreference tasks while ensuring information exchange. Novel memorisation schemes reduce token consumption compared to storing previous messages, and automatic prompt optimisation alleviates LLM hallucinations."
+  
+  significance: "LLMLINK achieves performance gains over other LLM-based models and fine-tuning approaches on long narrative datasets, significantly reducing resources required for inference and training. The approach demonstrates the mutual benefit of collaborative dual LLM systems with specialized memorisation strategies."
+
+tasks:
+  - task_name: "Dynamic Entity Linking on Long Narratives"
+    
+    task_overview: "Joint entity recognition and coreference resolution in chunked long narratives. The task involves processing narrative text incrementally, identifying named entities (proper nouns, noun phrases, pronouns) in each chunk, then resolving coreferences by linking entities to previously resolved entities or creating new singletons. The dynamic approach processes chapters/sections sequentially, maintaining memory across chunks."
+    
+    input_description: "Long narratives segmented by natural boundaries (chapters, sections) or fixed-length chunks (8,192 tokens). Each chunk contains narrative text with entities to be identified and linked. Input includes user prompts, system prompts, and previously resolved entities with descriptions for upper-level processing."
+    
+    output_description: "JSON-formatted output containing: (1) Identified entities categorized as PROPER_NOUN, NOUN_PHRASE, or PRONOUNS with descriptions, (2) Resolved entities showing coreference links between mentions and singletons, (3) Updated entity descriptions incorporating new information from current chunk."
+
+methodology:
+  method_name: "LLMLINK - Dual LLM Framework with Memorisation and APO"
+  
+  approach_type: "neural"
+  
+  core_technique: "LLMLINK employs dual instruction-tuned LLMs in a two-layered framework. Lower-level NER LLM identifies entities within chunks using fixed system prompt 'You are an expert NER assistant' and user prompt specifying entity types. Upper-level Resolver LLM receives NER predictions with auxiliary summaries, maintaining cache of inputs/outputs to generate coreference predictions. Two memorisation schemes: Prompt Cache stores coreference clusters as JSON dictionary recording directed acyclic graphs, Conversation Memo keeps track of conversation history with story summaries. Automatic Prompt Optimisation (APO) with custom LLM Ranker evaluates prompt quality using 5-scale ranking for NER and customized ranking for coreference resolution. Algorithm includes rewinding mechanism (maxRewind=2) to handle flashbacks where characters mentioned before proper nouns. Implementation uses Mixtral-8x7B-Instruct with temperature=0, context size 16,384 tokens."
+  
+  base_models:
+    - "Mixtral-8x7B-Instruct-v0.1"
+    - "GPT-3.5-turbo (baseline)"
+    - "GPT-4 Turbo (for APO ranker)"
+    - "T5 (for LCA-LLM baseline)"
+    - "BERT (for DOC-ARC baseline)"
+    - "T0 (for Pure-Seq2seq baseline)"
+    - "Longformer (for Dual-Cache baseline)"
+  
+  key_innovations:
+    - "Dual LLM architecture with specialized models for NER and coreference resolution"
+    - "Two novel memorisation schemes (Prompt Cache and Conversation Memo) reducing token consumption"
+    - "Adapted Automatic Prompt Optimisation with custom LLM Ranker for narrative tasks"
+    - "Dynamic incremental processing matching human episodic reading patterns"
+    - "Rewinding mechanism to handle narrative flashbacks and character introductions"
+
+datasets:
+  - dataset_name: "Coreference-Annotated LitBank"
+    characteristics: "Fiction dataset with entities annotated in ACE format. Coreferences resolved for proper names (PROP), common phrases (NOM), and pronouns (PRON). Each coreference grounded to singleton. 90 documents for training, 10 for testing. Average 25.06 chapters, 102k tokens, 291 mentions per document."
+    usage: "Primary evaluation for coreference resolution on literary texts"
+    size: "100 documents total"
+    domain: "fiction"
+    is_new: false
+    new_dataset_contribution: null
+  
+  - dataset_name: "WhoLink (refactored NarrativeQA)"
+    characteristics: "Subset of NarrativeQA refactored for Who questions targeting characters. Filtered to ensure named entities can be grounded to text spans. 401 annotations grounding references to singleton characters. 133 training documents, 100 test documents. Average 81.87/54.75 chapters, 177k/131k tokens, 3.76/2.86 mentions per document."
+    usage: "Evaluation of long-term coreference resolution for character-focused questions"
+    size: "233 documents with 401 annotations"
+    domain: "mixed"
+    is_new: true
+    new_dataset_contribution: "First refactoring of NarrativeQA specifically for character coreference resolution, ensuring all entities are grounded to text spans for evaluation of long-term coreference capabilities."
+
+evaluation:
+  evaluation_strategy: "F1-scores for named entity detection and coreference resolution, plus exact string match metrics. Traditional coreference metrics (MUC, B³, CEAF, BLANC) avoided due to hallucination issues in free-form LLM completion. Token consumption analysis for computational cost assessment. Ablation studies examine contributions of dual LLM structure, memorisation schemes, and APO components. Case studies demonstrate error correction through APO and improved pronoun resolution through memorisation."
+  
+  main_results: "LLMLINK achieves best overall results: LitBank NER F1 98.4%, Coref F1 81.5%, Exact Match 73.0%; WhoLink NER F1 91.6%, Coref F1 78.2%, Exact Match 71.6%. Outperforms LCA-LLM (fine-tuned T5) by 1.3% on LitBank and 6.8% on WhoLink for coreference. Token consumption 32.73M (LitBank) and 129.52M (WhoLink), significantly lower than Mixtral-with-Memo (69.17M/417.33M). Prompt Cache more efficient than Conversation Memo while maintaining comparable performance."
+  
+  metrics_used:
+    - "Named Entity Recognition F1"
+    - "Coreference Resolution F1"
+    - "Exact String Match"
+    - "Cumulative Token Consumption"
+    - "Component-wise ablation metrics"
+  
+  human_evaluation_summary: null  # No human evaluation reported
+
+results_analysis:
+  key_findings:
+    - "Dual LLM structure alone yields minor boost (~0.5%), but enables effective memorisation"
+    - "Prompt Cache brings 2.4% improvement, Conversation Memo yields 1.6% gain"
+    - "APO provides additional 1% performance gain on LitBank"
+    - "Instruction-tuned models excel on sparse annotations (WhoLink)"
+    - "Token tagging models achieve higher performance with sufficient annotations"
+    - "Memorisation critical for handling long context, especially for pronouns"
+    - "LLM Ranker essential for APO - performance degrades significantly without it"
+  
+  ablation_summary: "Dual-LLMs alone: 77.9% (LitBank), 75.8% (WhoLink). With Cache: 80.3%, 77.6%. With Memo: 79.5%, 76.9%. Full LLMLINK: 81.5%, 78.2%. Without APO: 80.6%, 78.1%. Without LLM ranker: 79.3%, 76.0%. Cache more token-efficient than Memo while achieving similar performance gains."
+
+contributions:
+  main_contributions:
+    - "First dual LLM framework allocating distinct responsibilities based on local and global contexts for joint NER and coreference resolution in dynamic narrative settings."
+    - "Novel memorisation strategies (Prompt Cache storing DAG structures, Conversation Memo with story summaries) tailored for instruction-tuned LLMs, significantly reducing token consumption compared to context expansion methods."
+    - "Adaptation of Automatic Prompt Optimisation with customized LLM ranker leveraging annotations to mitigate hallucinations in narrative understanding tasks."
+    - "Demonstration that collaborative dual LLM systems with specialized memorisation outperform both fine-tuned models and single LLM approaches on long narrative datasets."
+  
+  limitations:
+    - "Inherits weaknesses of instruction-tuned LLMs requiring extra tokens and intricate prompt engineering"
+    - "Lower layer LLM receives no signals from upper layer (unidirectional information flow)"
+    - "maxRewind and rewind timing preset ahead of inference"
+    - "Challenge in shifting focus backwards during interim reading process"
+    - "Prompt engineering complexity and potential for inconsistent generation"
+
+narrative_understanding_aspects:
+  - "Character / Entity Understanding"
+  - "other"  # Coreference resolution in long narratives
+
+keywords:
+  - "dual LLMs"
+  - "entity linking"
+  - "coreference resolution"
+  - "long narratives"
+  - "memorisation schemes"
+  - "prompt cache"
+  - "conversation memo"
+  - "automatic prompt optimisation"
+  - "dynamic processing"
+  - "episodic reading"
+
+notes: "Code available at https://github.com/somethingx1202/LlmLink. Work demonstrates importance of matching computational approaches to human reading patterns through episodic processing and specialized memorisation."

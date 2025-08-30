@@ -1,0 +1,125 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "FACTTRACK: Time-Aware World State Tracking in Story Outlines"
+  authors:
+    - "Zhiheng Lyu"
+    - "Kevin Yang"
+    - "Lingpeng Kong"
+    - "Daniel Klein"
+  year: 2025
+  venue: "NAACL"
+  paper_url: "https://github.com/cogito233/fact-track"
+
+problem_statement:
+  background: "Large language models have surpassed human performance across many tasks, yet generating long-form text remains challenging. Even with context windows of hundreds of thousands of tokens, models struggle to retrieve and reason over long context. Advanced models still consider long context generation as a direction for improvement."
+  
+  gap_or_challenge: "Existing hierarchical generation approaches struggle with maintaining factual consistency and avoiding hallucinations during generation. Problems at high-level planning stages greatly damage downstream task performance. Training corpus documents suffer from length limitations and fragmented sources, impairing models' ability to establish long-distance, multi-state connections. Current sentence-level fact verification models struggle with longer texts, particularly with multi-fact contexts and dynamic, stateful content over time."
+  
+  research_objective: "This work proposes FACTTRACK, a novel method for tracking atomic facts and addressing factual contradictions in story outlines. FACTTRACK maintains time-aware validity intervals for each fact, allowing for change over time. The method consists of a four-step pipeline to update a world state data structure: decompose events into directional atomic facts, determine validity intervals, detect contradictions, and update the world state."
+  
+  significance: "FACTTRACK using LLaMA2-7B-Chat substantially outperforms baselines and achieves performance comparable to GPT4. When using GPT4, FACTTRACK significantly outperforms all baselines including GPT4 baseline. The framework provides structured information useful for downstream tasks and enables time-aware contradiction detection crucial for long-form generation."
+
+tasks:
+  - task_name: "Time-Aware Contradiction Detection in Story Outlines"
+    
+    task_overview: "Detect factual contradictions and plot redundancy in hierarchically generated story outlines. The task requires tracking atomic facts with validity intervals on a timeline, identifying when facts contradict each other across time, and distinguishing legitimate contradictions from facts that simply change over time. The system must handle events that can be inserted non-chronologically, suitable for hierarchical inputs."
+    
+    input_description: "Story outlines with three layers (depth-3), each event having three sub-events, totaling 39 events. Outlines generated from WritingPrompts dataset premises using LLaMA2-7B-Chat. Average outline length approximately 4800 tokens. Events contain factual information about characters, settings, and plot developments."
+    
+    output_description: "List of contradictory event pairs with contradiction details including: specific atomic facts in conflict, validity intervals, contradiction scores (1-5 scale), and NLI scores. System also maintains updated world state with non-contradictory facts and their time-aware validity intervals."
+
+methodology:
+  method_name: "FACTTRACK"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "FACTTRACK maintains world state as two lists of pre-facts and post-facts with validity intervals. Four-step pipeline for each new event: (1) Decompose Events - break down events into pre-facts (truths before event) and post-facts (truths after event) using zero-shot LLM prompting. (2) Determine Validity Interval - use world state to find validity interval for each atomic fact, with default (−inf, l] for pre-facts and [r, inf) for post-facts. (3) Detect Contradictions - check overlap and contradiction using strictest constraint requiring contradiction on both checkpoints (event boundaries). (4) Update World State - update validity intervals of existing facts and add new facts. Uses NLI model finetuned on GPT4-annotated outputs for contradiction scoring (0-1). Retrieval model filters reduce computational cost. Timeline representation handles hierarchical temporal structure with recursive subdivision of [0,1] interval."
+  
+  base_models:
+    - "LLaMA2-7B-Chat (primary)"
+    - "GPT-4 (evaluation and comparison)"
+    - "GPT-3.5-Turbo (baseline)"
+    - "Custom NLI model (finetuned on GPT4 annotations)"
+  
+  key_innovations:
+    - "Directional atomic facts (pre-facts and post-facts) with time-aware validity intervals"
+    - "World state tracking as maximum set of non-contradicting facts at any time point"
+    - "Strictest constraint for contradiction detection at both checkpoints"
+    - "Hierarchical timeline representation for recursive event decomposition"
+    - "Integration of fact decomposition with temporal validity tracking"
+
+datasets:
+  - dataset_name: "Story Outline Dataset"
+    characteristics: "90 story outlines generated from WritingPrompts dataset premises. Three-layer hierarchical structure with 39 events total per outline. Average 4800 tokens per outline. Estimated 3-5 true contradictions per outline. Events contain rich factual information about characters, settings, and plot developments."
+    usage: "Primary evaluation dataset for contradiction detection"
+    size: "90 outlines with 39 events each"
+    domain: "fiction"
+    is_new: true
+    new_dataset_contribution: "First dataset specifically designed for time-aware contradiction detection in hierarchical story outlines with validity interval tracking."
+  
+  - dataset_name: "ContraDoc"
+    characteristics: "Document-level contradiction detection dataset used for additional evaluation. Binary judgment framework for detecting contradictions within documents."
+    usage: "Extended evaluation of FACTTRACK's generalization"
+    size: null  # Not specified
+    domain: "mixed"
+    is_new: false
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "GPT-4 annotation of contradiction scores (1-5 scale) for detected event pairs. Two metrics: PAIRWISE SCORE (GPT-4 evaluates event pairs directly) and CONTEXT SCORE (GPT-4 evaluates within full outline context). Downsampling applied to match baseline detection counts. Comparison against PAIRWISE DETECTION (LLaMA2-7B-Chat) and FULL OUTLINE DETECTION (GPT series with Chain of Thought). Ablation studies examine individual components. Extended evaluation on ContraDoc dataset using binary judgment with precision, recall, and F1 metrics."
+  
+  main_results: "FACTTRACK (LLaMA2-7B-Chat, top 300): PAIRWISE 2.393±0.164, CONTEXT 2.777±0.146. Outperforms PAIRWISE DETECTION baseline (1.452±0.080, 1.64±0.088) and FULL OUTLINE DETECTION GPT-3.5 (1.556±0.068, 1.902±0.078). Comparable to GPT-4 baseline (2.355±0.163, 2.859±0.149). FACTTRACK (GPT-4): 2.599±0.148, 3.133±0.123, significantly outperforming all baselines. ContraDoc: FACTTRACK achieves 57.32% F1 vs baseline 10.48% F1."
+  
+  metrics_used:
+    - "Contradiction Score (1-5 scale via GPT-4)"
+    - "PAIRWISE SCORE"
+    - "CONTEXT SCORE"
+    - "Precision, Recall, F1 (ContraDoc)"
+    - "NLI scores for contradiction detection"
+  
+  human_evaluation_summary: "No direct human evaluation due to complexity and context-dependent nature of contradictions. GPT-4 annotations proved higher quality and less noisy than attempted human labeling (see Appendix C.1)."
+
+results_analysis:
+  key_findings:
+    - "FACTTRACK effectively enhances contradiction detection through event decomposition and validity interval maintenance"
+    - "Decompose Events and Track Facts modules critical to performance"
+    - "Detect Contradictions module improvable with few-shot LLMs (GPT-4: 2.212-2.216 vs NLI: 1.836)"
+    - "Event decomposition remains bottleneck due to language ambiguity"
+    - "Method achieves better F1 on ContraDoc but lower precision due to borderline contradictions"
+    - "Computational cost grows near-linearly with outline length"
+  
+  ablation_summary: "Without Decompose Events (using CoT): maintains baseline performance. Without Track Facts: significant drop (2.380 PAIRWISE, 2.364 CONTEXT). Few-shot GPT4 for contradiction detection: 2.212 PAIRWISE, 2.216 CONTEXT. Few-shot LLaMA-7B: 2.186, 2.196. Default NLI model: 1.836, 2.046."
+
+contributions:
+  main_contributions:
+    - "Framework for decomposing events into directional atomic facts with time-aware validity intervals on a timeline."
+    - "FACTTRACK method for detecting time-aware factual contradictions in hierarchical story outlines."
+    - "Demonstration that maintaining validity intervals significantly improves contradiction detection performance."
+    - "Evidence that FACTTRACK using smaller models (LLaMA2-7B) can achieve performance comparable to larger models (GPT-4)."
+  
+  limitations:
+    - "Difficulty obtaining gold labels for contradictions limits evaluation"
+    - "Context window constraints restrict evaluation to ~4800 token outlines"
+    - "Manual hyperparameter selection without rigorous validation"
+    - "Only detects binary contradictions, not complex multi-way scenarios"
+    - "Performance depends on base LLM's generation and instruction-following capabilities"
+    - "Event decomposition ambiguity can lead to misunderstandings"
+
+narrative_understanding_aspects:
+  - "Narrative Consistency Check"
+  - "Plot / Storyline Extraction"
+  - "other"  # Time-aware fact tracking
+
+keywords:
+  - "time-aware fact tracking"
+  - "atomic facts"
+  - "validity intervals"
+  - "contradiction detection"
+  - "story outlines"
+  - "world state tracking"
+  - "pre-facts and post-facts"
+  - "hierarchical generation"
+  - "factual consistency"
+
+notes: "Code and data available at https://github.com/cogito233/fact-track. Method inherits biases from base LLMs. Currently English-only but translatable in principle. All intermediate results saved for reproducibility."

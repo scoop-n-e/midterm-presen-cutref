@@ -1,0 +1,136 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "NarrativePlay: Interactive Narrative Understanding"
+  authors:
+    - "Runcong Zhao"
+    - "Wenjia Zhang"
+    - "Jiazheng Li"
+    - "Lixing Zhu"
+    - "Yanran Li"
+    - "Yulan He"
+    - "Lin Gui"
+  year: 2024
+  venue: "EACL (System Demonstrations)"
+  paper_url: "https://aclanthology.org/2024.eacl-demo.10/"
+  
+problem_statement:
+  background: "Recent studies have leveraged Large Language Models (LLMs) to generate human-like responses guided by personality traits extracted from narratives. This advancement presents opportunities for creating immersive interactive environments similar to dynamic storylines from books or shows like Westworld."
+  
+  gap_or_challenge: "Current LLM-based methods for interactive agents focus on specific capabilities in predetermined scenarios, often depending on manual settings for characters and environments. This requires significant manual inputs and lacks generalisability. Additionally, extracting comprehensive character traits from long and complex narratives is challenging and remains largely under-explored. Existing research predominantly concentrates on agent behaviours within manually constructed sandboxes."
+  
+  research_objective: "This work aims to develop NarrativePlay, a novel system that allows users to role-play fictional characters and interact with other characters in narratives in an immersive environment. The system leverages LLMs to generate human-like responses guided by personality traits extracted from narratives, incorporating auto-generated visual displays and character speech."
+  
+  significance: "NarrativePlay opens up an interesting avenue for interactive narrative understanding, enabling more sophisticated dialogue systems and deeper analysis of literary texts. It provides a general framework for designing adaptable AI agents for varied scenarios without requiring extensive manual configuration."
+
+tasks:
+  - task_name: "Interactive Narrative Role-Playing"
+    
+    task_overview: "This task enables users to role-play as a fictional character selected from a narrative and interact with other characters in an immersive environment. The system generates human-like responses for non-player characters based on their extracted personality traits, memories, and narrative context. Users progress through main storyline events from their chosen character's perspective."
+    
+    input_description: "Users provide a narrative text, select a character as their perspective, and then input conversational queries or actions directed at other characters during story events. The system receives user inputs along with relevant character memories and current event context."
+    
+    output_description: "The system generates contextually appropriate responses from non-player characters, maintaining consistency with their extracted personalities and narrative roles. Outputs include text responses, character portraits, voice synthesis, and visual representations of narrative settings."
+
+methodology:
+  method_name: "NarrativePlay"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "NarrativePlay employs a multi-module architecture combining narrative extraction, multimodal synthesis, and storyline progression. The system uses ChatGPT (gpt-3.5-turbo) to extract structured information including characters, events, conversations, and settings from input narratives. Character memories are managed using a weighted retrieval system considering relevance, recency, and importance. For visual synthesis, the system leverages stable diffusion models (openjourney, Hotpot AI, Midjourney) to generate character portraits and environment images. Text-to-speech models from FakeYou platform provide unique voices for each character. The approach focuses on main storyline events rather than complete sandbox environments, simplifying complexity while maintaining immersion."
+  
+  base_models:
+    - "ChatGPT (gpt-3.5-turbo)"
+    - "Stable Diffusion models"
+    - "FakeYou TTS models"
+  
+  key_innovations:
+    - "Automatic extraction of comprehensive character traits from narratives without manual configuration"
+    - "Focus on main storyline events from user-selected character perspective instead of predefined sandboxes"
+    - "Weighted memory retrieval system combining relevance, recency, and importance for context-aware responses"
+    - "Integration of multimodal synthesis (text, image, speech) for enhanced immersion"
+    - "Generalizable framework for designing agents across diverse narrative scenarios"
+
+datasets:
+  - dataset_name: "Charlie and the Chocolate Factory (CCF)"
+    
+    characteristics: "Adventure story narrative used for evaluation. Features clear character introductions, straightforward plot progression, and well-defined character traits. Characters maintain consistent personalities throughout the story."
+    
+    usage: "Used for system evaluation including information extraction quality and agent response assessment"
+    
+    size: null
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+    
+  - dataset_name: "Murder on the Orient Express (MOE)"
+    
+    characteristics: "Detective novel narrative with complex character identities, hidden motivations, and deceptive interactions. Characters often hide true identities with clues revealed progressively, presenting greater extraction challenges."
+    
+    usage: "Used for system evaluation to test handling of complex narratives with unreliable narrators"
+    
+    size: null
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "Comprehensive evaluation using both human assessment and automatic evaluation with LLaMA-2-70B. Three annotators read complete narratives and rated agent responses on specifically designed questions across five categories: Character, Clarification, Relationships, Strategy, and Hypothetical questions. Evaluation focused on four aspects: Consistency, Relevance, Empathy, and Commonsense."
+  
+  main_results: "For information extraction, CCF achieved 86.8% accuracy for character summaries and 81.6% for intents, while MOE showed 89.8% for summaries but only 57.6% for intents due to hidden identities. Human evaluation showed agents performed well on relevance (2.97-3.0/3) and commonsense (2.0/2) but fell short on consistency (1.9-2.4/3) and empathy (2.2-2.4/3). Memory-equipped agents outperformed baseline without memory. Major characters in CCF performed better than minor ones, but the opposite was true for MOE due to complexity."
+  
+  metrics_used:
+    - "Extraction accuracy (characters, summaries, intents, appearance)"
+    - "Consistency score (1-3 scale)"
+    - "Relevance score (1-3 scale)"
+    - "Empathy score (1-3 scale)"
+    - "Commonsense score (1-2 scale)"
+    - "Fleiss' kappa for inter-rater agreement"
+  
+  human_evaluation_summary: "Three annotators evaluated agent responses after reading complete narratives. Inter-rater agreement ranged from 0.317 to 1.0 (Fleiss' kappa) across different aspects. Agents with memory consistently outperformed those without, though gaps existed between human and LLaMA-2-70B automatic evaluation."
+
+results_analysis:
+  key_findings:
+    - "Detective narratives pose significantly greater extraction challenges than adventure stories due to hidden identities and progressive revelation"
+    - "Longer prompts do not necessarily yield improved performance and may distract models from core information"
+    - "Memory retrieval significantly improves consistency and empathy in agent responses"
+    - "Character extraction accuracy varies based on narrative complexity, with MOE showing 27.2% incorrect character identification vs 19.1% for CCF"
+  
+  ablation_summary: "Evaluation with and without memory retrieval showed consistent improvements when memory was used. The weighted memory retrieval combining relevance, recency, and importance proved effective for maintaining context-aware responses."
+
+contributions:
+  main_contributions:
+    - "Developed NarrativePlay, a novel web-based platform that transforms narrative inputs into immersive interactive experiences. The system synchronizes text with visual displays of story settings, character portraits, and speech using advanced multimodal LLMs."
+    - "Proposed extraction of character traits from narratives for authentic character generation that produces human-like responses while adhering to predefined roles. This serves as a general framework for designing agents across diverse scenarios without manual configuration."
+    - "Introduced focus on main storyline events from user-chosen perspective instead of resource-intensive predefined sandboxes. This approach simplifies complex worlds into manageable visuals while enhancing adaptability."
+    - "Categorized player behaviours and compiled common questions in interactive narratives to assess agent response quality. Provided comprehensive evaluation framework including human and automatic assessment methods."
+  
+  limitations:
+    - "Manual input required for Midjourney image generation due to lack of API access"
+    - "FakeYou API waiting time adversely affects real-time speech generation"
+    - "System assumes linear event timeline, excluding time jumps or flashbacks"
+
+narrative_understanding_aspects:
+  - "Character / Entity Understanding"
+  - "Story Generation"
+  - "Narrative Question Answering"
+  - "other"  # Interactive narrative role-playing
+
+keywords:
+  - "interactive narrative"
+  - "narrative understanding"
+  - "large language models"
+  - "character extraction"
+  - "multimodal synthesis"
+  - "personality traits"
+  - "memory retrieval"
+  - "immersive storytelling"
+  - "agent-based interaction"
+
+notes: "System demonstration available at http://narrative-play.eastus.cloudapp.azure.com/. Focuses on transforming static narratives into dynamic, interactive experiences without requiring manual sandbox construction."

@@ -1,0 +1,139 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "NEXUSSUM: Hierarchical LLM Agents for Long-Form Narrative Summarization"
+  authors:
+    - "Hyuntak Kim"
+    - "Byung-Hak Kim"
+  year: 2025
+  venue: "ACL"
+  paper_url: null  # Not provided in the paper
+
+problem_statement:
+  background: "Summarizing long-form narratives such as books, movies, and TV scripts remains challenging in NLP. Unlike news or document summarization, narratives require capturing intricate plotlines, evolving character relationships, and thematic coherence over tens of thousands of tokens. The hybrid structure combining descriptive prose with multi-speaker dialogues, implicit inference, and dynamic topic shifts adds further complexity."
+  
+  gap_or_challenge: "Existing methods struggle with long-form narratives for three key reasons: (1) Context window limitations in LLMs lead to information loss when processing extended narratives, (2) Extractive-to-abstractive pipelines risk omitting critical details and disrupting narrative coherence, (3) Zero-shot LLM approaches perform poorly compared to fine-tuned models in narrative summarization, indicating need for task-specific adaptations beyond prompt engineering."
+  
+  research_objective: "This work addresses challenges by investigating: RQ1 - How can a Multi-LLM agent system be designed to summarize long-form narratives while preserving narrative structure and coherence? RQ2 - What impact does dialogue-to-description transformation have on improving summarization consistency and readability? RQ3 - How does iterative compression affect summary length control and content retention?"
+  
+  significance: "NEXUSSUM introduces a multi-agent LLM framework that processes long-form text through a structured, sequential pipeline without requiring fine-tuning, achieving up to 30.0% improvement in BERTScore (F1) across narrative benchmarks and offering a scalable approach for structured summarization in diverse storytelling domains."
+
+tasks:
+  - task_name: "Long-Form Narrative Summarization"
+    
+    task_overview: "Generate comprehensive summaries of long-form narratives (books, movies, TV scripts) that preserve plot coherence, character relationships, and thematic elements. The task requires handling texts ranging from 40K to 160K tokens, processing hybrid structures of descriptive prose and dialogue, and maintaining contextual integrity while condensing information effectively."
+    
+    input_description: "Long-form narrative texts from novels (BookSum - avg 158K tokens), movies (MovieSum - avg 43K tokens, MENSA - avg 40K tokens), and TV scripts (SummScreenFD - avg 9.5K tokens). Texts contain mixed prose-dialogue structures with multi-speaker interactions."
+    
+    output_description: "Abstractive summaries with controlled length ranging from 151 to 1,792 tokens depending on dataset. Summaries must capture key plot points, character interactions, and narrative themes while maintaining coherence and factual accuracy."
+
+methodology:
+  method_name: "NEXUSSUM - Hierarchical Multi-Agent LLM Framework"
+  
+  approach_type: "neural"
+  
+  core_technique: "NEXUSSUM employs a three-stage sequential pipeline with specialized LLM agents. Stage 1 - Preprocessing: Dialogue-to-Description Transformation converts character dialogues into structured third-person prose using Preprocessor agent P, segmenting input into scene-based chunks (8 scenes per chunk). Stage 2 - Narrative Summarization: Narrative Summarizer agent S generates initial abstract summary from preprocessed text using hierarchical chunk processing to maintain long-range coherence. Stage 3 - Iterative Compression: Compressor agent C applies iterative compression through sentence-based chunking and hierarchical refinement, dynamically adjusting based on target word count θ. System uses Mistral-Large-Instruct-2407 (123B) as base model with temperature=0.3, implemented via vLLM on four A100 GPUs. Each stage uses chunk-and-concat method for scalable processing of arbitrary-length narratives."
+  
+  base_models:
+    - "Mistral-Large-Instruct-2407 (123B)"
+    - "Claude 3 Haiku (for comparison)"
+    - "GPT-4o (baseline)"
+    - "GPT-4o-mini (baseline)"
+  
+  key_innovations:
+    - "Dialogue-to-Description Transformation preprocessing that converts dialogue to narrative prose"
+    - "Hierarchical multi-agent pipeline with specialized agents for each summarization stage"
+    - "Dynamic chunk size optimization balancing context retention and processing efficiency"
+    - "Iterative compression with sentence-level granularity for precise length control"
+    - "Training-free approach leveraging prompt engineering and multi-agent collaboration"
+
+datasets:
+  - dataset_name: "BookSum"
+    characteristics: "Novel-based summarization dataset with longest inputs (avg 158,645 tokens) and outputs (avg 1,792 tokens). High coefficient of variation (98.06% input, 46.43% output) indicating diverse text lengths."
+    usage: "Evaluation of long-context comprehension capabilities"
+    size: "17 test samples"
+    domain: "fiction"
+    is_new: false
+    new_dataset_contribution: null
+  
+  - dataset_name: "MovieSum"
+    characteristics: "Movie summaries with moderate-length documents (avg 42,999 tokens input, 902 tokens output)."
+    usage: "Testing multi-scene script summarization"
+    size: "200 test samples"
+    domain: "mixed"
+    is_new: false
+    new_dataset_contribution: null
+  
+  - dataset_name: "MENSA"
+    characteristics: "Script-based dataset combining ScriptBase and recent movie scripts (avg 39,808 tokens input, 952 tokens output). Rich character interactions and scene-based storytelling."
+    usage: "Evaluating character-driven plot summarization"
+    size: "50 test samples"
+    domain: "mixed"
+    is_new: false
+    new_dataset_contribution: null
+  
+  - dataset_name: "SummScreenFD"
+    characteristics: "TV show dataset with concise, highly variable summaries (CV 76.16% for output). Shortest inputs (avg 9,464 tokens) and outputs (avg 151 tokens)."
+    usage: "Testing adaptability to various writing styles"
+    size: "337 test samples"
+    domain: "mixed"
+    is_new: false
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "Comprehensive evaluation using semantic similarity metrics (BERTScore F1 with DeBERTa-XLarge-MNLI), length control metrics (Length Adherence Rate), and human preference analysis. Comparison against three baseline categories: Long Context Modeling (Zero-Shot GPT-4o/Mistral-Large, SLED, Unlimiformer, CachED), Extractive-to-Abstractive (Description Only, Two-Stage Heuristics, Summ N, Select and Summ), and Multi-LLM Agents (HM-SR, CoA). Ablation studies assess contribution of each pipeline stage. Human evaluation on K-Drama summaries using 5-point Likert scale for key events, flow, factuality, and readability."
+  
+  main_results: "NEXUSSUM achieves state-of-the-art performance: BookSum +30.0% BERTScore improvement over CachED (70.7 vs 54.4), MovieSum +7.1% over HM-SR (63.5 vs 59.3), MENSA +1.7% over CachED (65.7 vs 64.6), SummScreenFD matches CachED (61.6). Length Adherence Rate near 1.0 across target lengths (600-1500 words). Ablation shows each stage contributes: P +2.45, S +4.86, C +1.83 BERTScore points. Human evaluation reveals readability trade-off: NEXUSSUM scores higher on key events (4.17 vs 3.5) but lower on readability (2.17 vs 4.17) compared to Zero-Shot."
+  
+  metrics_used:
+    - "BERTScore (F1)"
+    - "ROUGE (1/2/L)"
+    - "Length Adherence Rate (LAR)"
+    - "Human preference scores (5-point Likert)"
+    - "Inference time complexity"
+  
+  human_evaluation_summary: "Three K-Drama experts evaluated summaries across fantasy-romance, historical, and romantic-comedy genres. NEXUSSUM achieves better length control (609 vs 219 words) and factual accuracy but lower readability than Zero-Shot. Introduction of NEXUSSUMR (with refining agent) improves readability from 2.17 to 3.67 while maintaining content quality."
+
+results_analysis:
+  key_findings:
+    - "Multi-agent collaboration essential for performance - each stage contributes incrementally"
+    - "Dialogue-to-Description transformation improves coherence by +2.45 BERTScore points"
+    - "Iterative compression enables precise length control (LAR >0.88) across all target lengths"
+    - "Trade-off between factual density and readability - requires post-processing for fluency"
+    - "Prompt engineering enables adaptation without fine-tuning (+5.0 BERTScore with CoT+Few-Shot)"
+    - "Performance gains highest on longest narratives (BookSum +30.0%)"
+  
+  ablation_summary: "Zero-Shot baseline: 54.81 BERTScore. Adding P: 57.26 (+2.45). P+S: 62.12 (+4.86). S+C: 63.90 (+1.78). Full NEXUSSUM (P+S+C): 65.73 (+1.83). Each component necessary for optimal performance."
+
+contributions:
+  main_contributions:
+    - "First multi-agent LLM framework specifically designed for long-form narrative summarization without fine-tuning."
+    - "Novel Dialogue-to-Description Transformation preprocessing that improves narrative coherence by converting dialogue into structured prose."
+    - "Hierarchical summarization pipeline with specialized agents that progressively refine summaries while preserving contextual dependencies."
+    - "Demonstrated state-of-the-art performance with up to 30.0% BERTScore improvement, particularly excelling on book-length narratives."
+  
+  limitations:
+    - "Automated metrics (BERTScore, ROUGE) fail to capture readability and user preference"
+    - "Human evaluation reveals readability gap - summaries denser and less natural than Zero-Shot"
+    - "Computational overhead from multi-stage processing"
+    - "Limited evaluation on non-English narratives"
+    - "Requires additional refining agent for human-preferred fluency"
+
+narrative_understanding_aspects:
+  - "Story Retelling / Abstract Summaries"
+  - "Character / Event-centric Summaries"
+  - "Plot / Storyline Extraction"
+  - "Narrative Consistency Check"
+
+keywords:
+  - "multi-agent LLM"
+  - "long-form narrative summarization"
+  - "dialogue-to-description transformation"
+  - "hierarchical summarization"
+  - "iterative compression"
+  - "length control"
+  - "narrative coherence"
+  - "chunk-and-concat"
+  - "scene-based processing"
+
+notes: "Work demonstrates potential of multi-agent LLM frameworks for domain-specific narrative summarization. Future work should explore fluency-enhancing frameworks and autonomous context-aware refinement."

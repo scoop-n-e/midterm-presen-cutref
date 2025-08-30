@@ -1,0 +1,119 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Cascading Large Language Models for Salient Event Graph Generation"
+  authors:
+    - "Xingwei Tan"
+    - "Yuxiang Zhou"
+    - "Gabriele Pergola"
+    - "Yulan He"
+  year: 2025
+  venue: "NAACL"
+  paper_url: "https://github.com/Xingwei-Tan/CALLMSAE"
+
+problem_statement:
+  background: "Events are fundamental discourse units forming the backbone of human communication, interconnected through hierarchical, temporal, or causal relations. Event relation graphs represent and understand complex event narratives with nodes as events and edges as relationships. High-quality event relation graphs enhance downstream tasks like question answering and reasoning."
+  
+  gap_or_challenge: "Existing studies on contextualized event graph generation rely on distant supervision from CAEVO, which often results in sparse, low-quality event graphs populated with non-salient events. CAEVO identifies all verbs as events, including trivial ones like 'say' and 'think,' which have minimal connections and contribute little to narrative understanding. Prior methods fail to distinguish salient events crucial for understanding narratives."
+  
+  research_objective: "This work proposes CALLMSAE, a CAscading Large Language Model framework for SAlient Event graph generation, which leverages LLMs to eliminate costly human annotations. The method first identifies salient events by prompting LLMs to generate summaries, then develops an iterative code refinement prompting strategy to generate event relation graphs, removing hallucinated relations and recovering missing edges."
+  
+  significance: "CALLMSAE introduces a novel framework that generates salient and more accurate event graphs, outperforming competitive baselines. The work presents NYT-SEG, a large-scale automatically annotated event graph dataset serving as distant supervision signals. Fine-tuning models on NYT-SEG outperforms models trained on CAEVO data."
+
+tasks:
+  - task_name: "Salient Event Graph Generation"
+    
+    task_overview: "Generate event relation graphs from long documents where nodes represent salient events and edges denote relationships (hierarchical, temporal, causal). The task requires identifying salient events that are crucial for narrative understanding, then constructing directed acyclic graphs representing event relations. The approach uses summarization test to identify salient events and code-based prompting for graph generation."
+    
+    input_description: "Long documents from news articles (New York Times corpus). Documents average 8-10 paragraphs describing event narratives in domains like sports and international politics. Input includes raw text that needs event extraction and relation identification."
+    
+    output_description: "Event relation graphs with salient events as nodes and three types of edges: hierarchical (subevent relations), temporal (happened_before relations), and causal (caused_by relations). Graphs are represented as directed acyclic graphs in NetworkX format with Python code."
+
+methodology:
+  method_name: "CALLMSAE - Cascading LLMs Framework"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "CALLMSAE combines various prompts in a pipelined manner. Stage 1: Generate salient events using summarization test - LLMs first generate summaries then extract events from them. Stage 2: Generate graphs as code completion - formulate prompts as Python code using NetworkX package, generating each relation type (hierarchical, temporal, causal) in separate DAGs. Stage 3: Iterative refinement with hallucination grader - evaluate each generated edge for grounding in document, remove low-confidence edges, then iteratively recover missing edges (max 5 iterations). Stage 4: Complement relation types - predict hierarchical first, use it for temporal prediction, then use both for causal prediction. Implementation uses Llama3-70B as backbone with temperature=0. Evaluation uses novel Hungarian Graph Similarity (HGS) metric based on semantic embeddings (SFR-Embedding-Mistral) and Hungarian assignment algorithm."
+  
+  base_models:
+    - "Llama3-70B-instruct (primary)"
+    - "GPT-4-1106-preview"
+    - "GPT-3.5-turbo"
+    - "Mixtral-8x7B-instruct"
+    - "Flan-T5-base (fine-tuned)"
+    - "BERT/Longformer (baselines)"
+  
+  key_innovations:
+    - "Cascading LLM framework combining summarization for saliency with code-based graph generation"
+    - "Iterative refinement with hallucination grader to balance precision and recall"
+    - "Code prompting strategy for efficient single-pass relation generation"
+    - "Hungarian Graph Similarity metric for semantic-based evaluation of abstractive graphs"
+    - "Dependent relation generation leveraging hierarchical→temporal→causal ordering"
+
+datasets:
+  - dataset_name: "NYT-SEG"
+    characteristics: "Large-scale event graph dataset from New York Times corpus. 10,347 documents total (10,231 LLM-generated training, 100 human-annotated test). Documents selected based on descriptors indicating event narratives (sports, international politics). Average 8-10 paragraphs per document. Human annotations include salient event identification and three relation types."
+    usage: "Primary dataset for training and evaluating salient event graph generation"
+    size: "10,347 documents with 757 human-annotated relations in test set"
+    domain: "news"
+    is_new: true
+    new_dataset_contribution: "First large-scale dataset focusing on salient event graphs with three major relation types. Unlike CAEVO which extracts all verbs as events, NYT-SEG focuses on narrative-critical salient events. Includes both LLM-generated distant supervision and human-annotated test set with inter-annotator agreement F1=0.819 for events and 0.677 for relations."
+
+evaluation:
+  evaluation_strategy: "Multi-faceted evaluation combining saliency metrics, graph quality assessment, and human evaluation. Saliency evaluated using frequency, first appearance, and stretch size features. Graph quality assessed using Hungarian Graph Similarity (HGS) with precision-oriented and recall-oriented variants. Comparison against CAEVO, fine-tuned models (Madaan et al., Tan et al.), and LLM baselines. Human evaluation on 50 documents for precision assessment. Format error and cycle detection for constraint violation checking."
+  
+  main_results: "Saliency: LLM-generated events show similar saliency to human annotations (frequency 0.09-0.10 vs 0.11 human) while CAEVO shows low saliency (0.05). Graph quality: CALLMSAE achieves best overall HGS (hierarchical 0.334, temporal 0.327, causal 0.295). Fine-tuned T5 on CALLMSAE data outperforms all CAEVO-based models (overall HGS 0.348 vs 0.131 best CAEVO). Human evaluation confirms superiority (0.69 vs 0.60 baseline). Llama3 shows zero format errors and cycles while GPT-3.5 has 10.67% cycles."
+  
+  metrics_used:
+    - "Hungarian Graph Similarity (HGS)"
+    - "Precision-oriented HGS (PHGS)"
+    - "Recall-oriented HGS (RHGS)"
+    - "Event saliency features (frequency, first appearance, stretch size)"
+    - "Inter-annotator agreement F1"
+    - "Human evaluation precision scores"
+    - "Format error and cycle rates"
+  
+  human_evaluation_summary: "3 annotators recruited from Prolific annotated 100 documents. Inter-annotator agreement F1=0.819 for salient events, 0.677 for relations. Additional evaluation on 50 documents shows CALLMSAE precision 0.69 vs baseline 0.60. Annotators confirmed Mixtral-generated events significantly more salient than CAEVO (F1 52.59% vs 3.49%)."
+
+results_analysis:
+  key_findings:
+    - "LLM-generated events are significantly more salient than CAEVO events (2x frequency, better stretch)"
+    - "Code prompting achieves O(1) complexity vs O(n²) for baseline prompts"
+    - "Hallucination grader effectively increases precision while maintaining recall"
+    - "Dependent relation generation improves precision (temporal 0.211 vs 0.153 without hierarchical)"
+    - "Fine-tuned T5 on CALLMSAE data exceeds CALLMSAE itself, showing effective pattern learning"
+    - "Llama3 demonstrates superior constraint understanding with zero cycles"
+  
+  ablation_summary: "Without iterative refinement: lower precision across all relations. Without dependent relations: temporal HGS drops from 0.341 to 0.283, causal remains similar. Baseline prompt without code format: higher recall but much lower precision (0.076 vs 0.196 hierarchical). Code prompt alone without hallucination grader: higher recall but lower precision."
+
+contributions:
+  main_contributions:
+    - "CALLMSAE: First cascading LLM framework for salient event graph generation serving as distant signal generator for contextualized models."
+    - "Novel contextualized evaluation metric (Hungarian Graph Similarity) for comparing salient event graphs based on semantic embeddings."
+    - "NYT-SEG: Large-scale LLM-generated salient event graph dataset with 10,231 training documents and 100 human-annotated test documents."
+    - "Demonstration that salient event graphs significantly improve contextualized graph generation, with fine-tuned models outperforming CAEVO-based approaches."
+  
+  limitations:
+    - "Computational cost: 2,200 wall clock hours for generating NYT-SEG dataset"
+    - "Not all prompt combinations explored due to extensive recent literature"
+    - "Potential bias in LLM saliency preferences based on training data"
+    - "Code template length limits demonstration examples in prompts"
+    - "Risk of privacy concerns if applied to user-generated content"
+
+narrative_understanding_aspects:
+  - "Plot / Storyline Extraction"
+  - "other"  # Salient event graph generation
+
+keywords:
+  - "salient event graphs"
+  - "cascading LLMs"
+  - "event relation extraction"
+  - "code prompting"
+  - "hallucination grading"
+  - "iterative refinement"
+  - "Hungarian graph similarity"
+  - "distant supervision"
+  - "narrative understanding"
+
+notes: "Code and data available at https://github.com/Xingwei-Tan/CALLMSAE. Work demonstrates effective use of LLMs for generating high-quality distant supervision without human annotation."

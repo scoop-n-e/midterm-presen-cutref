@@ -1,0 +1,162 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "RoleMRC: A Fine-Grained Composite Benchmark for Role-Playing and Instruction-Following"
+  authors:
+    - "Junru Lu"
+    - "Jiazheng Li"
+    - "Guodong Shen"
+    - "Lin Gui"
+    - "Siyu An"
+    - "Yulan He"
+    - "Di Yin"
+    - "Xing Sun"
+  year: 2025
+  venue: "arXiv"
+  paper_url: "https://github.com/LuJunru/RoleMRC"
+
+problem_statement:
+  background: "Role-playing is important for Large Language Models (LLMs) to follow diverse instructions while maintaining role identity and the role's pre-defined ability limits. Modern LLMs are designed to interact with human users under certain role-playing settings, serving as AI assistants, personalized agents, leisure partners, content creators, and social experimental simulators."
+  
+  gap_or_challenge: "Existing role-playing datasets mostly contribute to controlling role style and knowledge boundaries, but overlook role-playing in instruction-following scenarios. Current datasets focus on a single aspect of role-playing rather than fine-grained, multi-layered instructions such as nested or prioritized requests. They lack focus on role-playing over fine-grained instruction-following capabilities."
+  
+  research_objective: "This work introduces RoleMRC, a fine-grained role-playing and instruction-following composite benchmark aimed at enhancing and evaluating the diverse role-playing and instruction-following capabilities of LLMs. The dataset covers free chats, on-scene dialogues, and ruled chats with nested, multi-turn and prioritized instructions."
+  
+  significance: "RoleMRC offers the most comprehensive role-playing dataset to date with 10.2k structured role profiles. It provides a framework for evaluating fine-grained role-playing and instruction-following capabilities orthogonal to existing approaches and demonstrates that models fine-tuned on RoleMRC enhance instruction-following without compromising general role-playing and reasoning capabilities."
+
+tasks:
+  - task_name: "Free Chats"
+    
+    task_overview: "Multi-turn open-domain conversations between roles and imagined users based on standardized role profiles. The simplest form of role-playing dialogue where roles and users interact freely without fixed topics or specific constraints. Includes variations with/without narration (vivid descriptions of role's speaking state from omniscient perspective) and different initial speakers."
+    
+    input_description: "Standardized role profile with seven components (Role Name/Description, Abilities/Skills, Speech Style, Personality, Experience/Background, Knowledge Boundaries, Speech Examples). Optional narration control flags."
+    
+    output_description: "Multi-turn dialogue with average 9.47 turns and 38.62 words per reply. Role responses maintaining character consistency, speech style, and appropriate narration insertion when enabled."
+  
+  - task_name: "On-scene MRC Dialogues"
+    
+    task_overview: "Role-playing conversations focused on Machine Reading Comprehension passages. Includes multi-turn dialogues about relevant passages and single-turn QA where roles provide stylized answers, refusals for unanswerable questions, or attempts for out-of-boundary questions. Eight types based on answerability and knowledge boundaries."
+    
+    input_description: "Role profile, MRC triplet (Passage, Question, Answer), relevance category (most/least relevant to role). For multi-turn: passage context. For single-turn: specific QA scenario type."
+    
+    output_description: "Multi-turn dialogue (9.2 turns avg) or single-turn response: stylized answer (if answerable and within boundary), refusal (if unanswerable), or attempt (if outside knowledge boundary). Average 39-48 words per reply."
+  
+  - task_name: "Ruled Chats"
+    
+    task_overview: "Complex instruction-following scenarios with additional rules applied to On-scene MRC Dialogues. Three rule types: Multi-turn (forcing answers after refusal), Nested formatting (emojis, capitalization, punctuation, word count), and Prioritized (conflicting system vs role ability instructions). Tests adherence to higher-level constraints."
+    
+    input_description: "On-scene MRC dialogue setup plus specific rule instructions. Multi-turn: user prompt forcing answer. Nested: formatting requirements. Prioritized: global refusal directive from system."
+    
+    output_description: "Role responses following specified rules while maintaining character. Multi-turn: 2-turn average with maintained refusal or transformed attempt. Nested/Prioritized: single-turn with format compliance or conflict resolution. 42-46 words per reply average."
+
+methodology:
+  method_name: "RoleMRC Construction and Evaluation Pipeline"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "Three-step pipeline: (1) Meta-pool creation - Sample 10.5k personas from PersonaHub, expand to standardized role profiles via GPT-4o with 7 components, filter to 10.2k final profiles. (2) MRC matching - Create 808.7k MRC retrieval pool from MS-MARCO, use SFR-Embedding for inner product search to find most/least relevant MRC triplets per role. (3) Multi-stage dialogue synthesis - Generate 38k instructions across Free Chats (4 variations), On-scene Dialogues (5k chats + 8k single-turn QA), Ruled Chats (3 rule types). Evaluation: Reference-based metrics (BLEU, ROUGE, METEOR, BERTScore) and reference-free LLM-as-judge across 5 dimensions (Knowledge Boundary, Role Style, Multi-turn/Nested/Prioritized Instruction-following). Post-tuning: SFT on single-label data, DPO on pair-label data. Neuron-level analysis to identify and constrain alignment tax."
+  
+  base_models:
+    - "GPT-3.5-turbo"
+    - "GPT-4o (synthesis and baseline)"
+    - "LLaMA3.1-8B/70B-Instruct"
+    - "Qwen2.5-7B/72B-Instruct"
+    - "CharacterGLM-6B"
+    - "Humanish-Llama-3.1-8B"
+    - "Peach-9B-Roleplay"
+  
+  key_innovations:
+    - "First large-scale fine-grained role-playing instruction-following dataset"
+    - "10.2k structured role profiles with 7 standardized components"
+    - "Integration of MRC with role-playing for knowledge boundary testing"
+    - "Three-category dialogue synthesis (Free/On-scene/Ruled)"
+    - "Pair-label data for preference optimization alongside single-label"
+    - "Five-dimension LLM-as-judge evaluation framework"
+    - "Neuron-level analysis and targeted constraints for alignment tax mitigation"
+
+datasets:
+  - dataset_name: "RoleMRC"
+    characteristics: "37.9k role-playing instructions with 10.2k role profiles. Three categories: Free Chats (5k, 9.47 turns), On-scene MRC Dialogues (13k including 5k chats and 8k single-turn), Ruled Chats (5.6k with multi-turn/nested/prioritized rules). 24k single-label for SFT, 14k pair-label for HPO. Average 3.5 turns, 40.6 words per reply."
+    usage: "Training and evaluation for role-playing instruction-following"
+    size: "37.9k instructions, 1.4k test samples"
+    domain: "mixed"
+    is_new: true
+    new_dataset_contribution: "Fine-grained role-playing with instruction-following scenarios, MRC integration, structured role profiles"
+  
+  - dataset_name: "RoleMRC-mix"
+    characteristics: "Robust version combining RoleMRC with external data. Includes RoleBench (16k), RLHFlow (40k), UltraFeedback (14k pair-label). Total 107.7k instructions. Prevents catastrophic forgetting during fine-tuning."
+    usage: "Robust training combining role-playing and general instructions"
+    size: "107.7k total (80k single-label, 28k pair-label)"
+    domain: "mixed"
+    is_new: true
+    new_dataset_contribution: "Integration of role-playing with general instruction data"
+  
+  - dataset_name: "MS-MARCO"
+    characteristics: "Machine reading comprehension dataset used to create retrieval pool of 808.7k MRC triplets for role-knowledge matching"
+    usage: "Source for MRC passages and questions"
+    size: "808.7k triplets used"
+    domain: "general"
+    is_new: false
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "Multi-faceted evaluation combining reference-based metrics and LLM-as-judge. Reference-based: BLEU, ROUGE-1/2/L/Lsum, METEOR, BERTScore F1 on 1.4k test set. Reference-free LLM-as-judge (GPT-4-turbo): Binary evaluation across 5 dimensions - Knowledge Boundary (answer vs refusal), Role Style (maintaining character), Multi-turn/Nested/Prioritized Instruction-following. External validation on RoleBench, CharacterLLM, and 9 general benchmarks. Neuron-level analysis of activation patterns between SFT and DPO models."
+  
+  main_results: "RoleMRC-SFT models achieve 8× BLEU improvement over base models (0.1782-0.1963 vs 0.02). DPO models excel in LLM-as-judge (97% Role Style accuracy) but lower reference-based scores. GPT-4o outperforms GPT-3.5 marginally. Larger models consistently better. On external RoleBench: RoleMRC models achieve best ROUGE scores (0.4442 ROUGE-1). CharacterLLM OOD: 6.53 best score. General benchmarks: maintained or improved performance (avg +1-11% gain). Neuron constraint improves multi-turn by 1.6%."
+  
+  metrics_used:
+    - "BLEU"
+    - "ROUGE-1/2/L/Lsum"
+    - "METEOR"
+    - "BERTScore F1"
+    - "LLM-as-judge accuracy (5 dimensions)"
+    - "OOD evaluation scores"
+  
+  human_evaluation_summary: null  # No human evaluation reported
+
+results_analysis:
+  key_findings:
+    - "SFT models excel at reference-based metrics (8× BLEU improvement)"
+    - "DPO models superior in instruction-following (97% Role Style accuracy)"
+    - "Trade-off between lexical matching and instruction compliance"
+    - "RoleMRC training enhances both role-playing and general capabilities"
+    - "No overfitting: models perform well on OOD CharacterLLM dataset"
+    - "Alignment tax identified in multi-turn instruction-following"
+    - "Neuron-level constraints mitigate alignment tax by 1.6%"
+    - "Layers 12-31 show significant activation differences between SFT/DPO"
+  
+  ablation_summary: "Neuron-level analysis reveals layers 3-11 have minimal changes between SFT/DPO while layers 12-31 (especially layer 19) show substantial activation differences. Constraining most-changed neurons with factor (1-10^-6) improves Knowledge Boundary (+2.66%), Role Style (-2.5% trade-off), Multi-turn (+1.6%), maintaining other dimensions."
+
+contributions:
+  main_contributions:
+    - "RoleMRC: First large-scale fine-grained role-playing instruction-following dataset with 37.9k instructions and 10.2k role profiles."
+    - "Comprehensive evaluation pipeline combining reference-based metrics and 5-dimension LLM-as-judge framework."
+    - "Integration of MRC with role-playing for systematic knowledge boundary testing."
+    - "Demonstration that RoleMRC training enhances instruction-following without compromising general capabilities."
+    - "Neuron-level analysis identifying alignment tax and targeted constraint method for mitigation."
+  
+  limitations:
+    - "System-level prompts in synthesized instructions somewhat similar, limiting generalizability"
+    - "Reliance on GPT-4o synthetic data may introduce model biases"
+    - "Neuron-level constraints for alignment tax may negatively impact other capabilities"
+    - "Dataset focuses on character-centric rather than individual-centric role-playing"
+    - "Further interpretability research needed for understanding alignment constraints"
+
+narrative_understanding_aspects:
+  - "Character / Entity Understanding"  # Role profiles and character consistency
+  - "Free-Form QA"  # MRC-based question answering in role context
+  - "other"  # Role-playing instruction-following
+
+keywords:
+  - "role-playing"
+  - "instruction-following"
+  - "fine-grained evaluation"
+  - "machine reading comprehension"
+  - "LLM alignment"
+  - "neuron-level analysis"
+  - "preference optimization"
+  - "character consistency"
+  - "knowledge boundaries"
+  - "multi-turn dialogue"
+
+notes: "Code and data available at https://github.com/LuJunru/RoleMRC. Dataset features novel integration of role-playing with MRC and complex instruction scenarios. Neuron-level analysis provides insights into alignment tax phenomenon."

@@ -1,0 +1,126 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Large Language Models Fall Short: Understanding Complex Relationships in Detective Narratives"
+  authors:
+    - "Runcong Zhao"
+    - "Qinglin Zhu"
+    - "Hainiu Xu"
+    - "Jiazheng Li"
+    - "Yuxiang Zhou"
+    - "Yulan He"
+    - "Lin Gui"
+  year: 2024
+  venue: "Findings of ACL"
+  paper_url: "https://aclanthology.org/2024.findings-acl.454/"
+
+problem_statement:
+  background: "Tasks like multi-agent interaction and character-centric narrative understanding require deeper understanding of complex relationships among multiple entities. Detective stories, where characters adopt multiple identities revealed at various points, are the most appropriate testbed for assessing LLMs' capability of deducing complex relationships."
+  
+  gap_or_challenge: "Existing datasets for narrative understanding are either built on well-known stories that LLMs have trained on or consist of simpler texts like children's stories. Real-life relationships are characterized by incomplete and uncertain information, with differing interpretations that may conflict based on different perspectives. Characters may have multiple identities, secrets known only to few, and relationships that require inference from multiple perspectives."
+  
+  research_objective: "This work introduces Conan (COntextual Narrative ANalysis), a new benchmark designed for extracting and analyzing intricate character relation graphs from detective narratives. The benchmark incorporates hierarchical relationship categories and role-oriented relationships from various character perspectives, including both public and secret relationships."
+  
+  significance: "The benchmark serves as a critical test for assessing LLMs' reasoning capabilities in understanding nuanced relational dynamics. It reveals significant limitations in current LLMs' ability to inference complex relationships and handle longer narratives, providing valuable insights for improving narrative understanding capabilities."
+
+tasks:
+  - task_name: "Character Extraction"
+    task_overview: "This task involves identifying all characters appearing in a given detective narrative. Characters may have different identities or aliases that surface at different points in the story. The task becomes challenging as LLMs often confuse targeted entities with other types like organizations, items, or locations, and struggle with coreference resolution across long-distance mentions."
+    input_description: "Detective narrative text from either a single character's perspective or from all characters' perspectives combined."
+    output_description: "List of all characters identified in the narrative, including those with multiple identities or aliases."
+
+  - task_name: "Entity Linking"
+    task_overview: "This task involves recognizing character relationships from the perspective of a specific character. It requires extracting both explicit and implicit relationships while accounting for scenarios where a single character has multiple identities. The task must handle perspective-based variations where relationships may be perceived differently by different characters."
+    input_description: "Narrative from a specific character's perspective and the character whose perspective is being analyzed."
+    output_description: "Relationship triplets in the format (ci, cj, ri,j) where ri,j signifies the relationship between characters ci and cj from ci's perspective."
+
+  - task_name: "Relation Deduction"
+    task_overview: "This task infers the actual relationships between characters by considering narratives from all character perspectives collectively. It involves resolving conflicting information arising from imperfect knowledge, secrets, misunderstandings, and lies among characters. The task requires distinguishing between truth, deception, and perception to accurately infer relationships."
+    input_description: "Collection of all character-centric narratives providing multiple perspectives on the same events and relationships."
+    output_description: "Unified relationship graph that resolves conflicts and deduces the genuine nature of relationships across all characters."
+
+methodology:
+  method_name: "Conan Benchmark Framework"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "The framework employs three distinct strategies for relation detection. AllTogether directly outputs a complete relationship graph from the narrative. DirRelation first extracts characters then generates relationships to minimize error propagation. PairRelation extracts characters, queries relationships for each character pair, then aggregates results. The approach uses hierarchical relationship categories (5 top-level, 54 intermediate, 163 detailed) based on social science definitions. For long narratives exceeding LLM input limits, the method segments text and iteratively updates relationship graphs. Manual annotation by detective narrative experts provides ground truth, with distinction between public relationships (known to most), secret relationships (known to few), and inferred relationships (deduced from synthesis)."
+  
+  base_models:
+    - "GPT-3.5-turbo-16k"
+    - "GPT-4-turbo"
+    - "Llama-2-70b-chat"
+  
+  key_innovations:
+    - "Hierarchical relationship categorization system with 163 fine-grained categories organized into three levels for nuanced evaluation"
+    - "Role-oriented relationship annotation from multiple character perspectives capturing public, secret, and inferred relationships"
+    - "Three distinct relation detection strategies addressing different aspects of the challenge"
+    - "Iterative graph updating mechanism for handling narratives exceeding LLM context limits"
+    - "Comprehensive error analysis revealing specific failure modes in complex narrative understanding"
+
+datasets:
+  - dataset_name: "Conan (COntextual Narrative ANalysis)"
+    
+    characteristics: "100 high-quality detective narratives from Chinese murder mystery games, featuring complex character relationships with multiple identities, secrets, and conflicting perspectives. Average 27,695 tokens per narrative with ~18.72 characters per story. Narratives significantly longer and more complex than existing benchmarks."
+    
+    usage: "Primary benchmark for evaluating LLM capability in understanding complex character relationships in detective narratives"
+    
+    size: "100 narratives (24 human-annotated with 7,951 relationships, 76 GPT-4 annotated)"
+    
+    domain: "fiction"
+    
+    is_new: true
+    
+    new_dataset_contribution: "First benchmark specifically designed for complex relationship extraction in detective narratives. Features hierarchical relationship categories, multi-perspective annotations, and distinction between public/secret/inferred relationships. Significantly longer and more complex than existing narrative understanding datasets."
+
+evaluation:
+  evaluation_strategy: "Multi-level evaluation using F1-scores at three hierarchical relationship levels. Character extraction evaluated separately with precision/recall. Relationship extraction assessed through triplet matching. Special evaluation for complex relationships (secret/inferred). Analysis of corruption rate for format compliance. Comparison across three strategies and narrative lengths. Inter-annotator agreement measured using F1-score following established triplet agreement measures."
+  
+  main_results: "GPT-4 achieves best performance with F1 0.276 on single character perspective using AllTogether strategy, dropping to 0.125 for all perspectives. Character extraction F1: GPT-4 0.772, GPT-3.5 0.680, Llama2 0.620. Significant performance degradation with narrative length - F1 drops from ~0.4 for short narratives to near 0 for 70K+ tokens. Complex relationships (secret/inferred) show lower accuracy than public relationships. High corruption rates: Llama2 44.5%, GPT-3.5 31%, GPT-4 14.3% before correction."
+  
+  metrics_used:
+    - "F1-score (character extraction, relationship extraction)"
+    - "Precision and Recall"
+    - "Corruption Rate"
+    - "Inter-annotator Agreement (Fleiss-kappa: 0.974 for characters, 0.782 for relationships)"
+  
+  human_evaluation_summary: "Four annotators (detective narrative fans) achieved high agreement: 0.974 for character extraction, 0.817 for relationship pairs, 0.782 for complete relationship triplets. Manual annotation estimated at 10 hours per narrative at $31.92/hour. One narrative removed due to ambiguous relationships."
+
+results_analysis:
+  key_findings:
+    - "LLMs struggle significantly with complex relationships - GPT-4 best F1 only 0.276 for single perspective"
+    - "Performance degrades sharply with narrative length due to 'lost in the middle' phenomenon"
+    - "Secret and inferred relationships show lower accuracy (0.072) compared to all relationships (0.082)"
+    - "Character extraction unexpectedly challenging - GPT-4 precision drops from 0.755 to 0.736 between perspectives"
+    - "PairRelation strategy increases recall but amplifies hallucinations, making it least effective overall"
+  
+  ablation_summary: "Gold character lists improve relationship extraction F1 by 31-74% across models. DirRelation best for Llama2/GPT-3.5, AllTogether best for GPT-4. Self-correction beneficial for Llama2/GPT-3.5 but counterproductive for GPT-4."
+
+contributions:
+  main_contributions:
+    - "Introduction of Conan benchmark - first dataset specifically designed for complex relationship extraction in detective narratives with hierarchical categories and multi-perspective annotations."
+    - "Comprehensive evaluation revealing fundamental limitations of current LLMs in understanding complex narrative relationships, with best model achieving only 27.6% F1-score."
+    - "Development of three distinct strategies for relationship extraction, with empirical analysis of their effectiveness across different scenarios and narrative lengths."
+    - "Identification of specific failure modes including lost-in-middle phenomenon, character duplication, and systematic struggles with secret/inferred relationships."
+  
+  limitations:
+    - "Annotator interpretations may vary despite clear guidelines"
+    - "Limited to 24 human-annotated narratives due to cost (~$31.92/hour, 10 hours per narrative)"
+    - "Single run evaluation of each LLM due to high computational costs"
+    - "Dataset limited to detective narratives, may not generalize to other narrative types"
+
+narrative_understanding_aspects:
+  - "Character / Entity Understanding"
+  - "other"  # Complex relationship extraction and inference
+
+keywords:
+  - "character relationships"
+  - "detective narratives"
+  - "narrative understanding"
+  - "entity linking"
+  - "relation extraction"
+  - "multi-perspective analysis"
+  - "LLM evaluation"
+  - "complex inference"
+
+notes: "Dataset includes content warnings for violence. Code and dataset available at https://github.com/BLPXSPG/Conan. Original narratives in Chinese with English translations provided."

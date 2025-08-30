@@ -1,0 +1,111 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Chronological Passage Assembling in RAG framework for Temporal Question Answering"
+  authors:
+    - "Byeongjeong Kim"
+    - "Jeonghyun Park"
+    - "Joonho Yang"
+    - "Hwanhee Lee"
+  year: 2025
+  venue: "arXiv"
+  paper_url: null  # Not provided in paper
+
+problem_statement:
+  background: "Long-context question answering over narrative tasks is challenging because correct answers often hinge on reconstructing a coherent timeline of events while preserving contextual flow in a limited context window. Modern transformer-based LLMs face fundamental limitations with extremely long-form text - processing extensive documents for every query leads to major computational inefficiency, and as context grows longer, models' ability to accurately identify and prioritize relevant information decreases."
+  
+  gap_or_challenge: "A fundamental methodological gap exists in most RAG frameworks: they primarily treat documents as a collection of short, independently-retrieved snippets of information. This methodology fundamentally conflicts with the sequential nature of long-form narratives. Narrative texts are uniquely defined by their structure; they can be extremely long, their individual passages often fail to convey the full story unless read in order, and grasping the chronological and relational connections between passages is essential for comprehension."
+  
+  research_objective: "This work proposes ChronoRAG, a novel RAG framework specialized for narrative texts. The approach focuses on two essential aspects: refining dispersed document information into coherent and structured passages, and preserving narrative flow by explicitly capturing and maintaining the temporal order among retrieved passages."
+  
+  significance: "ChronoRAG demonstrates substantial improvements in tasks requiring both factual identification and comprehension of complex sequential relationships on NarrativeQA dataset. The framework achieves significant improvements using lighter graph construction and retrieval mechanisms than existing summary and graph-based methods, underscoring that reasoning over temporal order is crucial in resolving narrative QA."
+
+tasks:
+  - task_name: "Long-Context Narrative Question Answering"
+    
+    task_overview: "Answer questions about narrative texts that require understanding event sequences and temporal relationships. The task involves reconstructing coherent timelines of events while preserving contextual flow. Questions often require reasoning over multiple related events and understanding chronological connections between passages."
+    
+    input_description: "Long narrative documents (stories, scripts) from NarrativeQA dataset, divided into episodes/chunks. User queries that may require temporal reasoning, particularly 'Time Questions' containing temporal keywords like 'When', 'While', 'During', 'After', 'Before'."
+    
+    output_description: "Generated answers that accurately respond to queries by leveraging temporal context and event sequences. Answers evaluated using ROUGE-L metric for overlap with human references."
+
+methodology:
+  method_name: "ChronoRAG"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "Two-stage framework: (1) Offline Graph Construction - Document chunking (100 tokens), chunk summarization (group 10 chunks), entity-relation extraction from summaries, indexing with narrative order, neighborhood assembling for context. Creates two-layer graph: Layer 0 (original chunks) and Layer 1 (relation descriptions). (2) Online Passage Retrieval - Hierarchical retrieval from Layer 1 (high-precision relations) then Layer 0 (detailed chunks) using child indices. Key-value separation where keys are relation descriptions and values are neighboring passages concatenated in index order. This preserves coherent local storyline rather than isolated facts."
+  
+  base_models:
+    - "meta-llama-3-8B-Instruct (summarization/extraction)"
+    - "arctic-Snowflake-embed-l (embeddings)"
+    - "unifiedqa-v2-t5-3b-1363200 (answer generation)"
+  
+  key_innovations:
+    - "Chronological passage assembling that preserves narrative flow"
+    - "Key-value separation for retrieval (relations as keys, context as values)"
+    - "Two-layer hierarchical graph with narrative-order indexing"
+    - "Neighborhood assembling to provide surrounding context"
+    - "Focus on temporal relationships over entity extraction"
+
+datasets:
+  - dataset_name: "NarrativeQA"
+    characteristics: "355 stories and scripts with 10,557 question-answer pairs. Includes subset of 1,111 'Time Questions' containing temporal keywords that require retrieving and reasoning over multiple related events. Short, pronoun-heavy answers make ROUGE-L effective for evaluation."
+    usage: "Primary evaluation dataset for narrative QA"
+    size: "10,557 QA pairs (1,111 Time Questions)"
+    domain: "fiction"
+    is_new: false
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "Compare ChronoRAG against five baselines: NaiveRAG (standard chunk retrieval), RAPTOR (recursive summarization tree), LightRAG (entity-relation graph), GraphRAG (detailed relation weighting), and Propositionizer (atomic facts). All methods use identical hyperparameters: top-k=20 retrieval, 1500 token context limit, same LLMs for processing. Evaluation on full NarrativeQA and Time Question subset using ROUGE-L metric."
+  
+  main_results: "Full dataset: ChronoRAG 0.308, RAPTOR-CT 0.297, RAPTOR-TT 0.295, Propositionizer 0.262, NaiveRAG 0.255, LightRAG 0.240, GraphRAG 0.200. Time Questions: ChronoRAG 0.268, RAPTOR-CT 0.261, RAPTOR-TT 0.259, Propositionizer 0.238, NaiveRAG 0.227, LightRAG 0.214, GraphRAG 0.185. ChronoRAG achieves best performance on both sets."
+  
+  metrics_used:
+    - "ROUGE-L (Longest Common Subsequence overlap)"
+  
+  human_evaluation_summary: null  # No human evaluation reported
+
+results_analysis:
+  key_findings:
+    - "ChronoRAG outperforms all baselines on both full dataset and Time Questions"
+    - "Restructuring events into clear temporal order provides most coherent context"
+    - "GraphRAG performs worst due to exhaustive entity extraction creating noise"
+    - "Summarization-based methods (RAPTOR) follow but still lag behind"
+    - "Ablation shows chunk summarization crucial (0.308→0.272 without)"
+    - "Passage assembling important for Time Questions (0.268→0.252 without)"
+    - "Trade-off: extending linking window reduces retrieval quality"
+  
+  ablation_summary: "Without summarization: 0.272 (whole), 0.233 (time). Without passage assembling: 0.295 (whole), 0.252 (time). Without relation extraction: 0.255 (whole), 0.227 (time). Chunk summarization has twofold effect: makes retrieval easier and clarifies flow during assembling."
+
+contributions:
+  main_contributions:
+    - "Identification that resolving narrative QA requires leveraging event chronology and preserving contextual flow."
+    - "ChronoRAG: Novel RAG framework that refines raw text into structured passages with explicit temporal links."
+    - "Demonstration that simple passage augmentation connecting adjacent events outperforms complex graph methods."
+    - "Evidence that event-to-event relations drive performance gains over entity extraction for narrative understanding."
+  
+  limitations:
+    - "Trade-off between linking window size and number of retrieved passages"
+    - "Linear cost increase with document length for graph construction"
+    - "Framework specialized for narrative texts, may not generalize to other domains"
+    - "Evaluation limited to single dataset (NarrativeQA)"
+
+narrative_understanding_aspects:
+  - "Narrative QA"  # Core focus on narrative question answering
+  - "Plot / Storyline Extraction"  # Temporal order and event sequences
+  - "other"  # Chronological coherence and temporal reasoning
+
+keywords:
+  - "retrieval-augmented generation"
+  - "narrative question answering"
+  - "temporal reasoning"
+  - "chronological coherence"
+  - "passage assembling"
+  - "hierarchical retrieval"
+  - "NarrativeQA"
+  - "event sequences"
+  - "contextual flow"
+
+notes: "Paper demonstrates that maintaining temporal order and contextual flow is crucial for narrative understanding. ChronoRAG achieves state-of-the-art results with simpler mechanisms than existing graph-based methods."

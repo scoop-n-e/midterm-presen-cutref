@@ -1,0 +1,142 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "BOOKWORM: A Dataset for Character Description and Analysis"
+  authors:
+    - "Argyrios Papoudakis"
+    - "Mirella Lapata"
+    - "Frank Keller"
+  year: 2024
+  venue: "EMNLP (Findings)"
+  paper_url: "https://aclanthology.org/2024.findings-emnlp.258/"
+
+problem_statement:
+  background: "Characters are at the heart of every story, driving the plot and engaging readers. Previous work has focused on detecting characters, understanding latent personas, their emotions, and their relationships. Most prior research studies characters in short stories or adopts relatively simplistic analysis methods when it comes to long narratives."
+  
+  gap_or_challenge: "Long stories typically contain a large number of characters with complex relationships and interactions which have a key role in the plot. Characters in long stories are dynamic, developing throughout the story with changing personalities, motivations, and relationships. Long narratives exceed the input length that many current transformer-based architectures can process. Using book summaries to describe characters significantly simplifies and restricts the task, as summaries contain limited information and omit important details."
+  
+  research_objective: "This work focuses on analyzing characters in long-form stories from a text-generation perspective, introducing two tasks: character description (generating a brief factual profile) and character analysis (producing an in-depth interpretation including character development, personality, and social context). The work also introduces joint character description where models generate descriptions for every character sequentially."
+  
+  significance: "The approach can help explore vast datasets of stories with applications in recommender systems and computational analysis of literature. It enables more sophisticated dialogue systems and deeper analysis of literary texts, providing a general framework for character understanding in full-length books."
+
+tasks:
+  - task_name: "Character Description"
+    
+    task_overview: "This task generates a brief factual profile of a character including their actions, relationships, and attributes. The task focuses on producing concise descriptions that capture the essential characteristics and role of a character within the narrative. The model must process book-length texts to extract relevant character information and generate coherent summaries of character traits."
+    
+    input_description: "Full-length books from the Gutenberg Project (average ~100k tokens) paired with a target character name. The input can be processed using different strategies including truncation, retrieval-based extraction (BM25 or coreference-based), or hierarchical processing."
+    
+    output_description: "A brief character description averaging 88 words that includes the character's attributes, relationships, actions, and role in the story. Descriptions should be factual and focus on observable characteristics rather than interpretation."
+
+  - task_name: "Character Analysis"
+    
+    task_overview: "This task produces an in-depth interpretation of a character's personality and behavior, including how the character develops throughout the story, their motives, and the social context. The analysis goes beyond surface-level traits to critically analyze the character's depth, complexity, and evolution within the narrative context. It typically explores social, political, or historical contexts relevant to understanding the character."
+    
+    input_description: "Full-length books from the Gutenberg Project (average ~95k tokens) paired with a target character name. Similar processing strategies as the description task can be applied."
+    
+    output_description: "A detailed character analysis averaging 602 words that interprets the character's development, personality, motivations, relationships, and their significance within the narrative's broader themes and context."
+
+  - task_name: "Joint Character Description"
+    
+    task_overview: "A variation of the character description task where the model generates descriptions for every character in a story sequentially. This task tests whether models can understand multiple characters and their interconnected relationships within a narrative. The model must maintain consistency while describing different characters and understand how they relate to each other."
+    
+    input_description: "Full-length books with all character names provided. The model processes the entire narrative to understand all characters collectively rather than focusing on individual characters in isolation."
+    
+    output_description: "Multiple character descriptions generated sequentially, one for each major character in the story. Each description maintains the same format as individual character descriptions but demonstrates understanding of character relationships and interactions."
+
+methodology:
+  method_name: "BOOKWORM Framework"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "The framework employs multiple strategies for processing book-length texts. Retrieval-based approaches use BM25 (statistical retrieval with character name as query, selecting top 80 paragraphs) or coreference resolution (BookNLP library to identify character mentions and extract relevant paragraphs). Hierarchical processing splits books into 8k token chunks, generates intermediate descriptions/analyses for each chunk, then merges them into final output. For joint character description, Llama-3-70B processes characters using hierarchical approach, describing 5 characters at a time if needed. Fine-tuning uses LoRA for Llama-3 and full fine-tuning for LongT5. Evaluation employs multiple metrics including Rouge, BERTScore, QA-based evaluation with fine-tuned RoBERTa, entailment-based metrics using T5-XXL, and PRISMA fact-based evaluation using GPT-4o-mini."
+  
+  base_models:
+    - "Llama-3-8B-Instruct"
+    - "Llama-3-70B-Instruct"
+    - "LongT5-base"
+    - "GPT-3.5 (for QA generation)"
+    - "GPT-4o-mini (for fact evaluation)"
+    - "T5-XXL (for entailment)"
+    - "RoBERTa-large (for QA)"
+  
+  key_innovations:
+    - "First dataset for character understanding based on full-length books rather than summaries"
+    - "Introduction of character analysis as a complementary task requiring deeper narrative interpretation"
+    - "Joint character description task evaluating collective character understanding"
+    - "Comprehensive evaluation framework including fact-based assessment across six character dimensions"
+    - "Demonstration that retrieval-based approaches outperform hierarchical processing for character tasks"
+
+datasets:
+  - dataset_name: "BOOKWORM"
+    
+    characteristics: "324 unique books with 5,869 character descriptions and 133 books with 1,328 character analyses from Gutenberg Project. Books average ~95-97k words. Descriptions average 88 words, analyses average 602 words. Sources include Sparknotes, Litcharts, Gradesaver, Cliffsnotes, and Shmoop for educational literary analysis. Mostly novels and plays with some short stories, novellas, and poetry."
+    
+    usage: "Primary dataset for training and evaluating character description and analysis models"
+    
+    size: "5,869 character descriptions, 1,328 character analyses"
+    
+    domain: "fiction"
+    
+    is_new: true
+    
+    new_dataset_contribution: "First dataset pairing full-length books with character descriptions and analyses. Unlike LiSCU which uses summaries, BOOKWORM provides complete narrative context. Introduces character analysis task and joint character description. Includes comprehensive fact categorization across six dimensions (Role, Relationship, Personality, Event, Mental State, Other)."
+
+evaluation:
+  evaluation_strategy: "Multi-metric evaluation combining reference-based and reference-free approaches. Rouge F1 measures token overlap with references. Entity mention recall counts coverage of named entities. BERTScore uses contextual embeddings for similarity. QA-based evaluation generates questions from references, uses fine-tuned RoBERTa to answer from model outputs. Entailment-based metric checks if input story entails generated text using T5-XXL. PRISMA fact-based evaluation extracts facts and categorizes them across six dimensions, evaluating factuality using GPT-4o-mini. Human evaluation validates fact categorization with Fleiss' Kappa 74.64."
+  
+  main_results: "Retrieval-based approaches consistently outperform hierarchical processing. Best description: Llama-3 with coreference retrieval achieves Rouge-L 19.84, EntMent 35.78, QA-F1 17.36, NLI 40.21. Best analysis: Llama-3 with BM25 achieves Rouge-L 15.62. Coreference retrieval shows highest entailment accuracy (50.85% for analysis). Fact-based evaluation shows models perform best on Role (53.66%) and Personality (53.50%) dimensions, struggle with Events (34.54%) and Relationships (41.31%). Joint character description performs worse than individual descriptions (Rouge-L 16.62 vs 17.82)."
+  
+  metrics_used:
+    - "Rouge-1/2/L"
+    - "Entity Mention Recall"
+    - "BERTScore"
+    - "QA Exact Match and F1"
+    - "Entailment Accuracy (NLI)"
+    - "PRISMA Precision/Recall/F1"
+    - "Fact categorization across 6 dimensions"
+  
+  human_evaluation_summary: "Human annotation of 200 facts for categorization validation shows strong inter-annotator agreement (Fleiss' Kappa 74.64). GPT-4o-mini achieves Cohen's Kappa 62.47 with human majority, validating automatic fact categorization approach."
+
+results_analysis:
+  key_findings:
+    - "No lead bias exists in book-length character understanding - Lead-k baseline performs poorly"
+    - "Retrieval-augmented models consistently outperform hierarchical processing despite latter being standard for book summarization"
+    - "Coreference-based retrieval superior to BM25 for description task, comparable for analysis"
+    - "Models struggle with dynamic character aspects (events, relationships) vs static ones (role, personality)"
+    - "Joint character description significantly harder than individual descriptions - models benefit from character name lists but struggle with collective understanding"
+  
+  ablation_summary: "Comparison of retrieval strategies shows coreference resolution outperforms BM25 for descriptions (40.21 vs 22.70 NLI accuracy). Hierarchical processing underperforms both retrieval methods. Fine-tuning improves description task but shows mixed results for analysis, possibly due to fewer training samples and data contamination."
+
+contributions:
+  main_contributions:
+    - "BOOKWORM dataset: First resource pairing full-length books with character descriptions and analyses, enabling character understanding research on complete narratives rather than summaries."
+    - "Introduction of character analysis task requiring in-depth interpretation of personality, development, and social context, complementing factual description task."
+    - "Joint character description task revealing limitations in current models' ability to understand multiple characters collectively despite benefiting from character name context."
+    - "Comprehensive evaluation framework combining multiple metrics including novel fact-based assessment across six character dimensions, revealing models excel at static traits but struggle with dynamic aspects."
+  
+  limitations:
+    - "Potential data contamination as books are publicly available and widely discussed"
+    - "Reliance on reference-based metrics that don't consider full book-length input"
+    - "Simple retrieval strategies (BM25, off-the-shelf coreference) without task-specific training"
+    - "Limited exploration of hierarchical approaches for joint character description"
+    - "Computational challenges for book-length entailment evaluation"
+
+narrative_understanding_aspects:
+  - "Character / Entity Understanding"
+  - "Story Generation"  # Joint character description generation
+  - "other"  # Character analysis and interpretation
+
+keywords:
+  - "character description"
+  - "character analysis"
+  - "long-form narratives"
+  - "book-length processing"
+  - "retrieval-augmented generation"
+  - "narrative understanding"
+  - "character development"
+  - "joint character understanding"
+  - "fact-based evaluation"
+  - "literary analysis"
+
+notes: "Dataset available at https://github.com/apapoudakis/BookWorm. Work demonstrates importance of retrieval over hierarchical processing for character tasks and reveals significant challenges in collective character understanding."

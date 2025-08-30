@@ -1,0 +1,125 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "STORYSUMM: Evaluating Faithfulness in Story Summarization"
+  authors:
+    - "Melanie Subbiah"
+    - "Faisal Ladhak"
+    - "Akankshya Mishra"
+    - "Griffin Adams"
+    - "Lydia B. Chilton"
+    - "Kathleen McKeown"
+  year: 2024
+  venue: "EMNLP"
+  paper_url: "https://aclanthology.org/2024.emnlp-main.557/"
+  
+problem_statement:
+  background: "Human evaluation has been the gold standard for checking faithfulness in abstractive summarization. However, with challenging source domains like narrative, multiple annotators can agree a summary is faithful while missing details that are obvious errors only once pointed out."
+  
+  gap_or_challenge: "Methods for detecting inconsistencies in narrative summarization face challenges including evaluating long summaries (Krishna et al., 2023) and the nuanced interpretation required for narrative text. Prior work has focused on factuality in news summaries but narrative requires understanding subtle meanings and interpretations that are easy for annotators to miss. Additionally, establishing ground truth is difficult as different annotation protocols catch unique but legitimate inconsistencies."
+  
+  research_objective: "This work introduces STORYSUMM, a new dataset comprising LLM summaries of short stories with localized faithfulness labels and error explanations. The benchmark is designed for evaluating faithfulness detection methods, testing whether they can detect challenging inconsistencies in narrative summaries."
+  
+  significance: "This benchmark pushes evaluation methods forward by introducing challenging narrative interpretation errors. The work demonstrates that any single human annotation protocol is likely to miss inconsistencies and advocates for pursuing multiple methods when establishing ground truth for summarization datasets."
+
+tasks:
+  - task_name: "Faithfulness Evaluation in Story Summarization"
+    
+    task_overview: "This task evaluates whether the information in a summary is consistent with the source story. The task requires detecting both obvious errors and subtle misinterpretations in narrative summaries. Annotators must identify whether all details in the summary are faithful to the source, ignoring thematic commentary. The benchmark tests automatic and human methods' ability to catch errors that require careful narrative interpretation."
+    
+    input_description: "The input consists of short stories from Reddit (typically less than one page) and LLM-generated summaries (about a paragraph long). Stories are from r/shortstories and r/shortscarystories subreddits with at least 3 upvotes."
+    
+    output_description: "Binary faithful/unfaithful labels at both summary and sentence levels. For unfaithful summaries, written explanations of inconsistencies are provided. Unfaithful summaries are further categorized as easy (all annotators detect) or hard (some annotators miss) to detect."
+
+methodology:
+  method_name: "Multi-Protocol Evaluation Framework"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "The framework employs three distinct human annotation protocols to establish ground truth. First, the Annotator protocol uses Upwork workers to perform fine-grained sentence-level annotation with binary faithfulness labels and written justifications for unfaithful sentences (Fleiss-kappa 0.85). Second, the Expert protocol has three paper authors review summaries holistically and adjudicate disagreements through discussion. Third, the Hybrid protocol uses GPT-4 to generate possible inconsistencies which new Upwork workers then verify. Labels are merged across protocols to create an expanded gold set, with easy errors detected by all methods and hard errors detected by only some. For automatic evaluation, various methods are tested including prompting-based (Binary and Chain-of-Thought with GPT-4, Claude-3, Mixtral), claim-based (FABLES, MiniCheck), and trained models (UniEval, AlignScore)."
+  
+  base_models:
+    - "GPT-3.5"
+    - "GPT-4"
+    - "Claude-2"
+    - "Claude-3"
+    - "Davinci-3"
+    - "ChatGPT"
+    - "Mixtral-8x7B"
+    - "Flan-T5-Large (MiniCheck)"
+  
+  key_innovations:
+    - "Introduction of expanded gold labels by merging multiple human annotation protocols to achieve better error coverage"
+    - "Novel hybrid annotation method using LLM-generated inconsistencies to guide human annotators"
+    - "Demonstration that different protocols catch unique but legitimate inconsistencies with only fair agreement"
+    - "Comprehensive benchmarking showing automatic metrics achieve at most 70% balanced accuracy"
+    - "Analysis revealing that evaluation against incomplete annotations can inflate metric performance"
+
+datasets:
+  - dataset_name: "STORYSUMM"
+    
+    characteristics: "96 short stories from Reddit with LLM-generated summaries containing over 500 sentence-level faithfulness labels. Stories are typically less than one page, unlikely to have been summarized elsewhere. Summaries are about a paragraph long, generated by GPT and Claude series models."
+    
+    usage: "Primary benchmark dataset for evaluating faithfulness detection methods in narrative summarization"
+    
+    size: "96 story-summary pairs (33 validation, 63 test)"
+    
+    domain: "fiction"
+    
+    is_new: true
+    
+    new_dataset_contribution: "First dataset specifically designed for benchmarking faithfulness evaluation methods in narrative summarization. Features challenging interpretation errors with localized labels and explanations. Includes expanded gold labels from multiple annotation protocols showing that single protocols miss 30-50% of errors."
+
+evaluation:
+  evaluation_strategy: "Multi-level evaluation comparing three human annotation protocols and benchmarking automatic metrics. Human protocols evaluated via inter-annotator agreement (Fleiss-kappa), cross-protocol agreement (Cohen's kappa), and error detection rates. Automatic metrics evaluated on both standard annotator labels and expanded gold labels to show impact of incomplete annotations. Metrics include balanced accuracy, precision/recall for faithful summaries, and percentage of easy/hard errors detected."
+  
+  main_results: "Human annotation: Annotator protocol achieves Fleiss-kappa 0.85 but misses errors found by other methods. Expert protocol detects 52% of hard errors with Cohen's kappa 0.36 vs annotator labels. Hybrid method finds 76% of hard errors but lower precision. Expanded gold set contains 40% unfaithful summaries vs 36% in annotator labels alone. Automatic metrics: FABLES achieves best performance at 67% balanced accuracy on annotator labels but drops to 65% on expanded gold. No metric exceeds 70% balanced accuracy. MiniCheck detects most hard errors (71-80%) but has low precision. Performance appears inflated when evaluated on incomplete annotations."
+  
+  metrics_used:
+    - "Fleiss-kappa (inter-annotator agreement)"
+    - "Cohen's kappa (cross-protocol agreement)"
+    - "Balanced Accuracy"
+    - "Precision/Recall"
+    - "% Easy/Hard errors detected"
+  
+  human_evaluation_summary: "MTurk workers label 97% summaries as faithful (unusable), Upwork workers 64%, experts 45%. Three experts initially agree on only 46% before adjudication. Different protocols have fair agreement (Cohen's kappa 0.2-0.4) but catch complementary errors. Manual review confirms all detected inconsistencies are legitimate."
+
+results_analysis:
+  key_findings:
+    - "Any single annotation protocol misses significant errors - annotator protocol finds only 2/3 of errors in expanded set"
+    - "Different human protocols detect unique but legitimate inconsistencies with only fair agreement"
+    - "Easy errors typically about core story events, hard errors about subtle details or meaning twists"
+    - "Automatic metrics performance inflated when evaluated on incomplete annotations"
+    - "Best automatic method (FABLES) still misses nearly 50% of hard inconsistencies"
+  
+  ablation_summary: null  # No specific ablation study mentioned
+
+contributions:
+  main_contributions:
+    - "Introduction of STORYSUMM, first benchmark specifically for testing faithfulness evaluation methods in narrative summarization with localized labels and explanations for challenging interpretation errors."
+    - "Demonstration that single human annotation protocols miss significant inconsistencies, with expanded gold labels revealing 30-50% more errors through multi-protocol approach."
+    - "Comprehensive evaluation showing state-of-the-art automatic metrics achieve at most 70% balanced accuracy, with best method missing nearly 50% of hard inconsistencies."
+    - "Evidence-based recommendations for human evaluation: use multiple protocols, fine-grained annotation, quality annotator pools, and high-coverage methods with filtering."
+  
+  limitations:
+    - "Relatively small dataset size (96 story-summary pairs) to enable affordable experimentation"
+    - "Stories are amateur-written from Reddit with potential ambiguities"
+    - "Labels depend on small pool of annotators and experts"
+    - "Sentence-level inconsistency detection beyond current scope"
+
+narrative_understanding_aspects:
+  - "Narrative Consistency Check"
+  - "other"  # Faithfulness evaluation in narrative summarization
+
+keywords:
+  - "faithfulness evaluation"
+  - "narrative summarization"
+  - "story summarization"
+  - "inconsistency detection"
+  - "human evaluation"
+  - "automatic metrics"
+  - "annotation protocols"
+  - "ground truth"
+  - "LLM evaluation"
+
+notes: "Dataset and code available at https://github.com/melaniesubbiah/storysumm. Work highlights critical gap between human and automatic evaluation capabilities in narrative understanding."

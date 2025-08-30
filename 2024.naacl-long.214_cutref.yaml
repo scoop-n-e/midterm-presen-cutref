@@ -1,0 +1,144 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Set-Aligning Framework for Auto-Regressive Event Temporal Graph Generation"
+  authors:
+    - "Xingwei Tan"
+    - "Yuxiang Zhou"
+    - "Gabriele Pergola"
+    - "Yulan He"
+  year: 2024
+  venue: "NAACL"
+  paper_url: "https://aclanthology.org/2024.naacl-long.214/"
+
+problem_statement:
+  background: "Event temporal graphs have been shown as convenient and effective representations of complex temporal relations between events in text. Recent studies employ pre-trained language models to auto-regressively generate linearised graphs for constructing event temporal graphs."
+  
+  gap_or_challenge: "Current methods lead to suboptimal graph generation as linearised graphs exhibit set characteristics but are treated sequentially by language models. This discrepancy stems from conventional text generation objectives, leading to erroneous penalisation of correct predictions caused by misalignment of elements in target sequences. The target sequence (list of event temporal relations) is order-invariant and should be treated as a set rather than an ordered sequence."
+  
+  research_objective: "This work reframes the task as a conditional set generation problem, proposing a Set-aligning Framework (SAF) tailored for effective utilisation of Large Language Models. The framework incorporates data augmentations and set-property regularisations designed to alleviate text generation loss penalties associated with linearised graph edge sequences."
+  
+  significance: "The framework encourages generation of more relation edges and improves model generalisation, particularly when training examples are limited. Under zero-shot settings, the structural knowledge introduced through the framework notably improves performance."
+
+tasks:
+  - task_name: "Event Temporal Graph Generation"
+    
+    task_overview: "This task involves generating event temporal graphs directly from raw text in an end-to-end manner. An event temporal graph is a directed graph with nodes representing events and edges representing temporal relationships (before, after, simultaneous). The graph is linearized using DOT graph description language for generation. The task requires addressing the set property of edge sequences while maintaining language model capabilities."
+    
+    input_description: "Raw text documents containing narrative content. Documents are from New York Times corpus and existing event relation datasets. Average document contains ~46 nodes and ~58 edges in the target graph."
+    
+    output_description: "Linearized event temporal graph in DOT format containing event nodes and temporal relation edges. Events are prefixed with noun phrases and suffixed with objects for context."
+
+methodology:
+  method_name: "Set-Aligning Framework (SAF)"
+  
+  approach_type: "neural"
+  
+  core_technique: "SAF employs Flan-T5 as the backbone model with three key components. First, data augmentation randomly permutes edge order in training examples while preserving DOT format structure. Second, Set Property Regularisations (SPR) include: (1) Cardinality regularisation encouraging adequate edge generation, (2) Duplication regularisation penalising element repetition, (3) Matching regularisation using Hausdorff distance to measure semantic similarity between generated and target edge sets. Edge embeddings are computed from decoder hidden states. Third, weak supervision using CAEVO for large-scale training data creation. Training involves initial epochs with augmented data followed by epochs with SPR. The framework balances conventional language modeling loss with set-aware regularisations through weighted averaging."
+  
+  base_models:
+    - "Flan-T5-base"
+    - "GPT-2 (baseline comparison)"
+    - "ChatGPT (gpt-3.5-turbo for zero-shot comparison)"
+  
+  key_innovations:
+    - "First framework addressing set misalignment issue in autoregressive event temporal graph generation"
+    - "Novel Set Property Regularisations (SPR) combining cardinality, duplication, and matching regularisations"
+    - "Data augmentation preserving DOT format while permuting edge order"
+    - "Hausdorff distance-based matching regularisation for semantic edge set comparison"
+    - "Demonstration that SAF generates 24-48% more edges than conventional approaches"
+
+datasets:
+  - dataset_name: "NYT Temporal Event Graph Dataset"
+    
+    characteristics: "18,263 training documents, 1,000 test documents from New York Times corpus. Documents selected using topic modeling on MATRES/TBD datasets. Average graph has 46 nodes and 58 edges with 2.52 relations per event. Temporal relations extracted using CAEVO tool. Additionally includes 22 human-annotated test documents with IOC 0.8986 for event spans and Cohen's κ 0.7465 for relations."
+    
+    usage: "Primary dataset for training and evaluating event temporal graph generation"
+    
+    size: "18,263 train, 1,000 test, 22 human-annotated test documents"
+    
+    domain: "mixed"  # News articles from various topics
+    
+    is_new: true
+    
+    new_dataset_contribution: "First large-scale dataset for document-level event temporal graph generation. Contains complex graphs with average 46 nodes and 58 edges compared to 4 nodes and 5 edges in previous work. Includes human-annotated test set with different label distribution from training data."
+  
+  - dataset_name: "MATRES"
+    
+    characteristics: "20 test documents with human-annotated temporal relations between events. Used for zero-shot evaluation."
+    
+    usage: "Zero-shot evaluation of models trained on NYT dataset"
+    
+    size: "20 documents"
+    
+    domain: "mixed"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "TB-Dense (TBD)"
+    
+    characteristics: "9 test documents with dense temporal relation annotations. Used for zero-shot evaluation."
+    
+    usage: "Zero-shot evaluation of models trained on NYT dataset"
+    
+    size: "9 documents"
+    
+    domain: "mixed"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "Evaluation uses precision, recall, and F1 scores for both node and edge predictions. Primary metric is edge F1 as it reflects both node and edge quality. Models evaluated on NYT-test, NYT-human, and zero-shot on MATRES/TBD. Experiments use beam search with beam size 5 and max length 2048. Training balanced across methods with same number of training steps. Results averaged over 3 random seeds."
+  
+  main_results: "NYT-test: SAF achieves edge F1 44.80% vs baseline 39.73% (+5.07%). NYT-human: SAF achieves edge F1 31.52% vs baseline 24.14% (+7.38%). SAF generates 24-48% more edges than baseline. Zero-shot MATRES: SAF 15.96% vs baseline 9.25% and ChatGPT 8.09%. Zero-shot TBD: SAF 17.05% vs baseline 7.67% and ChatGPT 9.66%. Performance improvements primarily from higher recall while maintaining similar precision."
+  
+  metrics_used:
+    - "Edge Precision/Recall/F1"
+    - "Node Precision/Recall/F1"
+    - "Number of generated edges (normalized comparison)"
+    - "Inter-annotator agreement (IOU for events, Cohen's κ for relations)"
+  
+  human_evaluation_summary: "22 documents annotated by crowd workers from Prolific platform. Event span IOU 0.8986 between annotators. Relation annotation Cohen's κ 0.7465. Human annotations show more lenient criterion for simultaneous relations (9.66% vs 2.39% in training)."
+
+results_analysis:
+  key_findings:
+    - "SAF framework successfully addresses set misalignment issue in graph generation"
+    - "Models with SAF generate 24-48% more edges while maintaining precision"
+    - "Performance improvements come primarily from higher recall"
+    - "Structural knowledge from SAF particularly beneficial under zero-shot settings"
+    - "ChatGPT underperforms fine-tuned models, conceptualizing events as broader high-level notions"
+  
+  ablation_summary: "SAF (w/o SPR) using only augmentation improves 3% on NYT-test, 6% on NYT-human. SAF (w/o DA) using only SPR improves 1.5% on NYT-test, 4.5% on NYT-human. Full SAF combining both components achieves best performance."
+
+contributions:
+  main_contributions:
+    - "Introduction of model-agnostic Set-Aligning Framework (SAF) for event temporal graph generation incorporating novel Set-Property Regularisations, data augmentation, and weak supervision techniques."
+    - "First human-annotated test set and weakly-supervised dataset specifically designed for document-level event temporal generation with complex graphs."
+    - "Extensive experimental validation showing SAF encourages language models to generate at least 24% more edges than previous approaches across various datasets."
+    - "Demonstration that structural knowledge introduced through SAF framework notably improves model generalisation, particularly in limited training data scenarios."
+  
+  limitations:
+    - "Noisy labels from CAEVO include imaginary events, trivial events, and negative expressions"
+    - "CAEVO identifies phrases like 'did not fire' as events which may not be suitable for temporal graphs"
+    - "Descriptions of potential future developments treated as events introduce confusion"
+    - "Resolution requires better-quality supervision signals focusing on salient narrative events"
+
+narrative_understanding_aspects:
+  - "other"  # Event temporal graph generation and temporal relation extraction
+
+keywords:
+  - "event temporal graph"
+  - "set generation"
+  - "autoregressive generation"
+  - "temporal relations"
+  - "set property regularisation"
+  - "Hausdorff distance"
+  - "data augmentation"
+  - "weak supervision"
+  - "narrative understanding"
+
+notes: "Code and data available at https://github.com/Xingwei-Warwick/Set-Aligning-Event-Temporal-Graph-Generation. Dataset DOI: https://doi.org/10.35111/77ba-9x74"

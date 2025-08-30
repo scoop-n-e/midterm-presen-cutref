@@ -1,0 +1,142 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Classifying Unreliable Narrators with Large Language Models"
+  authors:
+    - "Anneliese Brei"
+    - "Katharine Henry"
+    - "Abhisheik Sharma"
+    - "Shashank Srivastava"
+    - "Snigdha Chaturvedi"
+  year: 2025
+  venue: "ACL"
+  paper_url: "https://github.com/adbrei/unreliable-narrators"
+
+problem_statement:
+  background: "When reading first-person accounts, readers often question the reliability of the narrator: Can I trust how this narrator has perceived and is describing the event? Writers also concern themselves with how they textualize their ideas: Am I sharing information in a reliable way? Understanding narrative unreliability is critical for safe information transmission."
+  
+  gap_or_challenge: "Unreliability cues are often subtle and context-dependent, scattered across text, requiring deeper understanding beyond what is explicitly stated. Abstract inferences about the narrator's emotional and mental state are necessary. No existing work analyzes narrator unreliability with automatic methods, and there are no available labeled datasets."
+  
+  research_objective: "This work proposes using computational methods to identify unreliable narrators who unintentionally misrepresent information. Borrowing from narratology, the work defines three forms of unreliability (intra-narrational, inter-narrational, inter-textual) and introduces TUNA, a human-annotated dataset spanning multiple domains for classification tasks."
+  
+  significance: "This work introduces the first automatic approach to identifying unreliable narrators, providing a framework that can be applied across diverse real-world domains including reviews, online comments, cover letters, and essays. It demonstrates the potential for using LLMs to assist in evaluating narrative reliability."
+
+tasks:
+  - task_name: "Intra-narrational Unreliability Classification"
+    
+    task_overview: "Binary classification task determining whether a narrator exhibits verbal tics that indicate uncertainty in relating events. These include hedging language ('I think', 'maybe'), defensive tone, digressions, inconsistencies, selective memory admissions, or statements of potential disbelief. The task requires identifying subtle lexical cues that suggest the narrator may be unreliable."
+    
+    input_description: "First-person narrative text ranging from 24 to 1050 tokens from fiction, blog posts, subreddit posts, or hotel reviews."
+    
+    output_description: "Binary classification: A (contains verbal tics - unreliable) or R (no verbal tics - reliable)."
+
+  - task_name: "Inter-narrational Unreliability Classification"
+    
+    task_overview: "Multi-class classification determining if the narrator is unreliable from a secondary perspective. Two cases: (A) Same-unreliable-character-over-time - narrator reflects on past unreliability without indicating change, (B) Other-character-contradiction - another character contradicts the narrator through dialogue. Task requires understanding temporal consistency and character interactions."
+    
+    input_description: "First-person narrative text with potential dialogue or temporal references from multiple domains."
+    
+    output_description: "Three-class classification: A (same-unreliable-character-over-time), B (other-character-contradiction), or R (neither - reliable)."
+
+  - task_name: "Inter-textual Unreliability Classification"
+    
+    task_overview: "Multi-class classification determining if the narrator fits established unreliable character tropes from literary theory. Four tropes: (A) Naïf - naive observer lacking awareness, (B) Madman - highly emotional narrator with frantic voice, (C) Pícaro - cunning rogue attempting to improve prospects, (D) Clown - narrator who reinterprets conflicts in new light. Requires abstract pattern matching and deep character understanding."
+    
+    input_description: "First-person narrative text requiring analysis of character traits, emotional states, and behavioral patterns."
+    
+    output_description: "Five-class classification: A (naïf), B (madman), C (pícaro), D (clown), or R (none - reliable)."
+
+methodology:
+  method_name: "Multi-Method LLM Evaluation Framework"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "The framework employs multiple training strategies. Zero-shot and few-shot prompting provide baseline performance. Fine-tuning uses Parameter-Efficient Fine-Tuning with Low-Rank Adaptation (LoRA) with 8-bit quantization for 3 epochs. Curriculum learning (CL) divides training data into easy (fewer candidate labels) and difficult (multiple plausible labels) subsets. For CL, LLMs generate trait counts for each label to determine sample difficulty. Models train first on Subset-Easy then Subset-Difficult. Experiments use 6 LLMs: Llama3.1-8B, Llama3.3-70B, Mistral-7B, Phi3-medium, GPT-4o mini, o3-mini. Smaller LM classifiers (BERT, ModernBERT) provide baselines. Models train on fiction snippets then test on real-world domains (blog posts, subreddit posts, reviews) for out-of-domain generalization."
+  
+  base_models:
+    - "Llama3.1-8B"
+    - "Llama3.3-70B"
+    - "Mistral-7B"
+    - "Phi3-medium"
+    - "GPT-4o mini"
+    - "o3-mini (reasoning model)"
+    - "BERT"
+    - "ModernBERT"
+  
+  key_innovations:
+    - "First automatic approach to identifying unreliable narrators"
+    - "Three-level unreliability taxonomy from narratology (lexical to abstract)"
+    - "Expert-annotated dataset with substantial inter-annotator agreement"
+    - "Curriculum learning based on sample ambiguity/difficulty"
+    - "Cross-domain generalization from fiction to real-world texts"
+
+datasets:
+  - dataset_name: "TUNA (Texts with Unreliable Narrators)"
+    
+    characteristics: "817 first-person narratives from 4 domains. Fiction: 499 snippets from Project Gutenberg (24-924 tokens). Blog posts: 106 from PersonaBank (114-1050 tokens). Subreddit: 112 from r/AITA (73-858 tokens). Reviews: 100 hotel reviews from Deceptive Opinion corpus (53-460 tokens). Expert annotations by 10 English literature degree holders. Each sample annotated minimum twice with Cohen's Kappa: intra-narrational κ=0.75, inter-narrational κ=0.71, inter-textual κ=0.73."
+    
+    usage: "Training on fiction domain (373 train/valid, 126 test), testing on all domains for in-domain and out-of-domain evaluation"
+    
+    size: "817 narratives total (499 fiction, 318 real-world)"
+    
+    domain: "mixed"
+    
+    is_new: true
+    
+    new_dataset_contribution: "First dataset for unreliable narrator classification with expert annotations. Spans multiple text domains enabling cross-domain generalization studies. Includes three forms of unreliability with detailed annotation descriptions averaging 21.2 tokens. Substantial inter-annotator agreement demonstrates annotation quality."
+
+evaluation:
+  evaluation_strategy: "Multi-domain evaluation with macro-averaged F1 scores. In-domain testing on fiction test set, out-of-domain testing on blog posts, subreddit posts, and reviews. Statistical significance tested with p<0.05. Analysis includes narrator gender effects, narration style (conversational vs descriptive), sentiment tone, and number of characters using Llama3.3-70B for property inference."
+  
+  main_results: "Curriculum learning outperforms other methods for most cases. Llama3.1-8B with CL: intra-narrational F1 57.42%, inter-narrational 34.18%, inter-textual 19.30%. Intra-narrational easiest task, inter-textual most difficult requiring abstract inferences. Out-of-domain performance comparable to in-domain, demonstrating generalization capability. Larger models (Llama3.3-70B) achieve competitive performance with few-shot learning. LM classifiers underperform LLMs especially out-of-domain (BERT avg 17.77% vs CL 57.42% for intra-narrational)."
+  
+  metrics_used:
+    - "Macro-averaged F1 scores"
+    - "Class-wise precision, recall, F1"
+    - "Statistical significance testing (p<0.05)"
+    - "Inter-annotator agreement (Cohen's Kappa)"
+  
+  human_evaluation_summary: "10 expert annotators with English literature degrees. Each sample takes ~5 minutes to read and annotate. Total annotation time ~172 hours. Annotators write descriptions explaining unreliability observations (avg 21.2 tokens, max 299 tokens). Disagreements resolved through discussion or third annotator arbitration."
+
+results_analysis:
+  key_findings:
+    - "Task difficulty increases: intra-narrational < inter-narrational < inter-textual"
+    - "Curriculum learning improves performance especially for smaller models"
+    - "Male narrators predicted more accurately than female narrators across all models"
+    - "Conversational style easier for verbal tic detection, descriptive style better for abstract tasks"
+    - "Negative sentiment narratives easier for intra-narrational, positive sentiment better for other tasks"
+    - "Multiple characters increase difficulty for inter-narrational and inter-textual tasks"
+    - "LLMs generalize from fiction to real-world domains, LMs do not"
+  
+  ablation_summary: "Curriculum learning dividing samples by ambiguity (number of plausible labels) outperforms standard fine-tuning. Training on easy samples first provides better foundation for difficult samples. Few-shot learning competitive for larger models (Llama3.3-70B) but not smaller ones."
+
+contributions:
+  main_contributions:
+    - "Introduction of the task of automatically identifying unreliable narrators with computational methods."
+    - "Adaptation of narratological definitions providing three diverse and increasingly abstract forms of unreliability for classification."
+    - "TUNA dataset: expert-annotated collection of 817 first-person narratives spanning fiction and real-world domains with substantial inter-annotator agreement."
+    - "Demonstration that LLMs can learn unreliability patterns from fiction and generalize to real-world texts, though performance remains challenging (best F1 ~57% for easiest task)."
+  
+  limitations:
+    - "Limited to short texts (max 1050 tokens)"
+    - "English-only dataset"
+    - "Gender analysis limited to binary plus other/ambiguous"
+    - "Relatively small dataset size due to annotation cost"
+    - "Fiction snippets may lack complete narrative structure"
+
+narrative_understanding_aspects:
+  - "Character / Entity Understanding"
+  - "other"  # Narrator reliability assessment
+
+keywords:
+  - "unreliable narrator"
+  - "narratology"
+  - "first-person narrative"
+  - "verbal tics"
+  - "character tropes"
+  - "curriculum learning"
+  - "cross-domain generalization"
+  - "narrative reliability"
+  - "inter-textual analysis"
+
+notes: "Code and dataset available at https://github.com/adbrei/unreliable-narrators. Work bridges narratology and NLP, demonstrating challenging nature of narrative reliability assessment even for modern LLMs."

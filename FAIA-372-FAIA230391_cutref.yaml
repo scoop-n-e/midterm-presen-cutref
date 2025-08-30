@@ -1,0 +1,143 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Transferring Procedural Knowledge Across Commonsense Tasks"
+  authors:
+    - "Yifan Jiang"
+    - "Filip Ilievski"
+    - "Kaixin Ma"
+  year: 2023
+  venue: "ECAI 2023"
+  paper_url: "https://github.com/1171-jpg/LEAP"
+
+problem_statement:
+  background: "Stories about everyday situations are an essential part of human communication, motivating the need to develop AI agents that can reliably understand these stories. Despite the long list of supervised methods for story completion and procedural understanding, current AI fails to generalize its procedural reasoning to unseen stories."
+  
+  gap_or_challenge: "Story comprehension requires understanding implications of described events, detecting anomalous behaviors, and projecting alternatives. State-of-the-art methods typically lack pragmatic inference and focus solely on end-task goal prediction without transparency of intermediate reasoning. The requirement of benchmark-specific training limits generalization to novel benchmarks and tasks. Dense annotation requires costly manual labeling."
+  
+  research_objective: "This paper tests the hypothesis that generalization can be improved by associating downstream prediction with fine-grained modeling and the abstraction of procedural knowledge in stories. The paper studies the ability of AI models to transfer procedural knowledge across story-based tasks in a transparent manner."
+  
+  significance: "LEAP achieves new state-of-the-art results on in-domain procedural understanding tasks and demonstrates strong generalization to out-of-domain story tasks. The framework shows that fine-grained objectives prevent models from learning shortcuts, improving generalization. The automatic labeler enables dense annotation without manual effort."
+
+tasks:
+  - task_name: "Story Understanding with Procedural Reasoning"
+    
+    task_overview: "Simultaneous prediction of: (1) overall story plausibility, (2) conflicting sentence pairs in implausible stories, and (3) physical states of participants at every step. Three-tiered reasoning over story pairs to judge plausibility, track participant states, detect anomalies, and explain reasoning."
+    
+    input_description: "Story pairs (plausible and implausible) with n sentences each. Each story annotated with: preconditions and effects for each attribute of each participant at every step, conflicting sentence pairs for implausible story, and plausibility label."
+    
+    output_description: "Story plausibility classification, conflict sentence detection, and participant attribute state predictions (preconditions and effects) at each step."
+  
+  - task_name: "Zero-Shot Story Completion"
+    
+    task_overview: "Story cloze tasks requiring selection of plausible story endings or continuations without task-specific training. Tests generalization to unseen narrative understanding benchmarks."
+    
+    input_description: "Partial story context with multiple choice options for completion (ROCStories, PIQA, aNLI, CODAH, RICA)."
+    
+    output_description: "Selection of most plausible story continuation or ending from provided options."
+
+methodology:
+  method_name: "LEAP (Learning from Experience by Annotating Procedures)"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "Comprehensive framework with three main components: (1) Story Modeling - Single story model with participant-specific inputs and timestep embeddings, or Joint story model processing pairs in parallel. (2) Training Regimes - Story-centric (all three losses), Participant-centric (story label only for conflicting participants), or Sentence-centric (omit story loss). (3) Data Augmentation - In-domain: Participant Abstraction (replace with hypernyms) and Word Insertion. External: Natural stories (ROCStories) and Synthetic stories (3K from CSKG). Novel automatic labeler using semantic parsing for participant extraction and few-shot prompting with Codex for attribute annotation."
+  
+  base_models:
+    - "RoBERTa-Large (main model)"
+    - "Codex (for attribute annotation)"
+    - "spaCy (for participant extraction)"
+    - "TRIPS parser (for semantic analysis)"
+  
+  key_innovations:
+    - "Automatic labeler combining semantic parsing and few-shot prompting"
+    - "Participant abstraction augmentation strategy"
+    - "Joint story modeling with compositional loss"
+    - "Three-tiered reasoning architecture"
+    - "Code-style prompting for structured attribute annotation"
+    - "Two-stage attribute annotation (active detection then state annotation)"
+
+datasets:
+  - dataset_name: "TRIP"
+    characteristics: "800 story pairs with dense procedural annotations. Each story has preconditions/effects for 20 physical attributes, conflicting sentences, and plausibility labels."
+    usage: "Source task for training"
+    size: "800 story pairs"
+    domain: "fiction"
+    is_new: false
+    new_dataset_contribution: null
+  
+  - dataset_name: "ROCStories"
+    characteristics: "Story cloze task with everyday events. Two-choice selection of plausible story endings."
+    usage: "Target task for zero-shot evaluation and augmentation source"
+    size: null  # Not specified
+    domain: "fiction"
+    is_new: false
+    new_dataset_contribution: null
+  
+  - dataset_name: "Synthetic Stories (CSKG)"
+    characteristics: "100k+ stories generated from Commonsense Knowledge Graph based on psychological axioms. Three story types: unmet expectations, substitutions, object modifications."
+    usage: "Augmentation data source"
+    size: "3K stratified sample used"
+    domain: "fiction"
+    is_new: false
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "In-domain evaluation on TRIP test set with accuracy, consistency (both story and conflict correct), and verifiability (all three components correct) metrics. Zero-shot evaluation on five out-of-domain tasks: ROCStories, PIQA, aNLI, CODAH, RICA. Compare different model architectures, training regimes, and augmentation strategies. Intrinsic evaluation of labeler components."
+  
+  main_results: "In-domain: LEAP 97.3% accuracy, 78.4% consistency, 27.6% verifiability (new SOTA). Out-of-domain with augmentation: ROCStories 90.6%, CODAH 68.7%, PIQA 68.6%, aNLI 71.8%, RICA 57.5% (3-23 point improvements). Joint story modeling with story-centric loss performs best. External augmentation crucial for generalization. Labeler: 90% precision, 93.5% recall for participants; 61.2% precision, 70.3% F1 for attributes."
+  
+  metrics_used:
+    - "Accuracy"
+    - "Consistency"
+    - "Verifiability"
+    - "Precision/Recall/F1 (for labeler)"
+  
+  human_evaluation_summary: null  # No human evaluation reported
+
+results_analysis:
+  key_findings:
+    - "Joint story modeling with story-centric loss achieves best performance"
+    - "External augmentation improves out-of-domain by 3-23 points but hurts in-domain"
+    - "LEAP labeler outperforms CGLI on 12/13 zero-shot evaluations"
+    - "Participant abstraction and word insertion hurt out-of-domain performance"
+    - "66.7% unseen participants in PIQA vs 43.7% in aNLI affects performance"
+    - "Dense annotation prevents shortcut learning"
+    - "Trade-off between in-domain fitting and out-of-domain generalization"
+  
+  ablation_summary: "Without augmentation: strong in-domain but poor out-of-domain. CSKG alone: 89.6% ROCStories. ROCStories alone: comparable to CSKG. Combined best: 90.6%. Participant abstraction: hurts out-of-domain. Word insertion: hurts out-of-domain. Story-centric > Participant-centric > Sentence-centric for most tasks."
+
+contributions:
+  main_contributions:
+    - "LEAP: Comprehensive framework integrating modeling, training, and augmentation strategies for procedural story understanding."
+    - "Novel automatic labeler combining semantic parsing and few-shot prompting for dense annotation without manual effort."
+    - "Extensive evaluation showing strong generalization to out-of-domain tasks."
+    - "Insights into architecture/training/augmentation interplay for story understanding."
+    - "Evidence that fine-grained procedural modeling improves generalization."
+  
+  limitations:
+    - "Labeler limited to physical attributes, not mental states"
+    - "Current attributes mostly binary, not fine-grained"
+    - "Augmentation stories not dynamically selected for tasks"
+    - "Evaluation limited to short stories"
+    - "Dependency on API access to Codex for labeling"
+
+narrative_understanding_aspects:
+  - "Story Cloze / Next Event Prediction"  # Story completion tasks
+  - "Narrative Consistency Check"  # Plausibility and conflict detection
+  - "Character / Entity Understanding"  # Participant state tracking
+  - "other"  # Procedural reasoning and knowledge transfer
+
+keywords:
+  - "procedural reasoning"
+  - "story understanding"
+  - "knowledge transfer"
+  - "automatic labeling"
+  - "few-shot prompting"
+  - "semantic parsing"
+  - "data augmentation"
+  - "zero-shot evaluation"
+  - "participant states"
+  - "commonsense reasoning"
+
+notes: "Code and data available at https://github.com/1171-jpg/LEAP. Paper demonstrates that fine-grained procedural objectives improve generalization by preventing shortcut learning. Automatic labeler enables scaling dense annotation."

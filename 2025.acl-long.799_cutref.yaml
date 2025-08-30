@@ -1,0 +1,122 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "What Matters in Evaluating Book-Length Stories? A Systematic Study of Long Story Evaluation"
+  authors:
+    - "Dingyi Yang"
+    - "Qin Jin"
+  year: 2025
+  venue: "ACL"
+  paper_url: "https://github.com/DingyiYang/LongStoryEval"
+
+problem_statement:
+  background: "Automatic Story Evaluation involves providing critiques and ratings to assess the quality of human-written or machine-generated stories. This process is crucial for recommendation systems and constructive feedback. Unlike simpler evaluation tasks focusing on fluency and accuracy, story evaluation demands comprehensive assessment based on diverse human-centered criteria."
+  
+  gap_or_challenge: "Evaluating book-length stories (>100K tokens) poses three major challenges: (1) Data Annotation Constraints - human evaluation is time-intensive and cognitively demanding, scaling annotations for 100K+ token stories is impractical. (2) Inconsistent Evaluation Criteria - prior works rely on predefined criteria with no universal standard that reflects actual reader preferences. (3) Long Story Processing - book-length stories often exceed 128K-token context limits of LLMs, requiring efficient evaluation strategies."
+  
+  research_objective: "This work conducts systematic research to understand which evaluation aspects matter most to readers and explore effective methods for evaluating lengthy stories. The study introduces LongStoryEval benchmark, analyzes real reader preferences to develop a hierarchical evaluation criteria structure, and proposes NovelCritique, a specialized model for book-length story evaluation."
+  
+  significance: "First large-scale benchmark for book-length story evaluation with 600 newly published books (avg 121K tokens). Establishes evaluation criteria structure based on actual reader preferences. Demonstrates that aggregation-based and summary-based methods outperform incremental approaches. NovelCritique achieves superior alignment with human evaluations compared to commercial LLMs."
+
+tasks:
+  - task_name: "Book-Length Story Evaluation"
+    
+    task_overview: "Generate aspect-specific critiques and ratings for book-length stories based on specified evaluation criteria. The task requires processing stories averaging 121K tokens (max 397K) and producing reviews across 8 top-level aspects (plot & structure, characters, writing & language, world-building & setting, themes, emotional impact, enjoyment & engagement, expectation fulfillment) with corresponding scores."
+    
+    input_description: "Book-length stories (100K-400K tokens) with metadata including title, genres, and premise. Evaluation criteria list specifying which aspects to assess. For aggregation/incremental methods: full chapter content. For summary-based methods: plot summary, character analysis, and writing excerpts."
+    
+    output_description: "Aspect-specific critiques for each evaluation criterion, overall assessment summarizing strengths and weaknesses, and rating scores (1-5 scale) for both individual aspects and overall quality."
+
+methodology:
+  method_name: "Multi-Method Evaluation Framework with NovelCritique"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "The framework compares three evaluation strategies. Aggregation-Based: evaluates each chapter individually then averages chapter-level scores, providing detailed assessment but high computational cost. Incremental-Updated: progressively updates evaluations while reading, theoretically promising but suffers from instruction complexity and accumulating inconsistency. Summary-Based: generates comprehensive summary (plot, characters, writing excerpts) then evaluates, offering efficiency and early evaluation potential. NovelCritique model uses summary-based approach with Llama 3.1-8B base, instruction-tuned on 176K filtered reviews. Review bias mitigation filters training data to match rating distributions. Score normalization adjusts for user rating tendencies using platform-wide statistics."
+  
+  base_models:
+    - "GPT-4o"
+    - "GPT-4o-mini"
+    - "DeepSeek-v2.5"
+    - "Mixtral 8×7B-Instruct"
+    - "Llama 3.1-70B-Instruct"
+    - "Llama 3.1-8B-Instruct"
+    - "NovelCritique-8B (proposed)"
+  
+  key_innovations:
+    - "First large-scale benchmark specifically for book-length story evaluation"
+    - "Data-driven evaluation criteria structure derived from 340K real reader reviews"
+    - "Systematic comparison of three lengthy story processing methods"
+    - "Review bias mitigation and score normalization techniques"
+    - "NovelCritique specialized model outperforming commercial LLMs"
+
+datasets:
+  - dataset_name: "LongStoryEval"
+    
+    characteristics: "600 newly published books (2024-2025) with average length 121K tokens (max 397K). Each book includes average rating score and multiple reader reviews from Goodreads. Reviews reformatted into aspect-guided critiques with overall assessments and ratings. Covers diverse genres: Romance, Fantasy, Thriller, Mystery, Historical Fiction, Science Fiction, Young Adult."
+    
+    usage: "Primary dataset for training and evaluating book-length story evaluation models"
+    
+    size: "600 books, 340K reviews (176K filtered for training)"
+    
+    domain: "fiction"
+    
+    is_new: true
+    
+    new_dataset_contribution: "First benchmark for book-length stories exceeding 100K tokens. Unlike previous benchmarks limited to short stories (100-2000 tokens), provides real-world reader reviews with systematic analysis of evaluation criteria. Data-driven approach ensures criteria reflect actual reader standards rather than predefined aspects. Includes reviewer metadata and rating distributions for future personalization research."
+
+evaluation:
+  evaluation_strategy: "Kendall-Tau correlations between model-generated scores and human-assigned average ratings. Evaluation across 8 top-level aspects and overall scores. Comparison of three processing methods with multiple backbone LLMs. Analysis of aspect importance through correlation strength. Ablation studies on NovelCritique components. Qualitative analysis of generated critiques."
+  
+  main_results: "NovelCritique achieves highest overall correlation (20.1) with human ratings. For objective aspects: plot (21.4) and characters (20.8) most influential, writing (15.1) and world-building (11.2) least influential. For subjective aspects: emotional impact (21.1), enjoyment & engagement (22.8), expectation fulfillment (20.5) all critical. Aggregation-based and summary-based methods outperform incremental-updated approach. Summary-based offers best efficiency-performance tradeoff. GPT-4o with aggregation achieves 15.2 correlation but requires 5x averaging for stability."
+  
+  metrics_used:
+    - "Kendall-Tau correlation"
+    - "Aspect-specific correlations"
+    - "Computational cost analysis"
+    - "Stability across multiple runs"
+  
+  human_evaluation_summary: "Average ratings from real readers on Goodreads platform. Reviews processed to extract user-mentioned aspects (1000+ unique aspects identified). Organized into hierarchical structure with 8 top-level and 20 sub-aspects through systematic analysis."
+
+results_analysis:
+  key_findings:
+    - "Plot and characters are most influential objective aspects for ratings"
+    - "Emotional impact, enjoyment, and expectation fulfillment critical subjective aspects"
+    - "Aggregation-based methods provide detailed assessment but high computational cost"
+    - "Summary-based methods offer efficiency with comparable performance"
+    - "Incremental-updated methods suffer from instruction complexity and inconsistency"
+    - "Closed-source LLMs exhibit significant variability requiring multiple runs"
+    - "Review bias mitigation and score normalization improve model alignment"
+  
+  ablation_summary: "Removing review bias mitigation, score normalization, or review organization each reduces NovelCritique performance. One-pass evaluation on 128K subset shows poor correlation (5.5 overall). Detailed summaries slightly improve performance but increase computational cost. GPT-4o-mini summaries maintain quality at 0.03% cost of GPT-4o."
+
+contributions:
+  main_contributions:
+    - "LongStoryEval: First large-scale benchmark for book-length story evaluation with 600 books averaging 121K tokens and 340K reader reviews."
+    - "Hierarchical evaluation criteria structure derived from systematic analysis of real reader preferences, encompassing 8 top-level aspects and 20 sub-aspects."
+    - "Comprehensive comparison of three lengthy story processing methods, demonstrating aggregation and summary-based approaches outperform incremental updates."
+    - "NovelCritique: 8B specialized model achieving 20.1 Kendall correlation with human ratings, outperforming commercial LLMs like GPT-4o."
+  
+  limitations:
+    - "Evaluation relies on score generation prone to inconsistencies"
+    - "Requires averaging multiple runs to mitigate variability"
+    - "Focus on general assessment over personalized preferences"
+    - "Summary-based methods may miss story details"
+    - "Limited to English language stories"
+
+narrative_understanding_aspects:
+  - "Narrative Assessment"
+  - "other"  # Book-length story evaluation
+
+keywords:
+  - "book-length story evaluation"
+  - "long-form narrative"
+  - "evaluation criteria"
+  - "reader preferences"
+  - "aggregation-based evaluation"
+  - "summary-based evaluation"
+  - "review processing"
+  - "NovelCritique"
+  - "LongStoryEval"
+
+notes: "Dataset verified absent from LLM pretraining to avoid contamination. Anonymized test set proposed for future evaluations. Review processing uses DeepSeek-v2.5 with GPT-4o fallback for ambiguous cases. Training uses LoRA with r=64, alpha=16 on 4 A6000 GPUs for 125 hours."

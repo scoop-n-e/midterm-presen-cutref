@@ -1,0 +1,148 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Fine-Grained Modeling of Narrative Context: A Coherence Perspective via Retrospective Questions"
+  authors:
+    - "Liyan Xu"
+    - "Jiangnan Li"
+    - "Mo Yu"
+    - "Jie Zhou"
+  year: 2024
+  venue: "arXiv"
+  paper_url: null  # Not provided in the paper
+
+problem_statement:
+  background: "Since the advent of LLMs, document comprehension has improved significantly through end-to-end generative paradigm. With long context windows enabled via various techniques, the end-to-end paradigm is simple and effective. However, this paradigm may not suffice for all comprehension scenarios, particularly for narratives where passages tend to be cohesively interconnected rather than isolated."
+  
+  gap_or_challenge: "The end-to-end paradigm implicitly grasps context connections through sequence modeling but may not capture the distinctive nature of narratives where multiple character/event developments are entangled over long ranges. Current approaches don't explicitly model dependency relations between context snippets, missing high-level understanding of narrative coherence."
+  
+  research_objective: "This work proposes a fine-grained context modeling framework for narratives through a graph called NARCO that explicitly depicts relations between context snippets. The graph uses retrospective questions as edges, inspired by human cognitive perception that constantly reinstates relevant events from prior context during reading."
+  
+  significance: "NARCO offers a directly-applicable alternative path orthogonal to the end-to-end paradigm, explicitly capturing coherence dependencies. The framework is practically realized by LLMs without human annotations and effectively facilitates various downstream narrative comprehension tasks."
+
+tasks:
+  - task_name: "Recap Identification"
+    
+    task_overview: "Identify which preceding snippets function as recap or prelude to current context in narratives. The task requires understanding narrative development and plot progression to recognize coherence relations between context snippets. NARCO edges are used to link current snippets to related preceding ones based on retrospective questions."
+    
+    input_description: "A target snippet from a novel/show script and a list of preceding candidate snippets. For each candidate, NARCO generates retrospective questions asking about causes/background that can be clarified by the candidate."
+    
+    output_description: "Ranked list of candidates where higher scores indicate better recap information. Selection based on edge relation scores, edge degrees, or interpolation with baseline text similarity."
+  
+  - task_name: "Plot Retrieval"
+    
+    task_overview: "Find most relevant story snippets given a query of short plot description. The task is challenging as queries are abstract based on overall story understanding, requiring essential background information. NARCO augments node embeddings with edge questions for enhanced local representation."
+    
+    input_description: "Query of plot description and candidate story snippets as graph nodes. NARCO edges contain retrospective questions from neighboring nodes providing auxiliary contextual information."
+    
+    output_description: "Ranked list of retrieved candidates based on query-node similarity interpolated with query-edge similarity (zero-shot) or augmented embeddings via attention mechanism (supervised)."
+  
+  - task_name: "Long Document Question Answering"
+    
+    task_overview: "Answer multi-choice questions on long narrative documents using retrieval-augmented generation. NARCO assists in recognizing more relevant snippets through extracted relations across narrative context, improving QA performance by enhanced retrieval."
+    
+    input_description: "Long document (5k+ tokens) split into snippets, question, and NARCO edges between snippets. Query-edge similarity is interpolated with query-node similarity for retrieval."
+    
+    output_description: "Retrieved relevant snippets concatenated as shortened context for zero-shot QA inference by LLMs, generating multi-choice answers."
+
+methodology:
+  method_name: "NARCO (NARrative COgnition graph)"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "Graph formulation with nodes as context chunks (240 words max) and edges as free-form retrospective questions. Questions arise from succeeding node asking clarification about events/situations that can be addressed by preceding node. Two-stage LLM prompting: (1) Question Generation - two-turn scheme where LLM lists connections then converts to questions, alleviating self-answerable problems; (2) Self Verification - optional filtering stage where generated questions are verified by QA on concatenated context, discarding noisy questions not bridged by prior context. Edge utilization: direct relation scoring, edge degree ranking, or embedding augmentation via attention mechanism. Graph edges capture causal/temporal coherence without fixed taxonomies."
+  
+  base_models:
+    - "GPT-4 (question generation)"
+    - "ChatGPT/GPT-3.5 (verification and inference)"
+    - "Llama2-7B/70B (QA inference)"
+    - "BGE-Large encoder (retrieval)"
+  
+  key_innovations:
+    - "Retrospective question-based edges reflecting human cognitive process"
+    - "Two-stage prompting scheme for precision-focused edge generation"
+    - "Task-agnostic graph representation without fixed relation taxonomies"
+    - "Multiple edge utilization strategies for different downstream tasks"
+    - "LLM-based graph realization without human annotations"
+
+datasets:
+  - dataset_name: "RECIDENT"
+    characteristics: "Recap identification dataset with novels (Notre-Dame de Paris) and TV shows (Game of Thrones). Each target snippet has ~60 candidate preceding snippets with 4.9-5.6 positive recaps on average. Test sets: 169 snippets (NDP), 204 snippets (GOT)."
+    usage: "Edge efficacy evaluation for coherence recognition"
+    size: "373 target snippets total in test sets"
+    domain: "fiction"
+    is_new: false
+    new_dataset_contribution: null
+  
+  - dataset_name: "Plot Retrieval Dataset"
+    characteristics: "Adapted from Xu et al. (2023b) using Notre-Dame de Paris in Chinese. Short snippets as graph nodes with queries of plot descriptions. 1288 candidate snippets total, queries may have 1-7 positive snippets."
+    usage: "Local context augmentation evaluation"
+    size: "29484/1000/510 queries for train/dev/test"
+    domain: "fiction"
+    is_new: false
+    new_dataset_contribution: null
+  
+  - dataset_name: "QuALITY"
+    characteristics: "Multi-choice QA on narrative documents from Project Gutenberg. Average 5k+ tokens per document. Questions require global evidence from multiple document parts."
+    usage: "Broader RAG application evaluation"
+    size: null  # Standard QuALITY dataset
+    domain: "fiction"
+    is_new: false
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "Three empirical studies from different angles. Study I: Zero-shot recap identification using edge relations/degrees, evaluated by F1@5. Study II: Plot retrieval with zero-shot interpolation and supervised reranking, evaluated by nDCG@1/5/10. Study III: RAG for long document QA with enhanced retrieval, evaluated by accuracy on dev/test sets."
+  
+  main_results: "Study I: NARCO improves F1@5 by up to 4.7 points (21.7% relative) over baselines on RECIDENT. Study II: Zero-shot retrieval improves 3.4% nDCG@10; supervised model gains 2.2% over baseline. Study III: Enhanced retrieval boosts QA accuracy by 2-5% consistently across all LLMs, with 72.8% on QuALITY test set."
+  
+  metrics_used:
+    - "F1@5 (recap identification)"
+    - "nDCG@1/5/10 (plot retrieval)"
+    - "Accuracy (question answering)"
+    - "Edge statistics (what/why/how ratios)"
+  
+  human_evaluation_summary: null  # No human evaluation reported
+
+results_analysis:
+  key_findings:
+    - "Edge relations alone achieve comparable/better performance than text-based baselines"
+    - "Edge degrees provide reasonable ranking signal despite simplicity"
+    - "Self-verification effectively filters noisy questions with minimal degradation"
+    - "Query-edge similarity provides positive information gain in retrieval"
+    - "Smaller models benefit more from NARCO (5% for Llama2-7B vs 2% for 70B)"
+    - "Consistent improvements across all three diverse evaluation settings"
+  
+  ablation_summary: "Without self-verification (Full-F), performance degrades minimally, showing robustness. Edge degrees alone achieve decent performance. What/why/how questions constitute 58-62%, 25-27%, 8-14% respectively. Average 3.4-3.5 questions per edge, reduced to 1.9-2.0 after verification."
+
+contributions:
+  main_contributions:
+    - "Novel paradigm of fine-grained context modeling for narrative comprehension, orthogonal to end-to-end approaches."
+    - "NARCO graph framework with retrospective questions as edges, capturing task-agnostic coherence dependencies."
+    - "Practical LLM-based graph realization through two-stage prompting without human annotations."
+    - "Three empirical studies demonstrating edge efficacy, local augmentation, and broader RAG applications."
+  
+  limitations:
+    - "Generated questions contain noise; GPT-4 struggles with irrelevant chunk pairs"
+    - "Cannot handle joint dependencies among 3+ chunks (only pairwise)"
+    - "Filtering inadequate for LLMs with poor instruction following"
+    - "Requires GPT-4 for quality generation (cost consideration)"
+    - "Graph generation computational overhead for large documents"
+
+narrative_understanding_aspects:
+  - "Narrative Consistency Check"
+  - "Narrative QA"
+  - "Plot / Storyline Extraction"
+  - "other"  # Coherence modeling and retrieval
+
+keywords:
+  - "narrative comprehension"
+  - "coherence dependencies"
+  - "retrospective questions"
+  - "graph representation"
+  - "fine-grained context modeling"
+  - "LLM prompting"
+  - "retrieval augmentation"
+  - "plot retrieval"
+  - "recap identification"
+
+notes: "Code and data not yet released. Work demonstrates alternative to end-to-end paradigm through explicit coherence modeling. Edge questions inspired by human cognitive process of reinstating relevant events during reading."

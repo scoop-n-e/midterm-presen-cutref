@@ -1,0 +1,135 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Returning to the Start: Generating Narratives with Related Endpoints"
+  authors:
+    - "Anneliese Brei"
+    - "Chao Zhao"
+    - "Snigdha Chaturvedi"
+  year: 2024
+  venue: "NAACL (Short Paper)"
+  paper_url: "https://aclanthology.org/2024.naacl-short.10/"
+
+problem_statement:
+  background: "Human writers often bookend their writing with ending sentences that relate back to the beginning sentences in order to compose a satisfying narrative that 'closes the loop.' Automatic story generation has advanced significantly recently but still struggles to generate satisfying and coherent stories with closure."
+  
+  gap_or_challenge: "Current autoregressive story generation approaches struggle to generate satisfying and coherent stories with narrative closure. Stories lack the phenomenological feeling of finality that is generated when all questions saliently posed by the narrative are answered. Models fail to achieve closure through bookending (circular construction) where the ending relates back to the beginning."
+  
+  research_objective: "This work proposes RENARGEN (Related Endpoint Narrative Generator), a controllable story-generation paradigm that generates narratives by ensuring the first and last sentences are related and then infilling the middle sentences. The work explores how various methods of bookending from Narratology affect language modeling for stories."
+  
+  significance: "RENARGEN addresses the challenge of narrative closure in automatic story generation by introducing bookending techniques. This provides better narrative closure and more satisfying stories compared to current autoregressive models."
+
+tasks:
+  - task_name: "Related Endpoint Story Generation"
+    
+    task_overview: "This task generates stories with related first (start) and last (stop) sentences to achieve narrative closure through bookending. The system first generates related endpoints given an input start sentence, then infills middle sentences considering both left and right contexts. Various methods of relatedness are explored including semantic similarity, answering narrative questions, matching story elements, and logical entailment relationships."
+    
+    input_description: "An initial start sentence from ROCStories corpus or user-provided text. For LMs, the start sentence is processed to generate a phrase list of salient words. For LLMs, the start sentence is used directly with various prompting methods."
+    
+    output_description: "A complete 5-sentence story (or user-specified length) where the first and last sentences are related through various bookending methods. The story exhibits narrative closure with all middle sentences coherently connecting the endpoints."
+
+methodology:
+  method_name: "RENARGEN (Related Endpoint Narrative Generator)"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "RENARGEN employs different strategies for LMs and LLMs. For LMs: (1) Phrase Generator uses GPT-2 to extract salient words/phrases from start sentence using BERT embedding similarity (threshold γ=0.7), (2) Stop Generator uses GPT-2 to generate related stop sentence from start and phrase list, (3) Story Infiller uses Position Classifier (BERT) to identify best infill location and Infill Generator (GPT-2) to generate sentences iteratively considering both contexts. For LLMs: Endpoint Generator uses 6 prompting methods - phrase list generation, direct relatedness, answering narrative questions, matching story elements, logical entailment, and reverse entailment. Story Infiller generates all middle sentences at once. Both approaches use beam search and controlled generation."
+  
+  base_models:
+    - "GPT-2"
+    - "BERT (uncased)"
+    - "Llama2-7b-chat"
+    - "Llama2-70b-chat"
+    - "Sentence-BERT (fine-tuned on STR-2022)"
+  
+  key_innovations:
+    - "First study of how bookending affects narrative generation in language modeling"
+    - "Novel iterative infilling strategy that dynamically decides infill positions based on context needs"
+    - "Integration of multiple narratological definitions of closure (semantic, erotetic, matching, entailment)"
+    - "User interactivity through editable phrase lists for controllable generation"
+    - "Flexible story length generation without fixed infill requirements"
+
+datasets:
+  - dataset_name: "ROCStories"
+    
+    characteristics: "Collection of 5-sentence human-written stories. 98,161 stories split 80:20 for training/validation (combining Spring 2016 and Winter 2017 sets). 3,742 stories from Cloze Spring 2016 used for evaluation."
+    
+    usage: "Training corpus for fine-tuning GPT-2 and BERT models, evaluation benchmark"
+    
+    size: "98,161 train/val, 3,742 test"
+    
+    domain: "mixed"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "STR-2022"
+    
+    characteristics: "5,500 English sentence pairs with relatedness scores. Used for fine-tuning Sentence-BERT for endpoint relatedness measurement."
+    
+    usage: "Training Sentence-BERT for semantic similarity evaluation"
+    
+    size: "5,500 sentence pairs"
+    
+    domain: "mixed"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "Automatic metrics evaluate endpoint relatedness (Lexical Overlap via Dice Coefficient, Cosine Similarity via Sentence-BERT, Syntax Similarity via FastKASSAM) and overall quality (Distinct n-grams for diversity, BLEU for coherence). Human evaluation on AMT with 100 pairwise comparisons per model assessing relatedness, closure, coherency, and overall preference. Interactivity evaluation with 8 in-house testers editing phrase lists on 50 stories."
+  
+  main_results: "RENARGEN-LM: Lexical overlap 0.329, Cosine sim 0.653, Syntax sim 0.594, Distinct n-grams 0.524, BLEU 3.35. Significantly outperforms GPT-2 baseline (0.183, 0.458, 0.533, 0.420, 3.14). RENARGEN-LLM-7b best: 0.589, 0.854, 0.252, 0.748, 1.579. RENARGEN-LLM-70b best: 0.594, 0.870, 0.199, 0.787, 1.576. Human evaluation: RENARGEN-LM preferred 66% vs GPT-2, RENARGEN-LLM-7b preferred 56% vs Llama-7b, RENARGEN-LLM-70b preferred 56% vs Llama-70b. 80% of users could generate better stories via interactivity, 62.5% ranked usefulness 4/5."
+  
+  metrics_used:
+    - "Lexical Overlap (Dice Coefficient)"
+    - "Cosine Similarity (Sentence-BERT)"
+    - "Syntax Similarity (FastKASSAM)"
+    - "Distinct n-grams"
+    - "BLEU score"
+    - "Human preference (relatedness, closure, coherency, overall)"
+  
+  human_evaluation_summary: "100 pairwise comparisons on AMT with USA-based master workers (98% approval, >5000 HITs). RENARGEN consistently preferred across all criteria. Interactivity evaluation: 8 testers, 50 stories, average 3 phrase list edits per start, 80% generated better stories through editing."
+
+results_analysis:
+  key_findings:
+    - "RENARGEN generates stories with significantly more related endpoints than baselines"
+    - "Phrase Generator and Position Classifier crucial for LM performance"
+    - "Endpoint Generator and Story Infiller essential for LLM performance"
+    - "Method (4) matching story elements performs best for LLMs (0.589 lexical overlap)"
+    - "Users find phrase list editing valuable for story control and improvement"
+  
+  ablation_summary: "Removing Phrase Generator (w/out PG) reduces cosine similarity from 0.653 to 0.622. Removing Position Classifier (w/out PC) reduces distinct n-grams from 0.524 to 0.435 and BLEU from 3.35 to 2.93. For LLMs, removing Endpoint Generator and Story Infiller significantly reduces all metrics."
+
+contributions:
+  main_contributions:
+    - "First study examining how related endpoints and bookending from narratology affect narrative generation with early outlook on how 'good writing practice' impacts language modeling."
+    - "RENARGEN paradigm adaptable to both LMs and LLMs that produces narratives with related endpoint sentences using novel iterative infilling strategy considering both left and right contexts."
+    - "Automatic and human evaluations demonstrating RENARGEN produces more coherent stories with better narrative closure than current autoregressive models."
+    - "Introduction of user interactivity through editable phrase lists enabling controllable story generation."
+  
+  limitations:
+    - "Limited to English language generation due to training data"
+    - "Restricted to story narrative generation"
+    - "Potential gender bias from ROCStories corpus as noted in prior work"
+    - "Fixed to relatively short story lengths in experiments"
+
+narrative_understanding_aspects:
+  - "Story Generation"
+  - "Narrative Consistency Check"
+  - "other"  # Narrative closure and bookending
+
+keywords:
+  - "narrative closure"
+  - "bookending"
+  - "circular construction"
+  - "story generation"
+  - "endpoint relatedness"
+  - "controllable generation"
+  - "iterative infilling"
+  - "narratology"
+  - "erotetic closure"
+
+notes: "Code and resources available at https://github.com/adbrei/RENarGen. Work demonstrates importance of narratological theory for improving automatic story generation."
