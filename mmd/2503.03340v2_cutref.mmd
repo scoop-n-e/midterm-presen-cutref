@@ -1,0 +1,381 @@
+\title{
+EnigmaToM: Improve LLMs' Theory-of-Mind Reasoning Capabilities with Neural Knowledge Base of Entity States
+}
+
+\author{
+Hainiu Xu \({ }^{\boldsymbol{*}}\) Siya \(\mathrm{Qi}^{\boldsymbol{*}}\) Jiazheng \(\mathrm{Li}^{\boldsymbol{*}}\) Yuxiang Zhou \({ }^{\boldsymbol{*}, \boldsymbol{\alpha}}\) Jinhua Du \({ }^{\ominus}\) Caroline Catmur* Yulan \(^{\boldsymbol{\circ}} \mathrm{He}^{\boldsymbol{q}, \diamond}\) \\ *King's College London \(\quad{ }^{\circ}\) Huawei London Research Centre \\ \({ }^{\diamond}\) The Alan Turing Institute \({ }^{\text {A }}\) Queen Mary University of London \\ \{hainiu.xu, yulan.he\}@kcl.ac.uk
+}
+
+\begin{abstract}
+Theory-of-Mind (ToM), the ability to infer others' perceptions and mental states, is fundamental to human interaction but remains challenging for Large Language Models (LLMs). While existing ToM reasoning methods show promise with reasoning via perceptual perspectivetaking, they often rely excessively on off-theshelf LLMs, reducing their efficiency and limiting their applicability to high-order ToM reasoning. To address these issues, we present EnigmaToM, a novel neuro-symbolic framework that enhances ToM reasoning by integrating a Neural Knowledge Base of entity states (Enigma) for (1) a psychology-inspired iterative masking mechanism that facilitates accurate perspective-taking and (2) knowledge injection that elicits key entity information. Enigma generates structured knowledge of entity states to build spatial scene graphs for belief tracking across various ToM orders and enrich events with fine-grained entity state details. Experimental results on ToMi, HiToM, and FANToM benchmarks show that EnigmaToM significantly improves ToM reasoning across LLMs of varying sizes, particularly excelling in highorder reasoning scenarios \({ }^{1}\).
+\end{abstract}
+
+\section*{1 Introduction}
+
+Theory-of-Mind (ToM), the ability to understand that others have perceptions and mental states different from one's own, is fundamental to effective communication and social interaction (Premack and Woodruff, 1978; Apperly, 2010). ToM reasoning can be first-order, involving the understanding of another's mental state, or higher-order, requiring recursive thinking about others' beliefs. Higherorder ToM reasoning is particularly vital in realworld contexts such as negotiation (De Weerd et al., 2017). As Large Language Models (LLMs) become increasingly sophisticated in imitating human
+
+\footnotetext{
+\({ }^{1}\) The neural knowledge base Enigma can be downloaded via https://huggingface.co/SeacowX/Enigma. Code and data are available at https://github.com/seacowx/ EnigmaToM.
+}
+
+\begin{figure}
+\includegraphics[width=\textwidth]{https://cdn.mathpix.com/cropped/2025_08_30_1bb8caca563567e440a9g-01.jpg?height=615&width=772&top_left_y=759&top_left_x=1053}
+\captionsetup{labelformat=empty}
+\caption{Figure 1: Example use-case of EnigmaToM framework in fourth-order ToM reasoning. An event (1) is enriched by adding information about entity-of-interests (italic text in (2)) derived from Enigma. Characters (3)) are extracted using an off-the-shelf NER model. Spatial scene graphs (4) and (5)) are constructed for perspectivetaking through a masking mechanism (5) \(\rightarrow\) (6)). Event nodes are retrieved to construct character-centric event sequence (7), which is used for the final QA (8)).}
+\end{figure}
+interactions, a plethora of studies have investigated LLMs' abilities to conduct ToM reasoning. While early studies show that LLMs exhibit traces of ToM capabilities (Bubeck et al., 2023; Kosinski, 2023), follow-up works impugn the robustness of such capabilities by showing that LLMs' ToM reasoning is often superficial (Sap et al., 2022; Ullman, 2023; Shapira et al., 2024).
+
+A vital prerequisite for human ToM reasoning is perceptual perspective-taking (referred to as "perspective-taking" thereafter), which is the process of inferring the perception of other characters (Davis, 1983; Harwood and Farrar, 2006). In the case of ToM reasoning with LLMs, perspectivetaking alleviates the reasoning burden of LLMs by identifying events that are observable by a given character and removing unobservable ones.
+
+Centered around perspective-taking, numerous methods have been proposed. SimulatedToM (Wilf
+et al., 2024) and Discrete World Models (DWM) (Huang et al., 2024) perform perspective-taking by directly prompting LLMs. While one may appreciate these methods' simplicity, the quality of perspective-taking is largely dependent on the capability of LLMs. SymbolicToM, TimeToM, and PerceptToM took a neuro-symbolic approach. TimeToM (Hou et al., 2024) and PerceptToM (Jung et al., 2024) utilize temporal and perceptual information of events to derive characters' perception by extracting common timestamps or perceived characters. However, accurately extracting perceived timestamps or perceivers becomes difficult as the length or complexity of the event trajectory increases. The most relevant work to ours is SymbolicToM, where perspective-taking is conducted by maintaining multiple belief graphs (Sclar et al., 2023). However, SymbolicToM constructs belief graphs using less powerful models including WANLI (Liu et al., 2022) and OpenIE (Stanovsky et al., 2018), limiting its generalizability to ToM tasks that involve complicated events. Further, as noted by Sclar et al. (2023), SymbolicToM lacks efficiency as the depth of ToM reasoning increases (see §3.4 for analysis).
+
+Given the need for accurate and efficient perspective-taking in ToM reasoning, we introduce Entity-Guided Masking (EnigmaToM), a neurosymbolic framework enhancing LLMs' ToM reasoning (Figure 1). Perspective-taking relies on reasoning about event implications, where information about the states of key entities is crucial (Zhang et al., 2023). EnigmaToM employs a Neural Knowledge Base (Enigma) to generate structured entity-state information (§3.1). This entity-state information supports spatial scene graph construction for perspective-taking (§3.3) and event elicitation through knowledge injection (§3.2). Experiment results show that EnigmaTom improves the ToM reasoning capabilities of a range of LLMs. Furthermore, the iterative masking mechanism, grounded by theories from psychology (Arslan et al., 2017), guarantees the efficacy of Enigmatom across ToM reasoning of varying orders.
+
+We summarize our contributions as follows:
+1. We introduce EnigmaToM, a neuro-symbolic framework for ToM reasoning that leverages a Neural Knowledge Base of Entity States to improve LLMs' ToM reasoning capabilities.
+2. Through the iterative masking mechanism, EnigmaToM conducts effective perspectivetaking while greatly reducing the number of
+character belief graphs that need to be tracked, thereby improving the efficiency in high-order ToM reasoning.
+3. EnigmaToM improves LLMs' ToM reasoning, especially for higher-order cases. Analysis show that EnigmaToM improves LLMs' ToM reasoning ability up to the fourth order.
+
+\section*{2 Related Work}
+
+Knowledge Base of Commonsense Knowledge in Natural Language Efforts to construct commonsense knowledge bases have a long history. Early work includes CyC, ConceptNet, and DBPedia (Lenat, 1995; Liu and Singh, 2004; Lehmann et al., 2015). Rashkin et al. (2018) introduced Event2Mind, an event-based knowledge graph that captures characters' intentions and reactions. Subsequently, Sap et al. (2019) introduced ATOMIC, a commonsense knowledge graph that models if-then relationships for simple events. To explore more complex events, Tandon et al. (2020) introduced OpenPI, a dataset for entity state tracking in procedures. OpenPI was extended to OpenPI2.0 by introducing entity saliency scores and entity canonicalization (Zhang et al., 2024). Parallel efforts have developed neural models, including a GRU-based encoder-decoder model for Event2Mind (Rashkin et al., 2018), a decoder-only Transformer called COMET for ConceptNet and ATOMIC (Bosselut et al., 2019), and fine-tuned GPT-2 for OpenPI (Tandon et al., 2020).
+
+Benchmarking LLMs' ToM Reasoning Capabilities Many ToM benchmarks are inspired by the False Beliefs test (Wimmer and Perner, 1983), including event-based benchmarks such as ToMi (Le et al., 2019), HiToM (Wu et al., 2023), BigToM (Gandhi et al., 2024), and OpenToM (Xu et al., 2024), and dialogue-based datasets such as FANToM (Kim et al., 2023). Based on the Smarties Test (Gopnik and Astington, 1988), Adv-CSFB (Shapira et al., 2024) and ToMChallenges (Ma et al., 2023) assess LLMs' ability to reason about unexpected contents and unexpected transfers. ToMBench (Chen et al., 2024) and EPITOME (Jones et al., 2023) contain a suite of ToM tasks that go beyond False Beliefs and Smarties Test. MMToMQA extends ToM evaluation to multimodality (Jin et al., 2024) and InformativeBench evaluates ToM in multi-agent settings (Liu et al., 2024).
+
+\section*{Improving LLMs' ToM Reasoning Capabilities}
+
+Methods for improving LLMs' ToM reasoning ca-
+
+\begin{figure}
+\includegraphics[width=\textwidth]{https://cdn.mathpix.com/cropped/2025_08_30_1bb8caca563567e440a9g-03.jpg?height=692&width=1583&top_left_y=239&top_left_x=239}
+\captionsetup{labelformat=empty}
+\caption{Figure 2: An overview of the EnigmaToM framework. In the graphs shown at bottom of (3), nodes denotes observed events while nodes denotes unobserved events. See detailed explanations in §3.}
+\end{figure}
+pabilities have focused on perspective-taking. SymbolicToM conducts perspective-taking via belief graphs (Sclar et al., 2023). SimulatedToM (Wilf et al., 2024) and DWM (Huang et al., 2024) conduct perspective-taking by prompting. DWM additionally prompts LLMs to infer the world state after a group of events. TimeToM utilizes the temporal order of events to conduct perspective-taking (Hou et al., 2024). PerceptToM does perspectivetaking by prompting LLMs to infer perceivers of each event (Jung et al., 2024). For multimodal ToM, methods like NIPE and BIP-ALM leverage Bayesian Inverse Planning (Ying et al., 2023; Jin et al., 2024), with environments (e.g. 2D grids or videos) providing strong perspective-taking signals through observable trajectories.
+
+\section*{3 The EnigmaToM Framework}
+
+Before presenting the EnigmaToM framework, we define the general setup of ToM reasoning tasks.
+
+ToM Task Setup We focus on the widely studied ToM task of reasoning about false beliefs (Wimmer and Perner, 1983), which is typically formulated as QA tasks. Formally, given a context consisting of a sequence of events, \(\mathcal{E}=\left\{\epsilon_{i}\right\}_{i=1}^{n}\), which involves multiple characters, \(\mathcal{C}=\left\{c_{j}\right\}_{j=1}^{m}\), and a query regarding the belief of a particular character, \(q_{c}, c \in \mathcal{C}\), the goal is to derive the most likely belief, \(b_{c}\), from all potential beliefs, \(\mathcal{B}_{c}\) :
+\[
+b_{c}^{*}=\arg \max _{b \in \mathcal{B}_{c}} \mathbb{P}\left(b \mid \mathcal{E}, q_{c}, c \in \mathcal{C}\right)
+\]
+
+Further, \(\mathcal{E}\) can be concise events as seen in the ToMi dataset (Le et al., 2019) or utterances as seen
+in the FANToM dataset (Kim et al., 2023). Beyond directly querying a character's beliefs about the environment, one can also probe their beliefs regarding other characters' perceptions, thereby enabling the assessment of higher-order ToM reasoning.
+
+The EnigmaToM Framework Figure 2 provides an overview of our framework, we use circled number ((N) to refer to components in the figure. At the core of EnigmaToM is a Neural Knowledge Base (NKB) of Entity States (Enigma). Given a sequence of events (1). \(\mathcal{E}\) ) and the corresponding questions (1). Q), EnigmaToM first leverages a chosen LLM (2) to identify key entities (e.g., characters and important objects) and their attributes relevant to ToM reasoning (Top left of (3)). Enigmathen produces state information for these entities after each event (Top right of (3), §3.1). With the entity state knowledge, EnigmaToM first conducts Knowledge Injection (referred to as "KI" thereafter) to enrich the original events by adding relevant finegrained entity state details (§3.2). Among the entity state knowledge, spatial information of characters is used to conduct perspective-taking through an Iterative Masking mechanism (referred to as "IM" thereafter. Bottom of (3), §3.3). The modified events are provided to the LLM for final answers via zero-shot prompting (4)). By offloading much of the ToM reasoning process to the symbolic IM component via perspective-taking, EnigmaToM reduces LLMs' reasoning burden.
+
+\subsection*{3.1 The Enigma Neural Knowledge Base}
+
+NKBs such as COMET are trained on a large corpus of structured knowledge in a sequence-
+to-sequence manner (Bosselut et al., 2019). Following this approach, we fine-tuned a Llama3.18B (Dubey et al., 2024) model to function as our NKB (Zheng et al., 2024). \({ }^{2}\) For training, we used OpenPI2.0 (Zhang et al., 2024), which consists of 25,600 human-annotated entity state changes derived from WikiHow articles. OpenPI2.0 was selected over ATOMIC and Event2Mind as it contains more complex events and entity states. Alternatively, as LLMs become increasingly adept at commonsense reasoning, they can serve as an NKB of entity states via prompting (Hwang et al., 2021). We denote the trained (T) and prompt-based (P) NKB as Enigma \({ }^{\top}\) and Enigma \({ }^{\mathrm{P}}\), respectively.
+
+To query the NKB, we adopt an entity-attributeguided approach which contains two steps. In Step 1 , given a sequence of events, \(\mathcal{E}\), a set of ToM questions, \(\mathcal{Q}\), and a chosen LLM parameterized by \(\theta\), we obtain a set of entities of interest, \(E= \{e\}_{i=1}^{n}\), and their corresponding attributes, \(A= \{a\}_{j=1}^{m}\), by zero-shot prompting:
+\[
+E, A=\operatorname{LLM}_{\theta}(\rho(\mathcal{E}, \mathcal{Q}))
+\]
+where \(\rho\) denotes the prompt template (see Appendix D for details of the prompt). Then in Step 2 , given an event, \(\epsilon \in \mathcal{E}\), a set of entities of interest \(E\) and their corresponding attributes \(A\), we query Enigma to retrieve the state of the entities after event \(\epsilon\) :
+\[
+\begin{aligned}
+s_{\epsilon}=\bigoplus_{i=1}^{n} \bigoplus_{j=1}^{m} & \operatorname{Enigma}\left(e_{i}, a_{j}, \epsilon\right) \\
+& \forall \epsilon \in \mathcal{E}, e_{i} \in E, a_{j} \in A
+\end{aligned}
+\]
+where \(\oplus\) denotes concatenation.
+
+\subsection*{3.2 Knowledge Injection (KI) with Enigma}
+
+In prior studies, perspective-taking was regarded as filtering out events unobserved by a given character, yielding a subset \(\mathcal{E}_{c}^{\prime} \subseteq \mathcal{E}\). We argue that beyond event filtering, perspective-taking should enhance LLMs' comprehension of events. Fine-grained entity state knowledge is crucial for event reasoning (Zhang et al., 2023) but often omitted due to reporting bias (Shwartz and Choi, 2020). To address this, we propose a knowledge injection mechanism, KI, that utilizes Enigma to enrich observable events with fine-grained entity state information. In the first step of KI, a chosen LLM is used to infer key entities, \(E\), and attributes, \(A\), based on a given sequence of events, \(\mathcal{E}\), and a set of ToM questions, \(\mathcal{Q}\),
+
+\footnotetext{
+\({ }^{2}\) See Appendix B for details of the fine-tuning process.
+}
+(Equation 2). We then query Enigma with the recognizied entities and their attributes to obtain their state information at each event (Equation 3). We exclude spatial information of characters, \(\mathcal{S}_{c}^{p}\), as this will be handled in the subsequent masking process (§3.3). Given a sequence of events, \(\mathcal{E}=\{\epsilon\}_{i=1}^{n}\), we augment it by injecting entity state knowledge, resulting in the sequence \(\mathcal{E}^{\text {aug }}\) :
+\[
+\mathcal{E}^{\text {aug }}=\bigoplus_{i=1}^{n} \epsilon_{i} \oplus \hat{s}_{\epsilon_{i}}, \text { where } \hat{s}_{\epsilon_{i}}=s_{\epsilon_{i}} \backslash s_{c}^{p}
+\]
+where \(\oplus\) denotes concatenation. As fine-grained entity state knowledge is often omitted in events due to reporting bias (Shwartz and Choi, 2020), this mechanism compensates for the lost information. More importantly, by providing state information of key entities, KI reinforces LLMs' understanding of the observed events.
+
+\subsection*{3.3 Perspective-Taking (IM) with Enigma}
+
+Studies in psychology have shown that people's beliefs about others' mental states rely only on information available to themselves \({ }^{3}\) (Arslan et al., 2017). Building on this insight, we assume that characters interpret others' beliefs through the lens of their own mental states, which allows us to employ Iterative Masking (IM) to facilitate efficient and accurate ToM reasoning across various order.
+
+Perspective-taking with Enigma is accomplished by constructing spatial scene graphs and performing Iterative Masking (IM) using constructed graphs. Specifically, we obtain spatial information, \(\mathcal{S}_{c}^{p}\), by querying Enigma about the location (attr) of a specific character (ent), \(c\), using Equation (3). Spatial scene graphs are constructed based on spatial information to represent the detailed locations where each event takes place as perceived by a given character. The nodes of the scene graph represent events and locations, while the edges denote the "isin" relationship, specifying the location where each event takes place.
+
+During IM, we first construct a characteroblivious spatial scene graph, \(G_{\mathcal{E}^{\text {aug }}}\), which documents the location of each augmented event from an omniscient perspective. We then construct character-centric spatial scene graphs, \(G_{c}\), that capture event locations from the perspective of each character. We introduce a null node, \(\varnothing\), which indicates that the location of the current event is
+
+\footnotetext{
+\({ }^{3}\) For instance, "Anne's belief about Sally's mental state" depends only on information available to Anne, i.e. events witnessed by Anne herself.
+}
+unknown to the character. During IM, the null node serves as a "mask" to exclude the event nodes, which are unobserved by the character, from \(G_{\mathcal{E}}{ }^{\text {aug }}\) (see Figure 1 and Figure 2). For high-order ToM reasoning, \(G_{\mathcal{E}^{\text {aug }}}\) is masked sequentially by the order of characters in the belief chain \({ }^{4}\) :
+\[
+G_{c_{1: k}}^{\text {masked }}=G_{\mathcal{E}^{\text {aug }}} \bigotimes_{j=1}^{k} G_{c_{j}}
+\]
+where \(\otimes\) represents the masking operation, and \(k\) corresponds to the ToM-order. The observable events of character \(c_{1: k}\) with injected entity state knowledge can be constructed as:
+\[
+\mathcal{E}_{c_{1: k}}^{\text {aug }}=V_{G_{c_{1: k}}^{\text {masked }}}^{\epsilon}
+\]
+where \(V_{G_{c_{1: k}}^{\text {masked }}}^{\epsilon}\) represents event nodes in \(G_{c_{1: k}}^{\text {masked }}\). In the case of high-order Tom reasoning, \(\mathcal{E}_{c_{1: k}}^{\text {aug }}\) is obtained by iteratively applying the belief of characters. As such, \(\mathcal{E}_{c_{1: k}}^{\text {aug }}\) effectively encapsulates the beliefs of all characters in the belief chain. This allows us to transform the high-order ToM question to that of first-order. For instance, reasoning about "Sally's belief about Anne's belief" without EnigmaToM requires first inferring Sally's perceived world state, which then serves as the basis for modeling Anne's belief. With EnigmaToM, such nested dependencies and recursive reasoning are handled by the IM mechanism. Consequently, un\(\operatorname{der} \mathcal{E}_{\text {Sally,Anne }}^{\text {aug }}\), deriving Sally's belief is sufficient to answer the original second-order Theory of Mind (ToM) question. Illustrative examples and further details on ToM order reduction are provided in Appendix C. We present illustrative examples and details of ToM order reduction in Appendix C.
+
+\subsection*{3.4 Efficiency of EnigmaToM}
+
+The IM mechanism of EnigmaToM addresses the intractability of high-order ToM reasoning faced by SymbolicToM (Sclar et al., 2023). Due to the asymmetry of ToM modeling \({ }^{5}\), enumerating all possible mental states for characters across all ToM orders is a permutation problem. Suppose a ToM reasoning question involves \(m\) characters and the ToM order goes up to \(k^{\text {th }}\)-order, the worst-case complexity of constructing belief graphs in SymbolicToM is \(\mathcal{O}\left(\sum_{i=1}^{k} \frac{m!}{(m-i)!}\right)\). In
+
+\footnotetext{
+\({ }^{4}\) For instance, the masked spatial scene graph for "Sally's belief of Anne's mental state" is \(G_{\mathcal{E}}\) aug \(\otimes G_{\text {Sally }} \otimes G_{\text {Anne }}\).
+\({ }^{5}\) For example, in second-order ToM, Anne's belief of Sally's mental state is not equivalent to Sally's belief of Anne's mental state.
+}
+
+\begin{table}
+\begin{tabular}{ccccc}
+\hline Dataset & O & Unit & \#Units & \#Qs \\
+\hline ToMi \(^{6}\) (Le et al., 2019) & 2 & E & 9.85 & 114 \\
+HiToM (Wu et al., 2023) & 4 & E & 26.49 & 614 \\
+FANToM (Kim et al., 2023) & 2 & U & 23.14 & 577 \\
+\hline
+\end{tabular}
+\captionsetup{labelformat=empty}
+\caption{Table 1: Summary of datasets. \(\boldsymbol{O}\) : highest ToM order tested. Unit: type of event sequence. "E" for event and "U" for utterance. \#Units: avg. units per sequence. \#Qs: avg. number of questions per sampled subset. Examples from each dataset can be found in Appendix A.}
+\end{table}
+contrast, EnigmaToM constructs one spatial scene graph, \(G_{\mathcal{E}^{\text {aug }}}\), which encapsulates omniscient spatial information, and \(m\) character-centric spatial scene graphs. Hence, the worst-case complexity for constructing spatial scene graphs in EnigmaToM is \(\tilde{T}(m, k)=\mathcal{O}(m)\), which is linear with respect to the number of characters and independent of the ToM order \(k\). We illustrate the difference in complexity in Appendix E.
+
+\section*{4 Experiments}
+
+EnigmaToM is evaluated on three widely used ToM benchmarks (Table 1) and compared against the following generic and ToM-specific methods:
+
+CoT (Wei et al., 2022) boosts LLMs' reasoning capabilities by prompting LLMs to explicitly list out their reasoning process.
+SimToM (Wilf et al., 2024) conducts perspectivetaking by directly querying the LLMs about the mental states of characters.
+TimeToM \({ }^{\dagger}\) (Hou et al., 2024) leverage the temporal information of events to conduct perspectivetaking. The final answer is obtained using a multiperspective belief-solving prompt.
+DWM (Huang et al., 2024) conducts perspectivetaking by partitioning the events into chunks and querying the LLMs about characters' mental states after each chunk.
+PerceptToM \({ }^{\dagger}\) (Jung et al., 2024) conducts perspective-taking by querying the LLMs about the characters' awareness of the events.
+
+To ensure a fair comparison with established methods, we conduct controlled experiments by controlling the format and answer space of all ToM questions. In addition, we follow a realistic setting of ToM reasoning by using only the sequence of events and ToM questions from each dataset.
+
+\footnotetext{
+\({ }^{6}\) We use the disambiguated ToMi (Sclar et al., 2023) from https://github.com/msclar/symbolictom.
+\({ }^{\dagger}\) Official implementation is not available at the time of experiments (Sept-Dec, 2024). We implemented this method using prompts from the corresponding paper.
+}
+
+\begin{table}
+\begin{tabular}{|l|l|l|l|l|l|l|l|l|}
+\hline \multicolumn{2}{|c|}{} & Qwen2.5-7B & Llama3.1-8B & Gemma2-9B & Gemma2-27B & Llama3.3-70B \({ }^{\text {4bit }}\) & Qwen2.5-72B \({ }^{\text {4bit }}\) & GPT-40 \\
+\hline \multirow{6}{*}{\begin{tabular}{l}
+\(\sum_{0}^{1}\) \\
+INOL
+\end{tabular}} & Vanilla & \(0.722_{ \pm 0.045}\) & \(0.647_{ \pm 0.011}\) & \(0.741_{ \pm 0.037}\) & \(0.715_{ \pm 0.048}\) & \(0.767_{ \pm 0.015}\) & \(0.717_{ \pm 0.034}\) & \(0.767_{ \pm 0.041}\) \\
+\hline & CoT & \(0.724_{ \pm 0.026}\) & \(0.739_{ \pm 0.025}\) & \(0.676_{ \pm 0.035}\) & \(0.537{ }_{ \pm 0.056}\) & \(0.741_{ \pm 0.032}\) & \(0.767_{ \pm 0.033}\) & \(0.769_{ \pm 0.029}\) \\
+\hline & SimToM & \(0.642_{ \pm 0.022}\) & \(0.600_{ \pm 0.020}\) & \(0.710_{ \pm 0.034}\) & \(0.684_{ \pm 0.015}\) & \(0.712_{ \pm 0.018}\) & \(0.749_{ \pm 0.020}\) & \(0.749_{ \pm 0.018}\) \\
+\hline & TimeToM & \(0.567_{ \pm 0.024}\) & \(0.630_{ \pm 0.019}\) & \(0.681_{ \pm 0.028}\) & \(0.587{ }_{ \pm 0.036}\) & \(0.739_{ \pm 0.021}\) & \(\mathbf{0 . 8 6 5}_{ \pm \mathbf{0 . 0 1 8}}\) & \(0.723_{ \pm 0.016}\) \\
+\hline & DWM & \(0.686_{ \pm 0.023}\) & \(0.644_{ \pm 0.033}\) & \(0.718_{ \pm 0.028}\) & \(0.707_{ \pm 0.045}\) & \(0.735_{ \pm 0.016}\) & \(0.762_{ \pm 0.051}\) & \(0.739_{ \pm 0.049}\) \\
+\hline & PerceptToM & \(0.720_{ \pm 0.038}\) & \(0.695_{ \pm 0.025}\) & \(0.676_{ \pm 0.029}\) & \(0.749_{ \pm 0.017}\) & \(0.738_{ \pm 0.032}\) & \(0.809_{ \pm 0.033}\) & \(0.790_{ \pm 0.023}\) \\
+\hline \multirow{2}{*}{} & Enigma \({ }^{\text {p }}\) & \(0.706_{ \pm 0.044}\) & \(0.738_{ \pm 0.056}\) & \(\mathbf{0 . 8 6 5}_{ \pm 0.031}\) & \(\mathbf{0 . 8 3 3}_{ \pm \mathbf{0 . 0 1 8}}\) & \(\mathbf{0 . 8 2 8}_{ \pm \mathbf{0 . 0 1 2}}\) & \(0.839_{ \pm 0.014}\) & \(\mathbf{0 . 8 4 7}_{ \pm \mathbf{0 . 0 3 0}}\) \\
+\hline & Enigma \({ }^{\top}\) & \(\mathbf{0 . 8 2 5}_{ \pm \mathbf{0 . 0 3 0}}\) & \(\mathbf{0 . 7 9 6}_{ \pm \mathbf{0 . 0 2 3}}\) & \(0.814_{ \pm 0.020}\) & \(0.804_{ \pm 0.050}\) & \(0.787_{ \pm 0.024}\) & \(0.837_{ \pm 0.024}\) & \(0.795_{ \pm 0.036}\) \\
+\hline \multirow{3}{*}{} & Vanilla & \(0.378_{ \pm 0.013}\) & \(0.333_{ \pm 0.015}\) & \(0.471_{ \pm 0.009}\) & \(0.527_{ \pm 0.018}\) & \(0.534_{ \pm 0.008}\) & \(0.456_{ \pm 0.012}\) & \(0.521_{ \pm 0.006}\) \\
+\hline & CoT & \(0.441_{ \pm 0.007}\) & \(0.304_{ \pm 0.021}\) & \(0.474_{ \pm 0.008}\) & \(0.535{ }_{ \pm 0.018}\) & \(0.537{ }_{ \pm 0.011}\) & \(0.481_{ \pm 0.011}\) & \(0.527_{ \pm 0.005}\) \\
+\hline & SimToM & \(0.402_{ \pm 0.009}\) & \(0.368_{ \pm 0.024}\) & \(0.473_{ \pm 0.012}\) & \(\underline{0.549_{ \pm 0.018}}\) & \(0.569_{ \pm 0.005}\) & \(0.536_{ \pm 0.018}\) & \(0.571_{ \pm 0.003}\) \\
+\hline \multirow{2}{*}{\begin{tabular}{l}
+\(\sum_{0}\) \\
+HiToM
+\end{tabular}} & TimeToM & \(0.316_{ \pm 0.010}\) & \(\underline{0.462_{ \pm 0.013}}\) & \(0.302_{ \pm 0.012}\) & \(0.302_{ \pm 0.013}\) & \(\underline{0.623_{ \pm 0.006}}\) & \(0.415_{ \pm 0.013}\) & \(\underline{0.633_{ \pm 0.008}}\) \\
+\hline & DWM & \(0.444_{ \pm 0.020}\) & \(0.367_{ \pm 0.019}\) & \(0.485_{ \pm 0.012}\) & \(0.488_{ \pm 0.018}\) & \(0.564_{ \pm 0.010}\) & \(0.560_{ \pm 0.009}\) & \(0.580_{ \pm 0.018}\) \\
+\hline & PerceptToM & \(0.393_{ \pm 0.019}\) & \(0.342_{ \pm 0.011}\) & \(0.440_{ \pm 0.009}\) & \(0.562_{ \pm 0.007}\) & \(0.588_{ \pm 0.010}\) & \(0.548_{ \pm 0.016}\) & \(0.580_{ \pm 0.018}\) \\
+\hline \multirow{2}{*}{} & Enigma \({ }^{\text {p }}\) & \(\mathbf{0 . 5 0 8}_{ \pm \mathbf{0 . 0 1 2}}\) & \(\mathbf{0 . 4 7 7}{ }_{ \pm 0.005}\) & \(\mathbf{0 . 5 5 5}_{ \pm 0.010}\) & \(\mathbf{0 . 5 7 6}_{ \pm \mathbf{0 . 0 0 4}}\) & \(\mathbf{0 . 6 9 6}_{ \pm \mathbf{0 . 0 0 7}}\) & \(\mathbf{0 . 6 0 5}_{ \pm \mathbf{0 . 0 0 7}}\) & \(\mathbf{0 . 7 3 3}_{ \pm \mathbf{0 . 0 1 7}}\) \\
+\hline & Enigma \({ }^{\top}\) & \(0.457{ }_{ \pm 0.005}\) & \(0.431_{ \pm 0.010}\) & \(0.446_{ \pm 0.008}\) & \(0.478_{ \pm 0.004}\) & \(0.518_{ \pm 0.011}\) & \(0.473_{ \pm 0.010}\) & \(0.626_{ \pm 0.020}\) \\
+\hline \multirow{6}{*}{FANToM} & Vanilla & \(0.400_{ \pm 0.015}\) & \(0.429_{ \pm 0.022}\) & \(0.485_{ \pm 0.016}\) & \(0.553_{ \pm 0.011}\) & \(0.486_{ \pm 0.022}\) & \(0.532_{ \pm 0.025}\) & \(0.476_{ \pm 0.020}\) \\
+\hline & CoT & \(0.398_{ \pm 0.014}\) & \(0.438_{ \pm 0.014}\) & \(0.470_{ \pm 0.019}\) & \(0.556_{ \pm 0.007}\) & \(0.494_{ \pm 0.028}\) & \(0.521_{ \pm 0.024}\) & \(0.453_{ \pm 0.014}\) \\
+\hline & SimToM & \(0.413_{ \pm 0.012}\) & \(0.440_{ \pm 0.015}\) & \(0.427_{ \pm 0.009}\) & \(0.574_{ \pm 0.010}\) & \(\mathbf{0 . 6 2 0}_{ \pm \mathbf{0 . 0 2 5}}\) & \(0.516_{ \pm 0.014}\) & \(0.502_{ \pm 0.016}\) \\
+\hline & TimeToM & \(0.252_{ \pm 0.020}\) & \(0.260_{ \pm 0.012}\) & \(0.299_{ \pm 0.011}\) & \(0.300_{ \pm 0.021}\) & \(0.580_{ \pm 0.017}\) & \(0.409_{ \pm 0.026}\) & \(0.404_{ \pm 0.016}\) \\
+\hline & DWM & \(0.429_{ \pm 0.013}\) & \(\underline{0.470_{ \pm 0.027}}\) & \(0.433_{ \pm 0.023}\) & \(0.562_{ \pm 0.017}\) & \(0.473_{ \pm 0.021}\) & \(0.543_{ \pm 0.014}\) & \(0.465_{ \pm 0.028}\) \\
+\hline & PerceptToM & \(0.408_{ \pm 0.023}\) & \(0.407_{ \pm 0.026}\) & \(\underline{0.504_{ \pm 0.006}}\) & \(\mathbf{0 . 6 1 1}_{ \pm \mathbf{0 . 0 0 9}}\) & \(0.527_{ \pm 0.011}\) & \(\underline{0.573_{ \pm 0.016}}\) & \(0.521_{ \pm 0.006}\) \\
+\hline \multirow{2}{*}{} & Enigma \({ }^{\text {p }}\) & \(0.445_{ \pm 0.026}\) & \(0.442_{ \pm 0.018}\) & \(0.439_{ \pm 0.023}\) & \(0.462_{ \pm 0.014}\) & \(0.515_{ \pm 0.020}\) & \(0.450_{ \pm 0.013}\) & \(0.531_{ \pm 0.015}\) \\
+\hline & Enigma \({ }^{\top}\) & \(\mathbf{0 . 4 8 7}_{ \pm \mathbf{0 . 0 1 8}}\) & \(\mathbf{0 . 5 4 5}_{ \pm \mathbf{0 . 0 3 6}}\) & \(\mathbf{0 . 5 3 0}_{ \pm \mathbf{0 . 0 1 2}}\) & \(0.582_{ \pm 0.028}\) & \(0.610_{ \pm 0.021}\) & \(\mathbf{0 . 5 7 4}_{ \pm \mathbf{0 . 0 3 1}}\) & \(\mathbf{0 . 5 5 3}_{ \pm \mathbf{0 . 0 1 1}}\) \\
+\hline
+\end{tabular}
+\captionsetup{labelformat=empty}
+\caption{Table 2: Main results of EnigmaToM in comparison with existing methods on ToMi, HiToM, and FANToM datasets. Accuracy means and variances are calculated based on 5 runs, which used 5 different subsets of the corresponding dataset. The best and second best results are highlighted in bold and underline respectively.}
+\end{table}
+
+Auxiliary information such as character names is obtained using an off-the-shelf NER model \({ }^{8}\).
+
+Question Formatting We formulate ToMi as a free-form generation task where the model is instructed to choose between two possible answers. We formulate HiToM as a multiple-choice task as in the original paper (Wu et al., 2023). FANToM contains both free-form generation and multiplechoice questions. We follow the question formatting instructions in the original paper (Kim et al., 2023). For efficient and accurate parsing of LLM responses, we follow the convention of (Huang et al., 2024), instructing LLMs to wrap answers within the special <answer> and </answer> tokens. As introduced in §3.3, the recursive modeling of mental states in high-order ToM questions has been addressed by the IM mechanism, which allows us to transform high-order ToM questions into firstorder questions. Similarly, TimeToM leverages temporal information to conduct symbolic modeling of high-order ToM (Hou et al., 2024). We apply such transformation when evaluating with TimeToM and EnigmaToM (Appendix C).
+
+\footnotetext{
+\({ }^{8}\) https://huggingface.co/dslim/bert-large-NER
+}
+
+Towards Robust Evaluation To ensure robust evaluation, we construct 5 subsets for each dataset by sampling data points using commonly used random seeds \({ }^{\ddagger}\). Each subset of ToMi and HiToM contains 100 event sequences, whereas each subset of FANToM contains 50 multi-round dialogues. The number of QA pairs in each subset is shown in Table 1. We report both the mean accuracy and its variance based on the 5 runs.
+
+We evaluate each method using various instructiontuned LLMs, including Llama3.1-8B, Llama3.3\(70 \mathrm{~B}^{\ddagger}\), Qwen2.5-7B, Qwen2.5-72B \({ }^{\ddagger}\), Gemma2-9B, Gemma2-27B, and GPT-4o (Dubey et al., 2024; Yang et al., 2024; Gemma, 2024; OpenAI, 2024). To ensure reproducibility, all experiments are done using zero-shot prompting with greedy decoding and a temperature of 0 . LLM inference is carried out using vLLM on 2 NVIDIA A100 \({ }^{806 B}\) GPUs (Kwon et al., 2023).
+
+Table 2 shows the main results of EnigmaTom in comparison with existing methods on ToMi,
+
+\footnotetext{
+\({ }^{\ddagger}\) We use 12, 42, 96, 2012, and 2024 as random seeds.
+\({ }^{\ddagger}\) Loaded in 4bit using BitsandBytes (Dettmers et al.) with weights from https://huggingface.co/unsloth.
+}
+
+HiToM, and FANToM datasets. In general, we see that EnigmaToM brings improvements in accuracy across all datasets and most LLMs. Specifically, Enigma \({ }^{p}\) outperforms other methods on ToMi and HiToM, while Enigma \({ }^{\top}\) achieves superior performance on FANToM. EnigmaToM is particularly effective with smaller LLMs. For instance, Enigma \({ }^{\top}\) boosts Qwen2.5-7B to exceed the zeroshot performance of Qwen2.5-72B \({ }^{4 \text { bit }}\). Further, results from the HiToM dataset demonstrate that EnigmaToM is particularly effective in high-order ToM reasoning. We analyze the effectiveness of EnigmaToM in tackling high-order ToM reasoning in §5.1. Moreover, results from Table 2 show that Enigma \({ }^{\text {p }}\) performs better on event-based datasets (ToMi and HiToM) while Enigma \({ }^{\top}\) is more effective on a dialogue-based dataset (FANToM). We investigate such a discrepancy in §5.2 and §5.3.
+
+\section*{5 Analysis}
+
+\subsection*{5.1 High-Order ToM Reasoning}
+
+\begin{figure}
+\includegraphics[width=\textwidth]{https://cdn.mathpix.com/cropped/2025_08_30_1bb8caca563567e440a9g-07.jpg?height=408&width=779&top_left_y=1273&top_left_x=237}
+\captionsetup{labelformat=empty}
+\caption{Figure 3: Relative advantage of EnigmaToM on HiToM dataset with respect to ToM order.}
+\end{figure}
+
+To assess the effectiveness of EnigmaToM in high order ToM reasoning, we analyze its performance on the HiToM dataset, which consists of ToM questions requiring reasoning up to the fourth order. We compute the relative advantage of EnigmaToM with Enigma \({ }^{\text {p }}\) over the zero-shot vanilla prompting baseline. From Figure 3, we observe that EnigmaToM improves mean accuracy across all orders of ToM reasoning, with notable effectiveness in higher-order ToM reasoning. Specifically, results from the Qwen2.5 and Llama3 families demonstrate that EnigmaToM has an increasing advantage as the order of ToM reasoning increases. For the third- and fourth-order ToM reasoning, EnigmaToM achieves an average improvement of \(0.160_{ \pm 0.003}\) and \(0.148_{ \pm 0.004}\) respectively, across all models compared to the baseline. We observe similar trends on ToMi and FANToM albeit they only contain ToM questions up to the second
+
+\begin{table}
+\begin{tabular}{|l|l|l|l|l|}
+\hline \multicolumn{2}{|c|}{} & Llama3.3-70B \({ }^{\text {4bit }}\) & Qwen2.5-72B \({ }^{\text {4bit }}\) & GPT-40 \\
+\hline \multirow{5}{*}{![](https://cdn.mathpix.com/cropped/2025_08_30_1bb8caca563567e440a9g-07.jpg?height=57\&width=24\&top_left_y=348\&top_left_x=1079)} & Enigma \({ }^{p}\) & \(0.828_{ \pm 0.012}\) & \(0.839_{ \pm 0.014}\) & \(0.847{ }_{ \pm 0.030}\) \\
+\hline & Enigma \({ }^{\top}\) & \(0.787_{ \pm 0.024}\) & \(0.837_{ \pm 0.024}\) & \(0.795_{ \pm 0.036}\) \\
+\hline & w/o KI & \(0.834_{ \pm 0.067}\) & \(0.845 \pm 0.026\) & \(0.811_{ \pm 0.028}\) \\
+\hline & w/o IM & \(0.693_{ \pm 0.014}\) & \(0.655_{ \pm 0.039}\) & \(0.674_{ \pm 0.002}\) \\
+\hline & w/o KI, IM & \(0.767_{ \pm 0.015}\) & \(0.717{ }_{ \pm 0.034}\) & \(0.767_{ \pm 0.041}\) \\
+\hline \multirow{5}{*}{HiToM} & Enigma \({ }^{\text {p }}\) & \(0.696_{ \pm 0.007}\) & \(0.605_{ \pm 0.007}\) & \(0.733_{ \pm 0.017}\) \\
+\hline & Enigma \({ }^{\top}\) & \(0.518_{ \pm 0.011}\) & \(0.473_{ \pm 0.010}\) & \(0.626_{ \pm 0.020}\) \\
+\hline & w/o KI & \(0.726_{ \pm 0.004}\) & \(0.632_{ \pm 0.003}\) & \(0.751_{ \pm 0.004}\) \\
+\hline & w/o IM & \(0.460_{ \pm 0.013}\) & \(0.423_{ \pm 0.008}\) & \(0.442_{ \pm 0.006}\) \\
+\hline & w/o KI, IM & \(0.534_{ \pm 0.008}\) & \(0.456_{ \pm 0.012}\) & \(0.521_{ \pm 0.006}\) \\
+\hline \multirow{5}{*}{FANToM} & Enigma \({ }^{\text {p }}\) & \(0.515_{ \pm 0.020}\) & \(0.450_{ \pm 0.013}\) & \(0.531_{ \pm 0.015}\) \\
+\hline & Enigma \({ }^{\top}\) & \(0.610_{ \pm 0.021}\) & \(0.574_{ \pm 0.031}\) & \(0.553_{ \pm 0.011}\) \\
+\hline & w/o KI & \(0.607_{ \pm 0.018}\) & \(0.542_{ \pm 0.036}\) & \(0.539_{ \pm 0.012}\) \\
+\hline & w/o IM & \(0.500_{ \pm 0.021}\) & \(0.477_{ \pm 0.017}\) & \(0.470_{ \pm 0.013}\) \\
+\hline & w/o KI, IM & \(0.486_{ \pm 0.002}\) & \(0.532_{ \pm 0.025}\) & \(0.476_{ \pm 0.020}\) \\
+\hline
+\end{tabular}
+\captionsetup{labelformat=empty}
+\caption{Table 3: Ablation study of EnigmaToM on ToMi, HiToM, and FANToM datasets. "w/o KI" indicates without entity state knowledge injection. "w/o IM" denotes without perspective-taking via iterative masking. Improved and decreased results are highlighted.}
+\end{table}
+order. See Appendix F for complete results and analysis on all three datasets.
+
+\subsection*{5.2 Ablation Study}
+
+To understand the effectiveness of each component of EnigmaToM, we conduct an ablation study by (1) keeping the injected knowledge but removing the masking-based perspective-taking mechanism (directly using \(\mathcal{E}^{\text {aug }}\) as context); and (2) conducting perspective-taking without knowledge injection (applying Equation 5 with \(G_{\mathcal{E}}\) instead of \(G_{\mathcal{E}^{\text {aug }}}\) ).
+
+Enigma for Perspective Taking As shown in Table 3, removing the IM mechanism results in an average accuracy drop of -0.165 on \(\mathrm{ToMi},-0.172\) on HiToM, and -0.103 on FANToM. This suggests that the iterative masking mechanism is effective in perspective-taking and crucial for EnigmaToM to achieve boosted performance in ToM reasoning (See Table A2 for complete results).
+
+Enigma for Knowledge Injection Compared to IM for perspective-taking, entity state knowledge injection is less critical. On ToMi and HiToM, its removal slightly reduces Gemma2-27B's performance on ToMi but improves performance for all other LLMs on both benchmarks, further highlighting IM's effectiveness in perspective-taking. However, for FANToM, entity state knowledge is indispensable, as excluding it results in performance drops across all LLMs. For ToMi and HiToM, we hypothesize that larger LLMs are better at handling reporting bias. This aligns with the results shown in Table 2, where Enigma \({ }^{\text {p }}\) surpasses Enigma \({ }^{\text {T }}\) as LLM
+
+\begin{table}
+\begin{tabular}{ccccc}
+\hline Dataset & Model & Precision & Recall & F1-Score \\
+\hline TMi & Llama3.3-70B \({ }^{\text {4bit }}\) & 0.859 & 0.968 & 0.910 \\
+\hline FTM & Llama3.3-70B \(^{\text {4bit }}\) & 0.880 & 0.970 & 0.923 \\
+\hline
+\end{tabular}
+\captionsetup{labelformat=empty}
+\caption{Table 4: Performance analysis of key entity recognition in ToMi (TMi) and FANToM (FTM) datasets using Llama3. 3-70B \({ }^{4 \text { bit }}\). See Appendix J for detailed description of the evaluation process.}
+\end{table}
+
+\begin{table}
+\begin{tabular}{cccc}
+\hline Model & Relevance & Accuracy & Avg. \#Token \\
+\hline\(\Sigma\) Enigma \(^{\top}{ }_{8 \mathrm{~B}}\) & 0.847 & 0.807 & 7.665 \\
+Enigma \(^{\top}{ }_{70 \mathrm{~B}}\) & 0.870 & 0.860 & 9.740 \\
+\hline\(\sum_{\mathrm{E}=\text { Enigma }^{\top}{ }_{8 \mathrm{~B}}}\) & 0.880 & 0.773 & 8.973 \\
+Enigma \(^{\top}{ }_{70 \mathrm{~B}}\) & 0.880 & 0.700 & 30.517 \\
+\hline
+\end{tabular}
+\captionsetup{labelformat=empty}
+\caption{Table 5: Performance analysis of Enigma \({ }^{\top}\) on ToMi (TMi) and FANToM (FTM) datasets. See Appendix J for detailed description of the evaluation process.}
+\end{table}
+size increases, meaning that the fine-grained information about the state of the entity and its causal relationships with events are encapsulated more effectively in the larger LLMs. In such cases, potential inaccuracies in injected entity-state knowledge outweigh its benefits in addressing reporting bias, leading to decreased performance. In the case of FANToM, the dialogue-based nature of the dataset makes useful information sparser than in eventbased datasets. Here, knowledge injection serves a different role: rather than primarily addressing reporting bias, it compresses important information from utterances into entity-state representation, effectively reducing LLMs' workload in identifying crucial information. See Appendix H for examples.
+
+\subsection*{5.3 Effectiveness of LLMs and Enigma}
+
+\begin{figure}
+\includegraphics[width=\textwidth]{https://cdn.mathpix.com/cropped/2025_08_30_1bb8caca563567e440a9g-08.jpg?height=330&width=761&top_left_y=1918&top_left_x=239}
+\captionsetup{labelformat=empty}
+\caption{Figure 4: Relative advantage of EnigmaToM on ToMi, HiToM, and FANToM datasets. We use Enigma \({ }^{\text {P }}\) as the pivot method for ToMi and HiToM and Enigma \({ }^{\top}\) for FANToM. Exact mean accuracies are shown in Table A1. Model sizes shown in x-axis are Qwen2.5 models.}
+\end{figure}
+
+The effectiveness of EnigmaToM is contingent upon the capabilities of both the Enigma neural knowledge base and the LLM deployed in the framework. In this section, we conduct analysis
+of EnigmaToM with an aim to explore the following two questions: (1) Does EnigmaToM benefit LLMs of larger size? and (2) How effective is our Enigmaneural knowledge base and does scaling Enigmalead to increased performance?
+
+We raise the first question by hypothesizing that perspective-taking, albeit the challenges posed by its multi-hop nature, could become solvable by more capable LLMs. Empirically speaking, the capability of LLMs positively correlates to their number of parameters. To eliminate potential confounding factors, we analyze the effectiveness of LLMs from the Qwen2.5 family with sizes ranging from 7B to 72B (Yang et al., 2024).
+
+In the second question, we aim to examine the effectiveness of Enigma \({ }^{\top}\). Trained using data from OpenPI2.0, we wish to investigate how well can the knowledge encapsulated in Enigma \({ }^{\top}\) be transferred to aid ToM reasoning. Aside from the performance of Enigma \({ }^{\top}\), we also explore the effectiveness of scaling of Enigma \({ }^{\top}\). In addition to the Enigma \({ }^{\top}\) used in previous experiments, which is trained using a Llama3.1-8B model, we trained another Enigma \({ }^{\top}\) based on Llama3.3-70B, which we denote as Enigma \({ }^{\top}{ }_{70 \mathrm{~B}}\). Experiments with Enigma \({ }^{\top}{ }_{70 \mathrm{~B}}\) are carried out following the same procedure described in §4.
+
+Scaling of Base LLMs We compute the relative advantage of EnigmaToM by calculating the difference in mean accuracy between EnigmaToM and the most performant baseline methods (see Table 2). We use Enigma \({ }^{\text {p }}\) as the pivot method for ToMi and HiToM and Enigma \({ }^{\top}\) for FANToM. Figure 4 shows two trends: (1) a slight diminishment in advantage on ToMi and (2) a gradual increase in advantage on FANToM. We attribute this to the differing difficulty levels of these two datasets. ToMi, which consists of short sequences of concise events, becomes easier to solve with large-scale LLMs. Conversely, FANToM, featuring long sequences of lengthy dialogues, remains challenging even for larger LLMs. HiToM, positioned between these two extremes with long sequences of concise events, shows that EnigmaToM has a consistent advantage regardless of the LLM sizes. This discrepancy in performance and model scaling effect between ToMi and FANToM aligns with the analysis in \(\S 4\) and §5.3. These findings suggest that while prompting large-scale LLMs can potentially tackle ToM reasoning involving short event sequences (as in ToMi ), ToM reasoning about lengthy event or dialogue sequences (as in HiToM and FANToM) can benefit from the
+
+\begin{table}
+\begin{tabular}{|l|l|l|l|l|l|l|l|l|}
+\hline \multicolumn{2}{|c|}{} & Qwen2.5-7B & Llama3.1-8B & Gemma2-9B & Gemma2-27B & Llama3.3-70B \({ }^{\text {4bit }}\) & Qwen2.5-72B \({ }^{\text {4bit }}\) & GPT-40 \\
+\hline \multirow{3}{*}{![](https://cdn.mathpix.com/cropped/2025_08_30_1bb8caca563567e440a9g-09.jpg?height=62\&width=32\&top_left_y=315\&top_left_x=263)} & Enigma \({ }^{p}\) & \(0.706_{ \pm 0.044}\) & \(0.738_{ \pm 0.056}\) & \(0.865_{ \pm 0.031}\) & \(0.833_{ \pm 0.018}\) & \(0.828_{ \pm 0.012}\) & \(0.839_{ \pm 0.014}\) & \(0.847{ }_{ \pm 0.030}\) \\
+\hline & Enigma \({ }^{\top}{ }_{8 \mathrm{~B}}\) & \(0.825_{ \pm 0.030}\) & \(0.796_{ \pm 0.023}\) & \(0.814_{ \pm 0.020}\) & \(0.804_{ \pm 0.050}\) & \(0.787_{ \pm 0.024}\) & \(0.837{ }_{ \pm 0.024}\) & \(0.795_{ \pm 0.036}\) \\
+\hline & Enigma \({ }^{\top}{ }_{708}\) & \(0.837{ }_{ \pm 0.017}\) & \(0.835_{ \pm 0.026}\) & \(0.847{ }_{ \pm 0.008}\) & \(0.854_{ \pm 0.023}\) & \(0.844_{ \pm 0.018}\) & \(0.860_{ \pm 0.015}\) & \(0.872_{ \pm 0.026}\) \\
+\hline \multirow{3}{*}{![](https://cdn.mathpix.com/cropped/2025_08_30_1bb8caca563567e440a9g-09.jpg?height=88\&width=32\&top_left_y=416\&top_left_x=263)} & Enigma \({ }^{p}\) & \(0.508_{ \pm 0.012}\) & \(0.477_{ \pm 0.005}\) & \(0.555_{ \pm 0.010}\) & \(0.576_{ \pm 0.004}\) & \(0.696_{ \pm 0.007}\) & \(0.605_{ \pm 0.007}\) & \(0.733_{ \pm 0.017}\) \\
+\hline & Enigma \({ }^{\top}{ }_{8 \mathrm{~B}}\) & \(0.457_{ \pm 0.005}\) & \(0.431_{ \pm 0.010}\) & \(0.446_{ \pm 0.008}\) & \(0.478_{ \pm 0.004}\) & \(0.518_{ \pm 0.011}\) & \(0.473_{ \pm 0.010}\) & \(0.626_{ \pm 0.020}\) \\
+\hline & Enigma \({ }^{\top}{ }_{70 \mathrm{~B}}\) & \(0.456_{ \pm 0.007}\) & \(0.444_{ \pm 0.012}\) & \(0.481_{ \pm 0.006}\) & \(0.489_{ \pm 0.012}\) & \(0.517{ }_{ \pm 0.010}\) & \(0.467_{ \pm 0.009}\) & \(0.733_{ \pm 0.010}\) \\
+\hline \multirow{3}{*}{![](https://cdn.mathpix.com/cropped/2025_08_30_1bb8caca563567e440a9g-09.jpg?height=108\&width=32\&top_left_y=521\&top_left_x=263)} & Enigma \({ }^{p}\) & \(0.445_{ \pm 0.026}\) & \(0.442_{ \pm 0.018}\) & \(0.439_{ \pm 0.023}\) & \(0.462_{ \pm 0.014}\) & \(0.515_{ \pm 0.020}\) & \(0.450_{ \pm 0.013}\) & \(0.531_{ \pm 0.015}\) \\
+\hline & Enigma \({ }^{\top}{ }_{8 \mathrm{~B}}\) & \(0.487{ }_{ \pm 0.018}\) & \(0.545_{ \pm 0.036}\) & \(0.530_{ \pm 0.012}\) & \(0.582_{ \pm 0.028}\) & \(0.610_{ \pm 0.021}\) & \(0.574_{ \pm 0.031}\) & \(0.553_{ \pm 0.011}\) \\
+\hline & Enigma \({ }^{\top}{ }_{70 \mathrm{~B}}\) & \(0.479_{ \pm 0.032}\) & \(0.517 \pm 0.041\) & \(0.491_{ \pm 0.039}\) & \(0.529_{ \pm 0.028}\) & \(0.537 \pm 0.011\) & \(0.494_{ \pm 0.023}\) & \(0.539_{ \pm 0.012}\) \\
+\hline
+\end{tabular}
+\captionsetup{labelformat=empty}
+\caption{Table 6: Results of scaling Enigma \({ }^{\top}\) from Llama3.1-8B to Llama3.3-70B. Improved, Unchanged, and decreased results are highlighted in the corresponding color.}
+\end{table}
+fine-grained entity state knowledge as well as the symbolic masking mechanism of EnigmaToM.
+
+Effectiveness of LLMs in Recognizing Key Entity-Attributes Recognizing entities and their attributes (Equation 2) that are indispensable for answering the ToM questions posed is a critical pre-requisite for the effectiveness of EnigmaToM. On the one hand, failing to recognize a key entity will disable EnigmaToM to properly augment the events with critical information. On the other hand, erroneously identify an extraneous entity will lead to inclusion of redundant information, which will prolong the context and increase the reasoning burden of the LLM. To evaluate the quality of key entities and attributes extracted by LLMs, we manually labeled 300 entities and attributes identified using Llama3.3-70B \({ }^{4 \text { bit }}\). Evaluation results from Table 4 suggests that LLMs are more than competent in identifying key entities and attributes. With a F1-score of 0.910 on the ToMi dataset and 0.923 on the FANToM dataset, it is safe to conclude that the vast majority of entities identified by LLMs are indeed vital to answering the ToM questions posed.
+
+Effectiveness of Enigma in Generating Entity State Information To understand the effectiveness of scaling Enigma, we trained two Enigma \({ }^{\top}\) models using the same OpenPI2.0 dataset. With Llama3.1-8B as the base model, we trained Enigma \({ }^{\top}{ }_{88}\). Further, with Llama3.3-70B, we trained Enigma \({ }^{\top}{ }_{70 \mathrm{~B}}{ }^{11}\). Table 6 shows that there is an obvious discrepancy between the scaling effect of Enigma \({ }^{\top}\) : Enigma \({ }^{\top}{ }_{70 \mathrm{~B}}\) consistently outperforms Enigma \({ }^{\top}{ }_{8 \mathrm{~B}}\) in ToMi and HiToM while underperforming Enigma \({ }^{\top}{ }_{8 \mathrm{~B}}\) in FANToM.
+- Relevance: whether the entity and attribute contribute to answering the ToM question. This evaluates the same aspects of EnigmaToM as the precision scores shown in Table 4
+
+\footnotetext{
+\({ }^{11}\) Training details are provided in Appendix B.
+}
+- Accuracy: whether the entity state can be inferred from the given context.
+
+From Table 5, we see that the relevance scores of both ToMi and FANToM exceed \(80 \%\), indicating that Llama3.3-70B is capable of identifying entities and attributes useful for ToM reasoning. Entity state length and accuracy are closely correlated. Enigma \({ }^{\top}{ }_{70 \mathrm{~B}}\) produces a more articulated response compared to its counterpart. Specifically, scaling Enigma \({ }^{\top}\) brings \(5.3 \%\) improvement in accuracy on ToMi while increasing response length by only 2.075 tokens. In contrast, FANToM experiences a significant 21.544 token increase in response length, which reduces Enigma \({ }^{\dagger}\) 's efficiency as an information compressor and leads to greater hallucination, resulting in a \(7.3 \%\) drop in accuracy. We provide demonstration examples in Appendix I.
+
+\section*{6 Conclusion}
+
+In this work, we introduced EnigmaToM, a neurosymbolic framework designed to enhance the ToM reasoning capabilities of LLMs. By leveraging a Neural Knowledge Base of Entity States through an iterative masking mechanism and knowledge injection, EnigmaToM accomplishes the bulk of ToM reasoning via perspective-taking through symbolic reasoning, which alleviates LLMs' reasoning burden. Experimental results across multiple benchmarks demonstrate that EnigmaToM outperforms existing methods, particularly excelling in high-order ToM reasoning scenarios. Our analysis highlights the effectiveness of the iterative masking mechanism in maintaining strong performance across varying depths of ToM reasoning, as well as the critical role of fine-grained entity state knowledge in compressing key information in complex event sequences (as in FANToM). Furthermore, the framework's efficiency and scalability make it a promising solution for addressing the computational challenges associated with high-order ToM reasoning tasks.
+
+\section*{Limitations}
+
+\section*{ToM Reasoning Beyond Character Perception}
+
+EnigmaToM tackles ToM reasoning of characters' beliefs based on their perceptions. While we believe that reasoning about characters' perceptions serve as a cornerstone for all types of ToM reasoning, future work may explore methods to facilitate real-world ToM reasoning about characters' emotions, intentions, desires, and their inherent subjectivity (Zhou et al., 2025).
+
+Neural Knowledge Base EnigmaToM relies on access to a Neural Knowledge Base (NKB) to retrieve entity-state information for answering ToM questions. While Table 5 shows that Enigma is capable of producing accurate entity-state information, it can be further improved (e.g. full-parameter fine-tuning instead of LoRA). Further, expanding the NKB to incorporate richer entity-state details, including emotional, temporal, and causal relationships, would be beneficial for ToM reasoning about high-level information.
+
+Error Propogation While experiments demonstrate the effectiveness of the IM mechanism, it is prone to error propagation. In the case of highorder ToM reasoning, applying a wrong mask in the iterative masking process will lead to the event being erroneously excluded and vice versa. Additionally, in cases requiring complex reasoning about non-linear or intertwined event dependencies, the symbolic Iterative Masking (IM) mechanism may need to be enhanced.
+
+\section*{Ethics Statement}
+
+This study aims to enhance LLMs' ToM reasoning by improving the accuracy and efficiency of perceptual perspective-taking, ultimately optimizing their effectiveness in communication. ToM reasoning is essential for enhancing LLMs' ability to interact with humans (e.g., in chatbots) or other LLMs (e.g., in multi-agent systems). The evaluation datasets used in this study have been peer-reviewed and widely adopted in previous research. However, these datasets may introduce issues such as cultural bias and often lack demographic information. Future research could incorporate auxiliary data, such as demographic and personality traits, to improve representativeness across diverse ethnic and cultural backgrounds.
+
+\section*{Acknowledgments}
+
+This work was supported in part by the UK Engineering and Physical Sciences Research Council (EPSRC) through an iCASE award with Huawei London Research Centre and a Turing AI Fellowship (grant no. EP/V020579/1, EP/V020579/2).
+
+\section*{References}
+
+Ian Apperly. 2010. Mindreaders: the cognitive basis of "theory of mind". Psychology Press.
+
+Burcu Arslan, Niels A Taatgen, and Rineke Verbrugge. 2017. Five-year-olds' systematic errors in secondorder false belief tasks are due to first-order theory of mind strategy selection: a computational modeling study. Frontiers in psychology, 8:275.
+
+Antoine Bosselut, Hannah Rashkin, Maarten Sap, Chaitanya Malaviya, Asli Celikyilmaz, and Yejin Choi. 2019. COMET: Commonsense transformers for automatic knowledge graph construction. In Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics, pages 4762-4779, Florence, Italy. Association for Computational Linguistics.
+
+Sébastien Bubeck, Varun Chandrasekaran, Ronen Eldan, Johannes Gehrke, Eric Horvitz, Ece Kamar, Peter Lee, Yin Tat Lee, Yuanzhi Li, Scott Lundberg, et al. 2023. Sparks of artificial general intelligence: Early experiments with gpt-4. arXiv preprint arXiv:2303.12712.
+
+Zhuang Chen, Jincenzi Wu, Jinfeng Zhou, Bosi Wen, Guanqun Bi, Gongyao Jiang, Yaru Cao, Mengting Hu, Yunghwei Lai, Zexuan Xiong, and Minlie Huang. 2024. ToMBench: Benchmarking theory of mind in large language models. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), pages 15959-15983, Bangkok, Thailand. Association for Computational Linguistics.
+
+Mark H Davis. 1983. Measuring individual differences in empathy: Evidence for a multidimensional approach. Journal of personality and social psychology, 44(1):113.
+
+Harmen De Weerd, Rineke Verbrugge, and Bart Verheij. 2017. Negotiating with other minds: the role of recursive theory of mind in negotiation with incomplete information. Autonomous Agents and Multi-Agent Systems, 31:250-287.
+
+Tim Dettmers, Mike Lewis, Sam Shleifer, and Luke Zettlemoyer. 8-bit optimizers via block-wise quantization. In International Conference on Learning Representations.
+
+Tim Dettmers, Artidoro Pagnoni, Ari Holtzman, and Luke Zettlemoyer. 2024. Qlora: Efficient finetuning of quantized llms. Advances in Neural Information Processing Systems, 36.

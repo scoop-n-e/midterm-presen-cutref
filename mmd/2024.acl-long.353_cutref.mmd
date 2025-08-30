@@ -1,0 +1,413 @@
+\title{
+Generating Contrastive Narratives Using the Brownian Bridge Process for Narrative Coherence Learning
+}
+
+\author{
+Feiteng Mu, Wenjie Li \\ The Department of Computing, The Hong Kong Polytechnic University, Hong Kong \\ \{csfmu,cswjli\}@comp.polyu.edu.hk
+}
+
+\begin{abstract}
+A major challenge for narrative reasoning is to learn narrative coherence. Existing works mainly follow the contrastive learning paradigm. However, the negative samples in their methods can be easily distinguished, which makes their methods unsatisfactory. In this work, we devise two strategies for mining hard negatives, including (1) crisscrossing a narrative and its contrastive variants; and (2) event-level replacement. To obtain contrastive variants, we utilize the Brownian Bridge process to guarantee the quality of generated contrastive narratives. We evaluate our model on several tasks. The result proves the effectiveness of our method, and shows that our method is applicable to many applications.
+\end{abstract}
+
+\section*{1 Introduction}
+
+Narrative reasoning (Charniak, 1972; Winograd, 1972) is an account of the development of events, along with explanations of how and why these events happened (Hutto, 2015), which has provoked a variety of applcations, including commonsense causal reasoning (Roemmele et al., 2011; Gordon et al., 2012; Luo et al., 2016), abductive reasoning (Bhagavatula et al., 2019), and so on.
+
+A major challenge for narrative reasoning is to evaluate narrative coherence (Mostafazadeh et al., 2016). Existing methods mainly focus on devising self-supervised tasks, in which positive samples are from large-scale real narratives (Mostafazadeh et al., 2016; Yao and Huang, 2018), and negative samples are created by sampling-based strategies. For example, Xie et al. (2020); Lin et al. (2020b); Uehara et al. (2020) create negative samples by shuffling or masking real narratives. Krishna et al. (2022) incorporates randomly sampled sequences and model-completed (Radford et al., 2019; Brown et al., 2020) sequences as negative samples. However, these strategies are generally coarse-grained and superficial. The resulting negatives still face
+problems of low quality, such as being irrelevant or repetitive (Krishna et al., 2022), making them less representative, and easily distinguishable.
+
+Hard negatives are critical in the contrastive learning framework (Wu et al., 2017; Mishchuk et al., 2017; Xuan et al., 2020). The ideal of hard negative samples should be that are similar to a real narrative but actually less coherent. To mine such negatives, a possible approach is to introduce contrastive narratives. Contrastive narratives are examples that are similar in content, but convey different semantics (Margatina et al., 2021; Wang et al., 2021). Due to this property, we can crisscross \({ }^{1}\) a narrative and its contrastive variants to obtain negative samples, as shown in Figure 1. The resulting negatives should be similar to the real narratives but less coherent, making them good candidates for hard negatives. However, existing works for collecting contrastive narratives rely heavily on manual annotation, which is costly and not scalable. To solve this problem, exploiting automated methods has great value, but is difficult since it requires preserving subtle differences while providing a clear delineation between the observed narrative and the generated ones.
+
+Actually, the generation of contrastive narratives involves exploring the latent space surrounding a given narrative, enabling the creation of similar narratives with distinct characteristics. Assuming that the evolution tendency of an observed narrative can be represented as a continuous trajectory in latent space, which can be modeled by Brownian motion (Revuz and Yor, 2013; Wang et al., 2022). Consequently, we can sample the latent trajectories which exhibit proximity to the observed trajectory, and then decode the sampled trajectories into explicit narratives. But the problem is that the
+
+\footnotetext{
+\({ }^{1}\) For example, according to \(X=(P, S)\) and \(X_{c}=\) ( \(P_{c}, S_{c}\) ), we can exchange their prefixes and suffixes to obtain the negatives ( \(P, S_{c}\) ) and ( \(P_{c}, S\) ). We define this strategy as "crisscrossing", and use this definition in the rest of our paper.
+}
+
+Narrative \(X=(P, S)\)
+\(P\) : Molly loves popcorn. She eats it everyday. \(S\) : On Molly's birthday her mom took her to the popcorn factory. They took a tour of the factory. Molly has a great day.
+![](https://cdn.mathpix.com/cropped/2025_08_30_3a996f05bf60fa92ddb8g-02.jpg?height=195&width=998&top_left_y=254&top_left_x=833)
+
+Figure 1: We define that an example consists of a prefix (P) and a suffix (S). Left: An ideal contrastive variant \(X_{c}\), which is similar to \(X\) but conveys different semantics. Text with red color denotes the difference. Right: The solid line denotes the data manifold. The dashed line represents the methods for creating negatives, such as Mixup (Zhang et al., 2017) or crisscrossing. As \(X_{c}\) approaches \(X\), the created negative example should be more "hard".
+decoded narratives may differ significantly in content from the observed narrative, which may not meet the requirements for contrastive narratives. To simplify the problem, we further suggest that contrastive narratives keep the same endpoint as the observed narrative, which directly models the fact that a narrative event can evolve to the same end through different paths (Qin et al., 2019). Based on this constraint, we are able to sample different trajectories from the Brownian Bridge (Majumdar and Orland, 2015; Wang et al., 2022) region that is centered around the observed narrative. The sampled trajectories are decoded as narratives with the same start and end as the observed narrative, while also having similar but different intermediate event chains. Then we crisscross the observed narrative and the generated ones to synthesize negative samples. In fact, in our crisscrossing strategy, the start and end points of resulting negatives remain the same as the positive ones. That is, the start and end of positive narratives will never be perturbed. This further motivates us to design an event-level perturbation to obtain negatives, as more diverse negatives definitely benefit contrastive learning.
+
+In this paper, we devise two strategies to create hard negatives for narrative coherence learning. The first strategy crisscrosses a narrative with its contrastive variants, and the second strategy performs an event-level replacement. To obtain contrastive narratives, we first sample different latent trajectories from the Brownian Bridge region, then fix the start and end points of the narrative, and generate diverse contrastive narratives.
+
+Our contributions can be summarized as follows. (1) Based on the Brownian Bridge process, we generate high-quality contrastive narratives, which are used to synthesize hard negatives. (2) We propose a new coherence evaluator (CohEval), which is enhanced by diverse and high-quality hard negatives. Our model is trained entirely through selfsupervised contrastive learning, and can be applied to a wide range of downstream tasks.
+
+We evaluate our model on multi-choice tasks and one narrative generation task. We also conduct an in-depth analysis of our negative sample synthesis strategies. The experimental results demonstrate the effectiveness of our method. Code is released at github.com/mufeiteng/ContrastiveNarratives.
+
+\section*{2 Related Work}
+
+Counterfactual Story Generation Counterfactual story generation (Qin et al., 2019; Hao et al., 2021; Chen et al., 2021) requires predicting how alternative events, contrary to what actually happened, might have resulted in different story endings. Existing works for counterfactual story generation mainly include manual annotation (Qin et al., 2019) or supervised fine-tuning (Hao et al., 2021) methods. In our work, contrastive narratives can be seen as a special case of counterfactual narratives, where we confine that an observed narrative and its contrastive variants have the same start and end. We generate contrastive narratives in a selfsupervised manner, which is based on the Brownian Bridge process (Wang et al., 2022).
+
+Language Modeling via Stochastic Process Generating long, coherent text is conceptually difficult for autoregressive models because they lack the ability to model text structure and dynamics (Lin et al., 2020a). Wang et al. (2022) explicitly models latent structure with Brownian Bridge dynamics, which can capture how sentence embeddings evolve over a document. (Wang et al., 2023) uses the stochastic process to model the temporal dynamics of dialogue paths. Motivated by Wang et al. (2022), we use Brownian Bridge for generating contrastive stories because it allows for the smooth modeling of gradual changes between two narrative states. Based on the simple constraint, we are able to generate coherent contrastive narratives, which are used to synthetic hard negatives.
+
+Hard Negatives Mining Earlier researchers devise a series of corrupting strategies, such as shuffling, masking, or lexical conversion, to perturb real narratives (Cai et al., 2020; Xie et al., 2020; Lin et al., 2020b; Uehara et al., 2020; Zhou et al., 2022a,b). Recent methods focus on mining hard negatives. For example, Jwalapuram et al. (2021) retrieves hard negatives from the corpus with a momentum encoder. Krishna et al. (2022) incorporates random sequences and model-generated sequences as hard negatives. Kalantidis et al. (2020) mixes different negatives in latent space to create hard negatives. Zhang et al. (2022) mixes multiple positive samples to produce hard negatives. Instead, we propose to use a narrative with its contrastive variants to synthesize hard negatives. Since the contrastive narratives are similar to the original ones, we can obtain qualified negatives.
+
+\section*{3 Methods}
+
+\subsection*{3.1 Data Preparation}
+
+Following the previous method (Cai et al., 2020), we use RocStories (Mostafazadeh et al., 2016) as our data corpus, since it contains abundant event commonsense knowledge, making it a good resource for narrative reasoning. Due to the limitation of computational resources, we randomly select about 20k samples from RocStories, and denote them as the positive sample set \(\mathcal{D}^{+}\). Each sample in \(\mathcal{D}^{+}\)is a narrative \(X=\left\{e_{1}, \cdots, e_{5}\right\}\), in which each \(e_{i}(i=1, \cdots, 5)\) is an event. Following previous works, we lay narrative coherence learning in the contrastive learning framework, in which the negative samples are needed for training.
+
+We devise two strategies for mining hard negatives: (1) crisscrossing a narrative and its contrastive variants; (2) event-level replacement. Next, we introduce how to obtain contrastive narratives.
+
+\subsection*{3.2 Generating Contrastive Narratives via the Brownian Bridge Process}
+
+Given a narrative, the contrastive variants should be similar to it and express distinctive characteristics. We regard this problem as exploring the latent space surrounding the given narrative, and propose to model this problem by the Brownian Bridge process (Wang et al., 2022). The density distribution of a Brownian Bridge process from a start point \(z_{0}\) at \(t=0\) to an endpoint \(z_{T}\) at \(t=T\) is:
+\[
+p\left(z_{t} \mid z_{0}, z_{T}\right) \sim \mathcal{N}\left(\left(1-\frac{t}{T}\right) z_{0}+\frac{t}{T} z_{T}, \frac{t(T-t)}{T}\right)
+\]
+
+The Brownian Bridge density acts like a noisy linear interpolation between the start and end point of the trajectory, where the intermediate point \(z_{t}\) should be more like \(z_{0}\) at the start and more like \(z_{T}\) at the end of the trajectory. Uncertainty is highest in the middle region, and low near the start and end points (rf. Figure 2, the green region). The characteristic of the Brownian Bridge is to maintain a smooth transition between the sampling midpoint and the starting and ending points.
+
+Following (Wang et al., 2022), we pre-train an event encoder with the Brownian Bridge contrastive loss \({ }^{2}\). Given the starting and ending events, the encoder is responsible for encoding an event \(e\) into latent code \(z\) and ensuring that the latent codes of any intermediate events conform to the Brownian bridge distribution (Equation 1). Once the event encoder is trained, it will be frozen in all subsequent processes and will never get updated.
+
+To train the contrastive narratives generator, we automatically construct training examples. Given the start event \(e_{1}\) and the end event \(e_{5}\), we first use the event encoder to encode them into latent vectors \(z_{1}\) and \(z_{5}\). Once \(z_{1}\) and \(z_{5}\) are obtained, we know the corresponding Brownian Bridge density (Equation 1), and we can sample middle points to obtain diverse latent trajectories, i.e., \(\mathbf{Z}=\left\{z_{1}, z_{2}, z_{3}, z_{4}, z_{5}\right\}\). To generate contrastive narratives, we encode ( \(e_{1}, e_{5}\) ) with BART (Lewis et al., 2019) to obtain the context embeddings:
+\[
+\mathbf{H}_{c}=\text { BARTEncoder }\left(\left[e_{1}, e_{5}\right]\right),
+\]
+where \([;]\) denotes the concatenation, \(\mathbf{H}_{c} \in \mathcal{R}^{l \times d}\), \(l\) is the length of \(\left[e_{1} ; e_{5}\right]\). Next, given \(\mathbf{H}_{c}\) and latent codes \(\mathbf{Z}\), we generate middle events \(y= \left(e_{2}, e_{3}, e_{4}\right)\). Specifically, let \(y_{t}\) denotes the \(t\)-th tokens in \(y\). At the timestep \(t\), the generator must predict \(y_{t}\) using \(\mathbf{H}_{c}\), all tokens in the past \(y_{<t}\), as well as the event latent codes \(\mathbf{Z}\) :
+\[
+\begin{aligned}
+\mathbf{h}_{y_{t}} & =\operatorname{BARTDecoder}\left(y_{<t}, \mathbf{H}_{c}, \mathbf{W}_{z}^{T} \mathbf{Z}\right) \\
+P\left(y_{t} \mid Y_{<t}\right) & =\operatorname{softmax}_{V}\left(\mathbf{W}_{v} \mathbf{h}_{y_{t}}+b\right)
+\end{aligned}
+\]
+where \(V\) denotes the standard vocabulary, \(\mathbf{W}_{z}\) denotes a linear layer that maps the dimension of \(z\) to be identical to \(\mathbf{H}_{c}\). This can be seen as decoding a latent trajectory \(\left\{z_{1}, z_{2}, z_{3}, z_{4}, z_{5}\right\}\) into narrative events given the start event \(e_{1}\) and end event \(e_{5}\).
+
+However, in our preliminary trials, we found that the generated narratives are coherent but less similar to the original one, which brings difficulties to the construction of hard negatives. The possible reason is that the encoding process, i.e., encoding
+
+\footnotetext{
+\({ }^{2}\) See Appendix A and (Wang et al., 2022) for details.
+}
+
+\begin{figure}
+\includegraphics[width=\textwidth]{https://cdn.mathpix.com/cropped/2025_08_30_3a996f05bf60fa92ddb8g-04.jpg?height=209&width=1583&top_left_y=254&top_left_x=239}
+\captionsetup{labelformat=empty}
+\caption{Figure 2: The training phrase of contrastive narratives generation. Given \(z_{1}\) and \(z_{5}, \mathbf{Z}\) is sampled according to Equation 1. The masked \(e_{2}, e_{3}, e_{4}\) are used as the prompt for decoding.}
+\end{figure}
+\(e\) to \(z\), lost too much information, making it difficult for the model to reconstruct \(y\). To solve this problem, we randomly mask the \(y\) with the ratio of \(\rho\) ( 0.85 by default), and use the masked sequence as the prompt for the decoding phrase, which encourages the generator to generate more similar events to \(y\). Actually, these can be seen as two types of constraints, where \(\mathbf{Z}\) requires that \(y\) and the generated text show similar trajectories in latent space, and the masked prompt requires that \(y\) and the generated text are similar in vocabulary. The whole training process is shown in Figure 2.
+
+When training, we use RocStories excluding \(\mathcal{D}^{+}\)as training data. We have also tried other pretrained models, such as GPT2 (Radford et al., 2019) and T5 (Raffel et al., 2020), and BART empirically performs best, as shown in Appendix B. Therefore, we choose BART as the backbone. After training, for each \(X \in \mathcal{D}^{+}\), we fix its start and end events, then sample different intermediate events. For each \(X\), we first generate 200 candidates, then use several criteria \({ }^{3}\) to filter low-quality candidates. We finally retain \(N\) (60 by default) most-qualified contrastive examples.
+
+\subsection*{3.3 Synthesizing Negative Examples}
+
+We devise two strategies to create negative examples. The first strategy crisscrosses a narrative with its contrastive variants, and the second strategy performs an event-level replacement.
+
+\subsection*{3.3.1 Crisscrossing a Narrative and its Contrastive Variants}
+
+Note that each \(X\) contains five events. For simplicity, we define the first three events as the prefix \((P)\), and the last two events as the suffix ( \(S\) ), so that we denote \(X=(P, S)\) and the contrastive variant \(X_{c}=\left(P_{c}, S_{c}\right)\). Then we are able to synthesize the negative example \(X^{-}=\left(P_{c}, S\right)\). The basic intuition is: \(P_{c}\) is coherent with \(S_{c}\), so it should be less coherent with \(S\). This is because \(X\) and \(X_{c}\) are different paths with the same start and end points.
+
+\footnotetext{
+\({ }^{3}\) See Appendix C for details.
+}
+
+More specifically, by comparing \(X=(P, S)\) and \(X^{-}=\left(P_{c}, S\right)\), we can find that the difference between \(X\) and \(X^{-}\)lies in the second and third events. In other words, we have replaced two events in the original story with different events. Therefore, the resulting samples should be less coherent than \(X\). Meanwhile, \(X^{-}=\left(P_{c}, S\right)\) is similar to \(X=(P, S)\), making it qualified as a hard negative \({ }^{4}\). With loss of generality, we denote the obtained negative samples as \(\mathcal{C}_{X}=\left\{X_{i}^{-}\right\}_{i=1}^{2 N}\).
+
+For each training epoch, we randomly sample \(K\) (15 by default) negatives samples \(\left\{X_{k}^{-}\right\}_{k=1}^{K}\) from \(\mathcal{C}_{X}\) for each \(X\), and feed them as well as \(X\) into a pre-trained language model (PLM) (Devlin et al., 2018a; Liu et al., 2019), e.g. RoBERTa, to obtain sequence-level representations:
+\[
+\mathbf{h}^{+}=\operatorname{RoBERTa}(X), \mathbf{h}_{k}^{-}=\operatorname{RoBERTa}\left(X_{k}^{-}\right),
+\]
+where \(k=\{1, \cdots, K\}, \mathbf{h}^{+}\)and \(\mathbf{h}_{k}^{-} \in \mathcal{R}^{d}, d\) is the hidden size of RoBERTa. We have also tried BERT (Devlin et al., 2018b) as the backbone, as shown in Appendix E. Next, the sequence-level representations are passed into a linear layer \(\mathbf{W}_{c} \in \mathcal{R}^{d}\) to derive coherence scores of all samples:
+\[
+s^{+}=\mathbf{W}_{c}^{T} \mathbf{h}^{+}, s_{k}^{-}=\mathbf{W}_{c}^{T} \mathbf{h}_{k}^{-} .
+\]
+
+Lastly, we use the contrastive classifying objective to distinguish the positive examples from the corresponding negative examples:
+\[
+\mathcal{L}_{1}=-\frac{1}{\left|\mathcal{D}^{+}\right|} \sum_{\mathcal{D}^{+}} \log \frac{\exp \left(s^{+}\right)}{\exp \left(s^{+}\right)+\sum_{k=1}^{K} \exp \left(s_{k}^{-}\right)} .
+\]
+
+It should be noted that the difference between \(X^{-}=\left(P, S_{c}\right)\) and \(X=(P, S)\) lies in the third and fourth events, i.e., \(e_{3}\) and \(e_{4}\). Due to the masked prompt, some tokens in \(\left(e_{3}, e_{4}\right)\) of \(X^{-}\)are similar to those of \(X\), making \(X^{-}\)qualified. However, in the crisscrossing strategy, \(e_{1}\) and \(e_{5}\) will never be perturbed. This further motivates us to perform a simple event-level perturbation to \(X\) to create more diverse negative samples.
+
+\footnotetext{
+\({ }^{4}\) Similarly, we can obtain the negative example \(X^{-}=\) ( \(P, S_{c}\) ) by defining the first two events as the prefix.
+}
+
+\subsection*{3.3.2 Event-level Replacement}
+
+Due to the fact that events are the basic semantic unit of neural language, for a narrative, if we replace a component event with another similar but different event, the resulting example should be less coherent and similar to the original narrative.
+
+Specifically, based on \(\mathcal{D}^{+}\), we build an event pool, which consists of about 100 k different events. We pre-compute the cosine similarity among all event pairs using SimCSE (Gao et al., 2021), and cache the top 20 most similar events \(Q^{e}\) for each query event \(e\). Then, given a positive example \(X\), we randomly select a position \(i\) and replace \(i\)-th event \(e_{i}\) with a randomly sampled event \(\bar{e}\) from \(Q^{e}\) to create a negative example \(\bar{X}=\left\{\cdots, e_{i-1}, \bar{e}, e_{i+1}, \cdots\right\}\). Likewise, for each training epoch, we create \(K\) negatives samples \(\left\{\bar{X}_{k}\right\}_{k=1}^{K}\). After obtaining hidden states of negatives: \(\overline{\mathbf{h}}_{k}=\operatorname{RoBERTa}\left(\bar{X}_{k}\right)\), we derive coherence scores of all samples and use the contrastive loss to rank the positive sample above the negatives:
+\[
+\begin{aligned}
+s^{+} & =\mathbf{W}_{c}^{T} \mathbf{h}^{+}, \bar{s}_{k}=\mathbf{W}_{c}^{T} \overline{\mathbf{h}}_{k}, \\
+\mathcal{L}_{2} & =-\frac{1}{\left|\mathcal{D}^{+}\right|} \sum_{\mathcal{D}^{+}} \log \frac{\exp \left(s^{+}\right)}{\exp \left(s^{+}\right)+\sum_{k=1}^{K} \exp \left(\bar{s}_{k}\right)} .
+\end{aligned}
+\]
+
+\subsection*{3.4 Training and Knowledge Transferring}
+
+When training, the final loss is
+\[
+\mathcal{L}=\gamma \mathcal{L}_{1}+(1-\gamma) \mathcal{L}_{2},
+\]
+where \(\gamma\) is set to 0.5 . It should be noted that another way is to merge two types of negatives and directly perform contrastive learning. However, this requires more GPU memory, which exceeds our condition. Therefore, we calculate the two losses separately and then average them.
+
+Our CohEval can be easily transferred to many downstream applications. For example, for the multi-choice task with a input \(C\) and option candidates \(O=\left\{o_{1}, \cdots, o_{n}\right\}\), we can use CohEval to select most reasonable \(o\) by:
+\[
+o \leftarrow \arg \max _{i} \operatorname{CohEval}\left(\left[C, o_{i}\right]\right) .
+\]
+
+Motivated by existing plug-and-play text generation methods (Miao et al., 2018; Chen et al., 2021), we also evaluate our CohEval in narrative text generation, with CohEval as coherence guidance. Details can be seen in the experiment.
+
+\section*{4 Experiment}
+
+\subsection*{4.1 Datasets and Experimental Details}
+
+The evaluation datasets include COPA (Roemmele et al., 2011), e-Care (Du et al., 2022a), \(\alpha\) NLI (Bhagavatula et al., 2020), Cloze (Mostafazadeh et al., 2016), Swag (Zellers et al., 2018), HellaSwag (Zellers et al., 2019), and TimeTravel (Qin et al., 2019). TimeTravel is a text-generation dataset, while others are multi-choice datasets. We evaluate our model on these datasets in the zero-shot setting. Note that the test sets of e-Care and HellaSwag are not released. So we evaluate our model on the validation set of the three datasets. The statistics of the datasets, as well as the experimental details are shown in Appendix D.
+
+\begin{table}
+\begin{tabular}{|l|l|l|l|l|l|l|}
+\hline Methods & \multicolumn{6}{|c|}{COPA e-Care \(\alpha\) NLI Cloze Swag HS.} \\
+\hline \multicolumn{7}{|c|}{LLMs-based Prompting} \\
+\hline Alpaca-lora (7B) & 57.4 & 54.5 & 52.6 & 66.1 & 36.0 & 30.2 \\
+\hline ChatGLM2 (6B) & 78.1 & 66.9 & 58.1 & 84.3 & 48.7 & 41.2 \\
+\hline ChatGPT & 96.2 & 81.8 & 75.5 & 94.7 & 70.7 & 76.4 \\
+\hline \multicolumn{7}{|c|}{Contrastive Training Based Methods} \\
+\hline RankGen(base) & 63.8 & 70.3 & 52.2 & 50.7 & 46.3 & 33.9 \\
+\hline RankGen(large) & 70.2 & 72.1 & 54.8 & 54.4 & 49.2 & 40.5 \\
+\hline EventBERT & N/A & N/A & 59.5 & 75.6 & N/A & N/A \\
+\hline CohEval (ours) & 77.8 & 71.9 & 67.6 & 77.6 & 67.4 & 44.9 \\
+\hline \multicolumn{7}{|c|}{Ablation Study} \\
+\hline \(M_{E R}\) & 73.4 & 75.4 & 65.3 & 77.1 & 61.8 & 38.9 \\
+\hline \(M_{C C}\) & 75.8 & 68.2 & 67.2 & 69.4 & 66.9 & 44.7 \\
+\hline
+\end{tabular}
+\captionsetup{labelformat=empty}
+\caption{Table 1: The accurary (\%) on multi-choice datasets. HS. denotes HellaSwag. Scores with bold denote the best results among contrastive training based methods.}
+\end{table}
+
+\subsection*{4.2 Baselines and Metrics}
+
+For multi-choice tasks, the metric is Accuracy. We compare our method with EventBERT (Zhou et al., 2022a), RankGen (Krishna et al., 2022), and several large language models (LLMs), including Alpaca-lora (7B) \({ }^{5}\), ChatGLM2 (6B) (Du et al., 2022b; Zeng et al., 2022) and ChatGPT (OpenAI. , 2023). For LLMs, we use one-shot prompting for experiments, the used prompts are in Appendix F. For TimeTravel, we follow Chen et al. (2021) and formulate this task in the MCMCbased sampling paradigm. The details are in Appendix G. We compare our method with DELOREAN (Qin et al., 2020), ClarET (Zhou et al., 2022b), CGMH (Miao et al., 2018), EDUCAT (Chen et al., 2021). Automatic evaluation metrics
+
+\footnotetext{
+\({ }^{5}\) The checkpoint is at https://github.com/tloen/alpaca-lora.
+}
+include BLEU4 (Papineni et al., 2002), BertScore (Zhang et al., 2019), ENTScore (Chen et al., 2021), and HMean \(=\frac{2 \cdot \text { BLEU4 } \cdot \text { ENTScore }}{\text { BLEU4 } \cdot \text { ENTScore }}(\) Chen et al., 2021). Manual evaluation metrics include Fluency, MinEdits (Chen et al., 2021), and Coherence.
+
+\subsection*{4.3 Overall Results}
+
+Automatic Evaluation The automatic evaluation result can be seen in Table 1 and 2, respectively. We have the following observations.
+- In Table 1, our model surpasses all contrastive training-based methods. This indicates that the negative samples we create are more qualified, which verifies the effectiveness of our method.
+- Although there is still a significant gap compared to ChatGPT, our method surpasses smaller LLMs, e.g., ChatGLM2, on most datasets.
+- In Table 2, our method outperforms EDUCAT. Since EDUCAT uses the off-the-shelf PLMs for evaluating coherence, the performance improvement proves that our CohEval is better at evaluating narrative coherence.
+- Compared with our method, ChatGLM2 and ChatGPT achieve high ENTScore, but low BLEU4. This indicates that auto-regressive methods tend to generate coherence counterfactual ending with massive edits. These behaviors conflict with the requirements of the task.
+
+\begin{table}
+\begin{tabular}{|l|l|l|l|l|}
+\hline Methods & BLEU4 & BertS. & ENTS. & HMean \\
+\hline \multicolumn{5}{|c|}{LLMs-based Prompting} \\
+\hline ChatGLM2 (6B) & 16.47 & 60.03 & 66.15 & 26.37 \\
+\hline ChatGPT & 36.41 & 69.81 & 82.62 & 50.55 \\
+\hline \multicolumn{5}{|c|}{Off-the-shelf small PLMs} \\
+\hline DELOREAN & 23.89 & 59.88 & 51.40 & 32.62 \\
+\hline ClarET & 23.75 & 63.93 & N/A & N/A \\
+\hline \(\mathrm{CGMH}^{\dagger}\) & 41.09 & 73.90 & 28.06 & 33.34 \\
+\hline EDUCAT & 44.05 & 74.06 & 32.28 & 37.26 \\
+\hline EDUCAT \({ }^{\dagger}\) & 43.57 & 74.00 & 33.41 & 37.82 \\
+\hline CohEval (ours) & 42.46 & 73.36 & 37.39 & 39.77 \\
+\hline \multicolumn{5}{|c|}{Ablation Study} \\
+\hline \(M_{E R}\) & 44.18 & 74.34 & 34.63 & 38.82 \\
+\hline \(M_{C C}\) & 42.99 & 73.64 & 35.78 & 39.05 \\
+\hline
+\end{tabular}
+\captionsetup{labelformat=empty}
+\caption{Table 2: The automatic result on TimeTravel. \({ }^{\dagger}\) denotes our implementation. BertS. denotes BertScore. ENTS. denotes ENTScore. Scores with bold denote the best results among off-the-shelf small PLMs.}
+\end{table}
+
+Ablation Study To investigate the influence of the two kinds of negatives, we devise two ablated variants: (1) \(M_{E R}\) which means we create negatives via event-level replacement; (2) \(M_{C C}\) which
+means we create negatives via the crisscrossing strategy. The ablation study result is shown in Table 1,2 . We have the following observations.
+- Compared to CohEval, \(M_{E R}\) and \(M_{C C}\) achieve lower ENTScore, indicating their weaker coherence evaluation abilities. But both variants obtain higher BLEU4 and BertScore. In TimeTravel, there is a trade-off phenomenon between BLEU and EntScore. This is because the gold \(y^{\prime}\) is obtained through editing the original \(y\) with minimal-edits. This leads to a high word overlap between \(y^{\prime}\) and \(y\). Due to the weaker coherence evaluation abilities of the two variants, the probability of accepting transitions is lower when adopting MCMC for rewriting. In other words, when using \(M_{E R}\) and \(M_{C C}\), the number of rewritings is relatively low, resulting in higher BLEU4 and BertScore but lower ENTScore.
+- The best ENTScore is achieved by combining two kinds of hard negatives. This indicates the two kinds of negatives complement each other. The reason is that more diverse negative examples contribute to contrastive learning.
+- \(M_{C C}\) generally performs better than \(\mathrm{M}_{E R}\). The possible reason is that, compared to the crisscrossing strategy, the event-level perturbation is more coarse-grained. Nevertheless, event-level replacement is an effective supplement to the crisscrossing strategies.
+
+Manual Evaluation on TimeTravel We perform an A/B test to compare our method with several baselines. Following (Chen et al., 2021), the human evaluation mainly focuses on three primary criteria: i) Fluency, whether a model produces fluent text; ii) Coherence, the logical consistency between the counterfactual context ( \(z, x^{\prime}\) ) and the generated endings \(y\); and iii) Min-Edits, the extent of minimal revision between two endings. We carry out a pairwise comparison with CGMH, EDUCAT, and two ablated models: \(M_{\text {exp }}\) and \(M_{\text {imp }}\). We randomly sample 100 cases for each pair of models. Three annotators are recruited to make a preference among win, tie, and lose given the counterfactual context and two outputs by our model and a baseline respectively. The annotators are research students from the field of text generation to make sure they have a fair judgment of used metrics. We calculate Fleiss's kappa reliability as the inter-annotator agreement. As is shown in Table 3, LLMs are able to generate fluent and coherent counterfactual ending, but tend to massively edit the original ending,
+which coincides with the finding in automatic evaluation. Compared to EDUCAT and two ablated variants, CohEval achieves better fluency and coherence results. In addition, four models achieve similar Min-Edits results, this is because they run for the same editing steps. The Fleiss's kappa reliability of Fluency, Min-Edits, and Coherence is 0.488, 0.507, and 0.428, respectively.
+
+\begin{table}
+\begin{tabular}{lllllll}
+\hline \multirow{2}{*}{ Methods } & \multicolumn{2}{c}{ Fluency } & \multicolumn{2}{c}{ Min-Edits } & \multicolumn{2}{c}{ Coherence } \\
+\cline { 2 - 7 } & \(\mathrm{W}(\%)\) & \(\mathrm{L}(\%)\) & \(\mathrm{W}(\%)\) & \(\mathrm{L}(\%)\) & \(\mathrm{W}(\%)\) & \(\mathrm{L}(\%)\) \\
+\hline vs. EDUCAT \(^{\dagger}\) & 27.0 & 13.7 & 23.0 & 24.7 & 33.7 & 4.7 \\
+vs. \(M_{E R}\) & 25.7 & 16.7 & 22.3 & 23.3 & 28.0 & 6.7 \\
+vs. \(M_{C C}\) & 20.0 & 12.0 & 23.7 & 22.3 & 23.0 & 7.0 \\
+vs. ChatGLM2 & 13.3 & 45.3 & 84.7 & 7.7 & 19.0 & 37.0 \\
+vs. ChatGPT & 14.7 & 41.3 & 60.3 & 25.0 & 13.7 & 40.0 \\
+\hline
+\end{tabular}
+\captionsetup{labelformat=empty}
+\caption{Table 3: Manual evaluation result on TimeTravel. Scores indicate the percentage of Win(W) and Lose(L).}
+\end{table}
+
+Human Correlation with our CohEval Same as (Chen et al., 2021), we analyze the correlation between our CohEval and human ratings in terms of coherence evaluation. We calculate Pearson's \(r\) and Kendall's \(\tau\) coefficients. The result is shown in Appendix H. All results show positive correlations. The result of our CohEval is close to that of ENTScore. Notice that ENTScore is trained with human-labeled counterfactual data, while our CohEval is trained in a self-supervised manner. This demonstrates the applicability of our CohEval.
+
+Overall, the result demonstrates that our CohEval is a generic narrative coherence evaluator, and can be applied to a wide range of downstream tasks.
+
+\subsection*{4.4 Deeper Analysis about Contrastive Narratives Generation}
+
+Indirect Evaluation through Multi-choice Tasks We conduct an ablation experiment to explore the impact of different sub-modules in contrastive narratives generation. We compare our BrownianBridge based method (denoted as "BB") with the following variants. (1) "w/o prompt", in which we ablate the masked prompt when training. (2) "w/o trajectory", in which we ablate the latent trajectories sampled from the Brownian bridge. (3) "Infilling", in which we ablate the masked prompt and the sampled latent trajectory when training. In this case, the ablated variant degenerates into a text-infilling model. We use the counterparts generated by different variants for crisscrossing to obtain negative examples, which are then used for contrastive learning. The result is shown in Table 4.
+
+We find: (1) Compared to "BB", "w/o prompt" and "w/o trajectory" get result drops, respectively; (2) "Infilling" gets a further performance drop.
+
+The possible reasons lie in the following aspects. (1) If contrastive narratives are incoherent, then the synthesized negatives are not "hard". The sampled latent trajectories help to maintain the coherence of generated contrastive narratives, which benefits the quality of synthesized negatives. (2) The masked prompt helps to reduce the difficulty of the generation process, as a result, the obtained contrastive counterparts are similar to the original ones, making the resulting negatives more qualified.
+
+\begin{table}
+\begin{tabular}{llllllll}
+\hline Methods & \multicolumn{7}{c}{ COPA e-Care \(\alpha\) NLI Cloze Swag HS. } \\
+\hline BB (our \(M_{C C}\) ) & 75.8 & 68.2 & 67.2 & 69.4 & 66.9 & 44.7 & - \\
+w/o prompt & 79.0 & 65.4 & 68.5 & 75.6 & 59.2 & 39.9 & -4.6 \\
+w/o trajectory & 71.0 & 71.2 & 65.9 & 69.9 & 67.1 & 42.0 & -5.1 \\
+Infilling & 72.2 & 71.9 & 64.8 & 77.7 & 58.1 & 40.4 & -7.1 \\
+\hline
+\end{tabular}
+\captionsetup{labelformat=empty}
+\caption{Table 4: The result (\%) of different kinds of counterparts for synthesizing negative examples.}
+\end{table}
+
+\begin{table}
+\begin{tabular}{lllllll}
+\hline \multirow{2}{*}{ Methods } & \multicolumn{2}{l}{ Coherence } & \multicolumn{2}{c}{ Similarity } & \multicolumn{2}{c}{ SubtleDiff. } \\
+\cline { 2 - 7 } & \(\mathrm{W}(\%)\) & \(\mathrm{L}(\%)\) & \(\mathrm{W}(\%)\) & \(\mathrm{L}(\%)\) & \(\mathrm{W}(\%)\) & \(\mathrm{L}(\%)\) \\
+\hline vs. w/o prompt & 43.0 & 19.0 & 46.0 & 6.3 & 27.3 & 7.0 \\
+vs. w/o trajectory & 53.7 & 15.3 & 26.7 & 7.7 & 28.0 & 12.7 \\
+vs. Infilling & 60.3 & 10.3 & 56.3 & 5.7 & 49.0 & 6.7 \\
+vs. ChatGLM2 & 40.0 & 20.0 & 39.0 & 20.3 & 24.3 & 28.3 \\
+vs. ChatGPT & 21.0 & 26.0 & 30.7 & 17.0 & 18.0 & 23.0 \\
+\hline
+\end{tabular}
+\captionsetup{labelformat=empty}
+\caption{Table 5: The manual evaluation on contrastive narratives generation. We compare "BB" with "w/o prompt", "w/o trajectory", "Infilling", ChatGLM2, and ChatGPT.}
+\end{table}
+
+\section*{Direct Evaluation through Manual Judgement}
+
+We further conduct a manual evaluation to directly evaluate the quality of generated contrastive narratives. Since we want the generated narrative to be similar to the original one and reflect subtle differences (such as changes in opinions or entities) to make itself a different story, we use Coherence, as well as Similarity and SubtleDifference (SubtleDiff.) as metrics. Coherence reflect the logical consistency between the given (start,end) events and the generated middle events. Similarity reflects the similarity between the generated middle events and those of the original story. SubtleDiff. measures whether the generated example is a qualified contrastive narrative, which reflects subtle differences from the original story but is actually a different story. We randomly select 100 stories that have no overlap with train data for the experiment.
+
+For each story, we use different models to generate its contrastive variant. We also perform a pairwise comparison with "w/o prompt", "Infilling", and two LLMs: ChatGLM2 and ChatGPT. The same three annotators are asked to make a preference among win, tie, and lose for each pair of generations. In Table 5, ChatGPT generally exhibits the best result, which reflects its powerful reasoning ability. Our "BB" is slightly inferior to ChatGLM2 on SubtleDiff., but wins on the other two metrics. This indicates that our method is comparable to small LLMs. In addition, "BB" significantly surpasses the ablated variants. Specifically, we find that the masked prompt helps to improve Similarity, while latent trajectory helps to improve Coherence. This coincides with human intuition. The Fleiss's kappa reliability of Coherence, Similarity, and SubtleDiff. is \(0.369,0.371,0.244\), respectively.
+
+Generally, by utilizing the Brownian bridge process, we harvest qualified contrastive narratives, which contributes to contrastive learning.
+
+\subsection*{4.5 Further Discussion}
+
+\begin{table}
+\begin{tabular}{lllllll}
+\hline Strategies & \multicolumn{6}{l}{ COPA e-Care \(\alpha\) NLI Cloze Swag HS. } \\
+\hline \multirow{3}{*}{ Mixup } & Random & 60.2 & 49.7 & 52.1 & 59.1 & 32.7 \\
+& w/o prompt & 61.8 & 55.5 & 57.0 & 64.3 & 35.4 \\
+BB & 63.6 & 60.0 & 64.4 & 66.5 & 41.9 & 29.3 \\
+\hline \multirow{3}{*}{ CrissC. w/o prompt } & 79.0 & 65.4 & 68.5 & 75.6 & 59.2 & 39.9 \\
+B (our \(M_{C C}\) ) & 75.8 & 68.2 & 67.2 & 69.4 & 66.9 & 44.7 \\
+\hline
+\end{tabular}
+\captionsetup{labelformat=empty}
+\caption{Table 6: The result of different strategies for creating negatives. CrissC. denotes the crisscrossing strategy.}
+\end{table}
+
+Influence of Different Strategies for Creating Negatives In our method, we crisscross a positive narrative with its contrastive counterparts to create negatives. Here, we further investigate the result when using Mixup (Zhang et al., 2017) to create negatives. The experimental setting is shown in Appendix I. We additionally explore three ways of obtaining the counterparts: (1) "BB" denotes our Brownian-Bridge based contrastive narratives; (2) "w/o prompt" denotes we ablate the prompt when generating contrastive narratives; (3) Random denotes we randomly select different positive narratives as counterparts. The result is shown in Table 6. We observe that:
+- The crisscrossing strategy is superior then Mixup by a large margin. We speculate that in the era of self-attention (Vaswani et al., 2017), using the transformer to directly learn the representation
+
+\begin{figure}
+\includegraphics[width=\textwidth]{https://cdn.mathpix.com/cropped/2025_08_30_3a996f05bf60fa92ddb8g-08.jpg?height=227&width=769&top_left_y=242&top_left_x=1056}
+\captionsetup{labelformat=empty}
+\caption{Figure 3: Results under the different number of retrained contrastive narratives.}
+\end{figure}
+of negative samples is better than manipulating representations of samples in the hidden space.
+- Whether adopting "CrissC." or Mixup, our BBbased contrastive narratives far surpass "random", which proves the strength of our method.
+
+Results under Different Number of Retained Contrastive Narratives We explore the influence of the number of retained contrastive narratives. The result is shown in Figure 3. Our method generally achieves the best result when \(N=60\), and the result even decreases when \(N\) further increases. We speculate that as \(N\) increases, incoherent contrastive examples increase, which has a negative impact on the quality of synthesized negative examples. So, we set \(N=60\) by default.
+
+Impact of the Mask Ratio \(\rho\) We investigate the impact of the different mask ratios \(\rho\) when generating contrastive narratives. In Table 7, the result is best when \(\rho=0.85\). As \(\rho\) decreases, the result gets worse. To investigate the reason, we manually examine the generated examples, and find the model tends to paraphrase the original story and generate duplicate examples when \(\rho\) decreases. This is because more information about the original story will be exposed when using a lower mask rate, making it easier to reconstruct the original story. We additionally calculate the diversity of the contrastive narratives generated at different \(\rho\). We use Distinct-n (Li et al., 2015) as the metric. As shown in Table 7, as \(\rho\) decreases, the corresponding Distinct scores also decrease. This indicates that a lower mask rate \(\rho\) may lead to duplicate samples when the generation phase, which harms the diversity of synthesized negative samples. Therefore, we proactively filter out duplicate items.
+
+\section*{The Reliability of Created Negative Examples}
+
+We further analyze whether the created negative samples are indeed "negative". On the training set, we first use ENTScore to directly evaluate the coherence of positive samples and two types of negatives. As shown in Table 8, the real positive ex-
+
+\begin{table}
+\begin{tabular}{llllll}
+\hline & \multicolumn{3}{c}{ Accuracy(\%) } & \multirow{2}{*}{ Dist-2 } & \multirow{2}{*}{ Dist-3 } \\
+\cline { 2 - 4 } & \(\alpha\) NLI & Swag & HS. & & \\
+\hline\(\rho=0.90\) & 65.2 & \(\mathbf{6 7 . 5}\) & 42.6 & 26.4 & 41.0 \\
+\(\rho=0.85\) & \(\mathbf{6 7 . 5}\) & 67.4 & \(\mathbf{4 4 . 9}\) & \(\mathbf{2 7 . 1}\) & 42.6 \\
+\(\rho=0.80\) & 66.2 & 66.5 & 43.3 & 26.8 & \(\mathbf{4 2 . 9}\) \\
+\(\rho=0.70\) & 64.0 & 63.4 & 42.9 & 25.0 & 40.7 \\
+\hline
+\end{tabular}
+\captionsetup{labelformat=empty}
+\caption{Table 7: The result under the different \(\rho\). Dist-n denotes Distinct-n. Scores with bold denote the best result.}
+\end{table}
+
+\begin{table}
+\begin{tabular}{lll}
+\hline Types & ENTScore & FN Rate \\
+\hline Positive examples & 94.6 & N/A \\
+Negatives via replacement & 54.5 & \(3.0 \%\) \\
+Negatives via crisscrossing & 65.9 & \(4.3 \%\) \\
+\hline
+\end{tabular}
+\captionsetup{labelformat=empty}
+\caption{Table 8: The reliability evaluation of created negatives. FN denotes false negative.}
+\end{table}
+amples receive an especially high ENTScore. However, the synthesized two types of negatives receive lower ENTScore, proving that they are obviously less coherent than positive examples. Next, we sample 100 cases and ask the annotators to make a judgment about whether the created 'negatives' are actually more coherent than positives, making them false negatives. As shown in Table 8, both types of negatives show a low FN rate. We show the error cases in the Appendix J.
+
+Visualize the Representations of Examples using t-SNE It is interesting to qualitatively visualize our model's ability to distinguish hard negatives. Based on the test set of TimeTravel, we are able to obtain positive examples and corresponding hard negatives. We leave the details in Appendix K. We use our CohEval and the ablated variant \(M_{E R}\), respectively, to obtain the representations of the examples, then we use t-SNE (Van der Maaten and Hinton, 2008) to visualize the representations. As shown in Figure 4 (a), the representations of positive and negative examples obtained by \(M_{E R}\) entangle together, this shows that \(M_{E R}\), a model that significantly outperforms baselines, still suffers from distinguishing the created positive and negative examples. But in Figure 4 (b), positive samples are concentrated on the right, while negative samples are concentrated on the left. This proves our CohEval's ability to distinguish positive examples from hard negatives, and confirms the effectiveness of the generated contrastive narratives.
+
+Case Study Appendix L, Table 15 presents a case study for the task of TimeTravel. The counterfactual endings generated by ChatGLM2 and Chat-
+
+\begin{figure}
+\includegraphics[width=\textwidth]{https://cdn.mathpix.com/cropped/2025_08_30_3a996f05bf60fa92ddb8g-09.jpg?height=330&width=701&top_left_y=259&top_left_x=1096}
+\captionsetup{labelformat=empty}
+\caption{Figure 4: Visualization of the representations of examples obtained from different models.}
+\end{figure}
+
+GPT are coherent but very different from the original ending. This conflicts with the minimal-editing requirement of the task. On the contrary, based on the MCMC sampling, our method can produce similar and coherent counterfactual endings. Appendix L, Table 16 presents a case study for contrastive narratives generation. Due to the sampled different trajectories, in the case \#1, our method shifts the topic of accent to personality, and produces a coherent story. And in the case \#2, our method exchanges the opinions of two participants. On the contrary, the middle events generated by ChatGLM2 and ChatGPT show a significant difference from that of the original story.
+
+\section*{5 Conclusion}
+
+In this paper, we propose to use the Brownian Bridge process to generate contrastive narratives, then we crisscross a positive story and its contrastive variants to create negative examples for contrastive learning. In addition, we devise the event-level replacement, which is an effective supplement to the crisscrossing strategy. The experiment verifies that (1) the generated contrastive narratives are qualified, and (2) our CohEval is effective and is a general coherence evaluator that is applicable to many downstream tasks.
+
+\section*{Acknowledgements}
+
+We thank the anonymous reviewers for their encouraging feedback. This work is supported by Research Grants Council of Hong Kong(PolyU/15207920, PolyU/15207821, PolyU/5213323) and National Natural Science Foundation of China (62076212).
+
+\section*{Limitations}
+
+To automatically generate contrastive narratives, we made the following assumption: the observed story and its contrastive variants have the same start
+and end events. However, this assumption may not be consistent with reality. In addition, under limited computing resources, we are unable to explore our method on larger data scales and larger pre-trained models. The experiment shows that our method is not able to surpass ChatGPT. But this does not mean that our work has no value in the era of large language models.
+
+Our method is essentially a discriminative model, while LLMs are generative models. They have different advantages. For example, LLM is better at generating coherent text, and our CohEval is better at multi-choice tasks. In fact, on TimeTravel, we use MCMC to make our CohEval applicable to generating tasks. Therefore, the gap between our method and LLM has been magnified. On discriminative tasks, although our model is not as good as ChatGPT, it outperforms the smaller ChatGLM on most multi-choice tasks. On the other hand, it is inherently unfair to directly compare small models with LLMs, as large models are obtained with massive resources, e.g., data, hardware, funding, etc. Due to resource limitations, our method is not as good as ChatGPT, but it is superior to ChatGLM, which also indicates that our method is valuable in low-resource scenarios. With sufficient computational resources, we can use a larger backbone and more data for training, which is expected to yield better results. We leave this in future works.
+
+\section*{Ethical Considerations}
+
+This work does not involve any sensitive data, but only crowd-sourced datasets released in previous works, including RocStories (Mostafazadeh et al., 2016), COPA (Roemmele et al., 2011), e-Care (Du et al., 2022a), \(\alpha\) NLI (Bhagavatula et al., 2020), Cloze (Mostafazadeh et al., 2016), Swag (Zellers et al., 2018), HellaSwag (Zellers et al., 2019), and TimeTravel (Qin et al., 2019). We believe that our research work meets the ethics of ACL.
+
+\section*{References}
+C. Bhagavatula, R. L. Bras, C. Malaviya, K. Sakaguchi, A. Holtzman, H. Rashkin, D. Downey, W. T. Yih, and Y. Choi. 2020. Abductive commonsense reasoning. In International Conference on Learning Representations.
+
+Chandra Bhagavatula, Ronan Le Bras, Chaitanya Malaviya, Keisuke Sakaguchi, Ari Holtzman, Hannah Rashkin, Doug Downey, Wen-tau Yih, and Yejin Choi. 2019. Abductive commonsense reasoning. In
+
+International Conference on Learning Representations.
+
+Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared D Kaplan, Prafulla Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, et al. 2020. Language models are few-shot learners. Advances in neural information processing systems, 33:1877-1901.
+
+Deng Cai, Yizhe Zhang, Yichen Huang, Wai Lam, and Bill Dolan. 2020. Narrative incoherence detection. arXiv preprint arXiv:2012.11157.
+
+Eugene Charniak. 1972. Toward a model of children's story comprehension. Ph.D. thesis, Massachusetts Institute of Technology.
+J. Chen, C. Gan, S. Cheng, H. Zhou, Y. Xiao, and L. Li. 2021. Unsupervised editing for counterfactual stories.
+J. Devlin, M. W. Chang, K. Lee, and K. Toutanova. 2018a. Bert: Pre-training of deep bidirectional transformers for language understanding.
+
+Jacob Devlin, Ming-Wei Chang, Kenton Lee, and Kristina Toutanova. 2018b. Bert: Pre-training of deep bidirectional transformers for language understanding. arXiv preprint arXiv:1810.04805.
+L. Du, X. Ding, K. Xiong, T. Liu, and B. Qin. 2022a. e-care: a new dataset for exploring explainable causal reasoning.
+
+Zhengxiao Du, Yujie Qian, Xiao Liu, Ming Ding, Jiezhong Qiu, Zhilin Yang, and Jie Tang. 2022b. Glm: General language model pretraining with autoregressive blank infilling. In Proceedings of the 60 th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), pages 320-335.
+T. Gao, X. Yao, and D. Chen. 2021. Simcse: Simple contrastive learning of sentence embeddings.
+
+Andrew Gordon, Zornitsa Kozareva, and Melissa Roemmele. 2012. SemEval-2012 task 7: Choice of plausible alternatives: An evaluation of commonsense causal reasoning. In *SEM 2012: The First Joint Conference on Lexical and Computational Semantics - Volume 1: Proceedings of the main conference and the shared task, and Volume 2: Proceedings of the Sixth International Workshop on Semantic Evaluation (SemEval 2012), pages 394-398, Montréal, Canada. Association for Computational Linguistics.
+
+Changying Hao, Liang Pang, Yanyan Lan, Yan Wang, Jiafeng Guo, and Xueqi Cheng. 2021. Sketch and customize: A counterfactual story generator. In Proceedings of the AAAI Conference on Artificial Intelligence, volume 35, pages 12955-12962.
+
+Daniel D Hutto. 2015. Narrative understanding. In The Routledge companion to philosophy of literature, pages 291-301. Routledge.

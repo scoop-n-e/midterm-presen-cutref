@@ -1,0 +1,299 @@
+\title{
+Event Knowledge Incorporation with Posterior Regularization for Event-Centric Question Answering
+}
+
+\author{
+Junru Lu \({ }^{1}\), Gabriele Pergola \({ }^{1}\), Lin Gui \({ }^{2}\) and Yulan He \({ }^{1,2,3}\) \\ \({ }^{1}\) Department of Computer Science, University of Warwick, UK \\ \({ }^{2}\) Department of Informatics, King's College London, UK \\ \({ }^{3}\) The Alan Turing Institute, UK \\ \{Junru.Lu, Gabriele.Pergola\}@warwick.ac.uk \\ \{lin.1.gui, yulan.he\}@kcl.ac.uk
+}
+
+\begin{abstract}
+We propose a simple yet effective strategy to incorporate event knowledge extracted from event trigger annotations via posterior regularization to improve the event reasoning capability of mainstream question-answering (QA) models for event-centric QA. In particular, we define event-related knowledge constraints based on the event trigger annotations in the QA datasets, and subsequently use them to regularize the posterior answer output probabilities from the backbone pre-trained language models used in the QA setting. We explore two different posterior regularization strategies for extractive and generative QA separately. For extractive QA, the sentence-level event knowledge constraint is defined by assessing if a sentence contains an answer event or not, which is later used to modify the answer span extraction probability. For generative QA, the token-level event knowledge constraint is defined by comparing the generated token from the backbone language model with the answer event in order to introduce a reward or penalty term, which essentially adjusts the answer generative probability indirectly. We conduct experiments on two event-centric QA datasets, TORQUE and ESTER. The results show that our proposed approach can effectively inject event knowledge into existing pre-trained language models and achieves strong performance compared to existing QA models in answer evaluation. \({ }^{1}\)
+\end{abstract}
+
+\section*{1 Introduction}
+
+Question answering (QA) has been extensively explored on entity-centric corpora where QA pairs are centered on knowledge about entities occurred in text (Devlin et al., 2018; Liu et al., 2019; Joshi et al., 2020). More recently, attempts have been made to develop QA models requiring reasoning of event semantic relations such as temporal, causal, and event hierarchical relations (Souza Costa et al.,
+
+\footnotetext{
+\({ }^{1}\) Code and models can be found: https://github.com/ LuJunru/EventQAviaPR.
+}
+
+\begin{figure}
+\includegraphics[width=\textwidth]{https://cdn.mathpix.com/cropped/2025_08_30_cdc67aeb0556677d225dg-1.jpg?height=1026&width=766&top_left_y=736&top_left_x=1059}
+\captionsetup{labelformat=empty}
+\caption{Figure 1: Event-centric QA examples from ESTER (top) and TORQUE (bottom). All event triggers are in bold. The question event trigger and answer event triggers are further smeared with red and blue colors, respectively. In-text answers are highlighted with underlines. Event graphs are manually created for easy inspection of event-event relations.}
+\end{figure}
+2020). In general, an event can be defined as a key description word, often called an event trigger, connected with a series of arguments (Zhang et al., 2020). Events in text, which may or may not reside in the same sentence, could form various semantic relations. Two typical examples from existing event-centric QA datasets (Han et al., 2021; Ning et al., 2020) are shown in Figure 1, in which a text paragraph is paired with a question and one or more answers. In these datasets, event triggers are annotated in the paragraphs, questions and answers.
+
+For easy inspection, we manually create an event graph for each example in Figure 1, where nodes denote events and edges show the semantic relation between two events. The first example from the ESTER dataset (Han et al., 2021) reports an event of 'Peak Tram mechanical failure' and its consequence. The question asks about the cause which leads to the event of 'suspension'. To answer the question, a QA model needs to first understand the event semantic relation that the question cares about (i.e., 'Causal'), then identify the causal relation between the 'mechanical failure struck Peak Tram' event and the 'suspension' event, as well as the co-reference relation between 'struck' and 'accident', and finally provide correct answers. In the second example, the question concerns events holding the temporal relation (i.e., 'Before') with the event 'a colleague was quoted'. To answer that, a QA model needs to be able to capture the temporal event knowledge in the given paragraph.
+
+The main challenge of event-centric QA is the need to perform reasoning of event semantic relations in the given context. This is more difficult compared to entity-centric QA which typically only relies on statistical correlations between the question entities and the entities occurred in text, both encoded by pre-trained language models (PLMs). Also, PLMs can be easily tuned to learn entity knowledge in a self-supervised manner (Devlin et al., 2018; Joshi et al., 2020), but it is far more challenging to encode complex event semantic knowledge in PLMs.
+
+To address the challenges, we propose a simple yet effective strategy to incorporate event semantic knowledge via posterior regularization for both extractive and generative event-centric QA . In specific, event-related knowledge constraints are first defined based on the event trigger annotations in the QA datasets, which are subsequently used to regularize the posterior answer output probabilities from the backbone PLMs used in the QA setting. For extractive QA , we define sentence relevance by assessing if it contains an event trigger and if any of its event triggers is an answer event. The sentence relevance can be considered as the sentence-level event knowledge constraint which can be used as a regularized score to adjust the probability of extracting an answer span from the text. Intuitively, if the sentence relevance score is high, then the probability of extracting an answer span from the corresponding sentence will
+be increased. As for generative QA , we define the token-level event knowledge constraints by comparing the generated token from a PLM with the answer event to incur a reward if there is a match and a penalty for irrelevant event tokens. Directly adjusting the answer generative probabilities using the token-level event knowledge constraints would lead to unstable results in our experiments. We instead define an additional loss term based on our introduced reward \& penalty term. The answer generative probabilities are regularized in an indirect manner. It is worth mentioning that although our model training relies on event trigger annotations to define event knowledge constraints, such annotations are not necessary during the inference.
+
+Our contributions can be summarized as follows: (1) We present a simple yet effective posterior regularization mechanism for event-centric QA . The event knowledge constraints are defined based on the event trigger annotations in the training set, which are subsequently used to adjust the answer probabilities from the backbone PLMs in the QA. (2) We explore two different posterior regularization strategies for extractive and generative QA separately. For extractive QA , the sentence-level event knowledge constraint is defined by assessing if a sentence contains an answer event or not. For generative QA , the token-level event knowledge constraint is defined by comparing the generated token from the backbone PLM with the answer event in order to introduce a reward or penalty term. (3) We conduct experiments on two event-centric QA datasets containing different QA forms with a range of event semantic relations. To the best of our knowledge, this work represents a first attempt to incorporate event knowledge via posterior regularization for event-centric QA. We outperform strong baselines under both the extractive and generative settings on the Exact Match (EM) scores.
+
+\section*{2 Related Work}
+
+Event-Centric Question Answering Eventcentric Question Answering has recently attracted increased attention in the research community (Jin et al., 2020; Zhou et al., 2019; Shang et al., 2021). Some work focused on questions concerning event temporal relations. ForecastQA (Jin et al., 2020) organized the event-centric questions and answers in a multi-choice framework, and provided explicit event timestamps for answer selection. The TORQUE dataset (Ning et al., 2020) contains
+the temporal event questions under the extractive setting, requiring an accurate understanding of subtle, and at times implicit language nuances of temporal keywords. Shang et al. (2021) developed a custom model, OTR-QA, for the aforementioned TORQUE dataset. The OTR-QA model reformulates the temporal event-centric QA as an open temporal relation extraction task, incorporating contrastive loss to encode small temporal differences. Instead of focusing on temporal event relations only, Du and Cardie (2020) and Liu et al. (2020) proposed employing QA for event trigger and argument extraction. Han et al. (2021) developed an event-centric QA dataset, called ESTER, consisting of questions on five different event semantic relations. They also leveraged PTMs for QA under both the generative and extractive settings. Lu et al. (2022) proposed to transform the contextual embeddings of events into an event-centric space, and utilize contrastive learning to incorporate event knowledge into event-centric QA on the ESTER dataset. Their approach is only able to inject token-level event knowledge. In contrast, our method provides a more flexible way of fusing event knowledge with constraint functions tailored to the extractive and generative setting separately.
+
+Posterior Regularization Posterior regularization (PR) (Ganchev et al., 2010) is a widely adopted framework to smoothly apply external knowledge constraints. ? and Zhang et al. (2018) fused PR with machine translation, while Yang and Cardie (2014) and Zhao et al. (2016) explored the application of PR to sentiment classification. Zhou et al. (2020) constructed entity, lexical, and predicate knowledge constraints to enhance QA models in identifying tiny language differences in adversarial perturbations on entity-centric QA datasets. To the best of our knowledge, this work represents the first attempt to design a posterior regularization mechanism built on event knowledge for event-centric QA.
+
+\section*{3 Methodology}
+
+We first formulate the task of event-centric QA , and then introduce our proposed methodology.
+
+\subsection*{3.1 Task Formulation}
+
+We formulate event-centric QA as a typical QA task with additional supervision signals of event triggers annotated in text passages, questions and answers.
+
+More formally, for a text passage \(\mathbf{x}^{p}\) paired with an answerable event-centric question \(\mathbf{x}^{q}\), a QA model is expected to produce one or more answers \(\hat{Y}= \operatorname{argmax}_{Y} p\left(Y \mid \mathbf{x}^{q}, \mathbf{x}^{p}\right)\), where \(\hat{Y}=\left\{\hat{\mathbf{y}}_{1}, \cdots, \hat{\mathbf{y}}_{A}\right\}\), and \(A\) denotes the number of answers. In addition, events are annotated in each text passage, their associated question, and ground truth answers, \(E=\left\{\mathbf{e}_{1}^{p}, \cdots, \mathbf{e}_{C_{p}}^{p}, \mathbf{e}_{1}^{q}, \cdots, \mathbf{e}_{C_{q}}^{q}, \mathbf{e}_{1}^{a}, \cdots, \mathbf{e}_{C_{a}}^{a}\right\}\), where \(C_{p}, C_{q}\) and \(C_{a}\) denote the number of events in a passage, question and answers, respectively.
+
+We build our QA models on the TORQUE (Ning et al., 2020) and the ESTER (Han et al., 2021) datasets. In both datasets, event triggers are annotated and each question contains a single event trigger (i.e., \(C_{q}=1\) ). In the subsequent sections, we use events and event triggers interchangeably. TORQUE focuses on the event temporal relation only and all its answers are just a set of event triggers holding the desirable temporal relation with their respective question events. ESTER covers a range of event semantic relations including Causal, Conditional, Counterfactual, Subevent, and Coreference. In ESTER, each question is additionally annotated with the event relation type \(t\). Although answers provided in ESTER are just text spans from their respective text passages, the QA models can be developed under both the extractive and generative settings.
+
+\subsection*{3.2 Injecting Event Knowledge via Posterior Regularization}
+
+We propose an effective way to inject event knowledge via posterior regularization (PR) for both extractive and generative event-centric QA . Let \(\theta\) denote the parameters of the basic QA model. Meanwhile, we define a set of PR constraints \(f(\mathbf{x}, \mathbf{y})\) built upon an input \(\mathbf{x}\), comprising of a question \(\mathbf{x}^{q}\) and a text passage \(\mathbf{x}^{p}\), and a reference answer \(\mathbf{y}\). The overall learning objective is defined by:
+\[
+J(\theta, \gamma)=L(\theta)-\sum_{n=1}^{N} \operatorname{KL}\left(p(\hat{Y} \mid \mathbf{x} ; \gamma, \theta) \| p\left(Y^{\prime} \mid \mathbf{x} ; \theta\right)\right)
+\]
+where \(\gamma\) denotes the additional parameters to encode PR constraints, \(p(\hat{Y} \mid \mathbf{x} ; \gamma, \theta)\) denotes the regularized probability, and \(p\left(Y^{\prime} \mid \mathbf{x} ; \theta\right)\) denotes the original probability without regularization. Particularly, \(p(\hat{Y} \mid \mathbf{x} ; \gamma, \theta)\) is obtained with the function \(G\) applied on the learned PR constraints \(f^{\prime}(\mathbf{x}, \mathbf{y} ; \gamma)\) and \(p\left(Y^{\prime} \mid \mathbf{x} ; \theta\right)\) :
+\[
+p(\hat{Y} \mid \mathbf{x} ; \gamma, \theta)=G\left(f^{\prime}(\mathbf{x}, \mathbf{y} ; \gamma), p\left(Y^{\prime} \mid \mathbf{x} ; \theta\right)\right)
+\]
+
+\begin{figure}
+\includegraphics[width=\textwidth]{https://cdn.mathpix.com/cropped/2025_08_30_cdc67aeb0556677d225dg-4.jpg?height=818&width=1486&top_left_y=259&top_left_x=288}
+\captionsetup{labelformat=empty}
+\caption{Figure 2: The overall architecture of our proposed mechanism. The input to the backbone PLM model is the question and the given supporting paragraph (upper box). In extractive \(\mathbf{Q A}\) (bottom left), we first use hidden vectors \(\mathbf{h}_{\mathbf{x}}\) to predict the sentence relevance probability \(f^{\prime}(x, y)\) with the true knowledge constraint \(f(x, y)\) as the reference, which is then combined with the preliminary probability \(p\left(Y^{\prime} \mid \mathbf{x}\right)\) to generate the regularized probability \(p(\hat{Y} \mid \mathbf{x})\). In generative \(\mathbf{Q A}\) (bottom right), the preliminary probability \(p\left(Y^{\prime} \mid \mathbf{x}\right)\) and the knowledge constraint \(f(y)\) are used to compute the reward\&penalty term, which rewards the generation of relevant triggers and penalises the generation of irrelevant event triggers. An additional loss term based on the reward\&penalty term will then indirectly guide the backbone PLM to generate the regularized probability \(p(\hat{Y} \mid \mathbf{x})\).}
+\end{figure}
+
+To enable end-to-end training, following the mutual distillation algorithm proposed in (Hu et al., 2016) which converts the learning of PR into an optimization problem, we propose to transform the learning objective defined in Eq. (1) to:
+\[
+\left.L(\theta, \gamma)=L_{Q A}(p(\hat{Y} \mid \mathbf{x} ; \gamma, \theta))+L_{P R}(G ; \gamma, \theta)\right)
+\]
+
+The overall architecture is shown in Figure 2. We take the PLM encoder, RoBERTa-large (Liu et al., 2019), and the PLM encoder-decoder, UnifiedQA-T5-large (Khashabi et al., 2020), as the backbone for extractive and generative QA respectively. The input to our QA models is a question-paragraph pair shown in the upper box in Figure 2. In the bottom part, event knowledge constraints are defined based on the event trigger annotations in the training set, which are subsequently used to regularize the conditional probability of the generated answer. In what follows, injecting event knowledge via posterior regularization will be discussed for both extractive and generative QA .
+
+\subsection*{3.2.1 Event-Centric Extractive QA}
+
+In extractive QA , answers are either event trigger words in the text passages in TORQUE or text
+spans in ESTER. The problem can be framed as sequence labeling that given an input text passage, a QA model aims to produce a label sequence with a label assigned to each word token. Either the 'B-IO'tagging or the 'I-O' tagging can be used, where ' B ' and ' I ' represent the beginning and the body of an answer span. In our experiments, we found that the 'I-O' tagging works better. Therefore, the 'I-O' labeling is used for both the TORQUE and ESTER datasets. We use \(\mathbf{x}=\left\{\langle\right.\) s \(\rangle \mathbf{x}^{q}</\) s \(\rangle</\) s \(\left.>\mathbf{x}^{p}\right\}\) to denote the input \(\mathbf{x}\) to the RoBERTa-large encoder, in which '<s>' and '</s>' are special separator tokens. For the ESTER dataset, the event relation label \(t\) is also given for each question. It can be used as a prompt, thus the input \(\mathbf{x}\) for a training instance in ESTER is slightly modified as \(\mathbf{x}=\left\{<\mathrm{s}>\mathrm{t}: \mathrm{x}^{q}</ \mathrm{s}></ \mathrm{s}>\mathrm{x}^{p}\right\}\). The target label in our setting is \(Y=\left\{\mathbf{y}_{1}, \cdots, \mathbf{y}_{\left|\mathbf{x}^{p}\right|}\right\}\), where \(\mathbf{y}_{i}\) is either 'I' or 'O'. Let \(N_{x}\) be the total length of input sequence \(\mathbf{x}, d\) be the dimension of the hidden representation produced by the RoBERTa-large, \(\mathbf{h}_{\mathbf{x}} \in \mathbb{R}^{N_{x} \times d}, Y^{\prime}\) and \(p\left(Y^{\prime} \mid \mathbf{x}\right) \in \mathbb{R}^{N_{x}}\) are the hidden representation of the input \(\mathbf{x}\), and the probabilities of the preliminary answer label sequence \(Y^{\prime}\)
+before posterior regularization, respectively.
+Knowledge constraints We define the sentencelevel event knowledge constraint \(f\left(x_{s}, y\right)\) :
+\[
+f\left(x_{s}, y\right)=\left\{\begin{aligned}
+1 & e^{a} \in x_{s} \\
+-1 & \text { Otherwise }
+\end{aligned}\right.
+\]
+where \(e^{a} \in x_{s}\) denotes that an answer event trigger word \(e^{a}\) locates in sentence \(x_{s}\). During training, we need to automatically infer a regularization score \(f^{\prime}\left(x_{s}, y\right)\) for each sentence \(x_{s}\). It can be done by first deciding if an event trigger word \(e_{k}\) in the sentence \(x_{s}\) is an answer event and then taking the weighted aggregation of the classification results of all the event trigger words in the sentence. More concretely, for an event \(e_{k}\) in the sentence \(x_{s}\), we predict if it is an answer event by:
+\[
+g^{\prime}\left(e_{k}\right)=\sigma\left(W_{g}^{\top} \mathbf{e}_{k}+b_{g}\right),
+\]
+where \(\sigma(\cdot)\) denotes the sigmoid function, \(\mathbf{e}_{k} \in \mathbb{R}^{d}\) is the hidden representation of the event \(e_{k}\) generated by RoBERTa-large, \(W_{g} \in \mathbb{R}^{d}\) and \(b_{g}\) are trainable weights and bias. The ground truth \(g\left(e_{k}\right)\) is defined as:
+\[
+g\left(e_{k}\right)=\left\{\begin{aligned}
+1 & e_{k} \in\left\{e_{1}^{a}, e_{2}^{a}, \cdots, e_{C_{a}}^{a}\right\} \\
+-1 & \text { Otherwise }
+\end{aligned}\right.
+\]
+
+Essentially, \(g\left(e_{k}\right)\) can also be considered as a constraint encoding the answer event information.
+
+Assuming the sentence \(x_{s}\) contains \(K\) events, we then derive the regularized score \(f^{\prime}\left(x_{s}, y\right)\) by taking the weighted aggregation of the event classification results:
+\[
+f^{\prime}\left(x_{s}, y\right)=\frac{1}{K} \sum_{k} \alpha_{\omega}^{k} g^{\prime}\left(e_{k}\right)
+\]
+where \(\alpha_{\omega}^{k}\) is the attention score of the \(k\)-th event in sentence \(x_{s}\) with respect to question \(x_{q}, \omega\) is the parameters of a multi-head attention (MHA) layer (Vaswani et al., 2017):
+\[
+\alpha_{\omega}=\operatorname{MHA}\left(\mathbf{h}_{x_{s}}, \mathbf{h}_{x_{q}}, \omega\right)
+\]
+
+To sum up, constraint \(g\left(e_{k}\right)\) is defined at the token level to predict if a token is an answer event, while \(f(x, y)\) is defined at the sentence level to predict if a sentence contains an answer event trigger word. The hierarchical constraints can encourage the major type of event triggers to contribute more to the prediction of the sentence regularization score \(f(*)\). Such a formulation (e.g. a binary constraint indicating the presence or absence of certain knowledge) is commonly used in PR work (Zhou et al., 2020).
+
+Learning Objectives We can learn the sentencelevel event knowledge constraints, \(f^{\prime}\left(x_{s}, y\right)\) and \(g^{\prime}\left(e_{k}\right)\), by minimizing the mean square error of the estimated scores and the ground truth scores:
+\[
+\begin{gathered}
+L_{f}=\frac{1}{S} \sum_{s}\left(f^{\prime}\left(x_{s}, y\right)-f\left(x_{s}, y\right)\right)^{2} \\
+L_{g}=\frac{1}{S} \sum_{s} \frac{1}{s_{K}} \sum_{k}\left(g^{\prime}\left(e^{k}\right)-g\left(e^{k}\right)\right)^{2}
+\end{gathered}
+\]
+where \(S\) denote the total number of sentences, and \(s_{K}\) denotes the total number of event triggers in sentence \(s\). Once the sentence-level event knowledge constraint \(f^{\prime}\left(x_{s}, y\right)\) is learned, we can update the posterior answer probability by the following function \(G\) mentioned in Eq. (2). The update of the \(G\) function here is equivalent to optimizing the parameters \(\alpha_{\omega}^{k}\) and the function \(g^{\prime}\left(e_{k}\right)\) in Eg. (7):
+\[
+\begin{aligned}
+& p(\hat{Y} \mid \mathbf{x})=G_{\text {ext }}\left(p\left(Y^{\prime} \mid \mathbf{x}, f^{\prime}(\mathbf{x}, Y)\right)\right. \\
+& G_{\text {ext }}(*)=p\left(Y^{\prime} \mid \mathbf{x}\right) \exp \left\{f^{\prime}(\mathbf{x}, Y)\right\}
+\end{aligned}
+\]
+where \(f^{\prime}(\mathbf{x}, Y) \in \mathbb{R}^{N_{x}}\) is the predicted regularization score for the whole input sequence. Note that for each sentence \(x_{s}\), there is only a single value of \(f^{\prime}\left(x_{s}, y\right)\) computed. We populate this value for all the word tokens in the sentence \(x_{s}\) and form a vector. Intuitively, if the score of \(f^{\prime}\left(x_{s}, y\right)\) is high, it indicates that the sentence \(x_{s}\) more likely contains the answer event, as such, the conditional answer probability should be increased. In contrast, if the score of \(f^{\prime}\left(x_{s}, y\right)\) is low, then the sentence \(x_{s}\) is more likely irrelevant and hence the conditional answer probability should be decreased.
+
+In the bottom left part of Figure 2, the preliminary answer probability \(p\left(Y^{\prime} \mid \mathbf{x}\right)\) mistakenly assigns a high score to Sentence 3 but a low score to Sentence 1. But the regularized probability \(p(\hat{Y} \mid \mathbf{x})\) gives a correct prediction since the regularization constraint \(f^{\prime}(\mathbf{x}, Y)\) guides the model to focus more on the first two sentences. The overall loss is:
+\[
+L_{e x t}=L_{e x t_{Q A}}+\lambda_{1}\left(L_{f}+L_{g}\right)
+\]
+where \(\lambda_{1}\) is the hyperparameter used to balance the training of the main task and the sub-tasks. \(L_{\text {ext } Q A}\) is the loss of the main QA task:
+\[
+L_{\operatorname{ext}_{Q A}}=-\frac{1}{N_{x}} \sum_{i=1}^{N_{x}} w_{b l} y_{i} \log \hat{y}_{i}
+\]
+where \(w_{b l}\) is a balancing hyperparameter to boost the weights of positive labels (Han et al., 2021).
+
+\subsection*{3.2.2 Event-Centric Generative QA}
+
+As there is no generative setting in the TORQUErelated work, we only explore generative QA on the ESTER dataset. We choose UnifiedQA-T5large as the backbone encoder-decoder PLM, following the typical setup in the ESTER baseline that fine-tuning a T5-large (Raffel et al., 2019) model in the universal generative style (Khashabi et al., 2020). The input sequence \(\mathbf{x}\) is denoted as \(\mathbf{x}=\left\{t: \mathbf{x}^{q} \backslash n \mathbf{x}^{p}\right\}\) since T5 adopts text separators different from RoBERTa. The ground truth \(Y\) is a concatenation of all answers separated by the ';' special token: \(Y=\left\{\mathbf{y}_{1} ; \cdots ; \mathbf{y}_{A}\right\}\). Let \(T\) be the total length of the output sequence \(\hat{Y}, V\) be the size of the T5 vocabulary, \(Y^{\prime}\) and \(p\left(Y^{\prime} \mid \mathbf{x}\right) \in \mathbb{R}^{T \times V}\) denotes the preliminary answer and its probability generated from the T5 decoder, respectively.
+Knowledge constraints Incurring penalties of certain tokens during generation via unlikelihood training is a popular strategy in controllable text generation (Welleck et al., 2019; Devaraj et al., 2021; Li et al., 2019). We extend this strategy by combining rewards of answer events and penalties of irrelevant events. Since the length of text generated by the decoder is unknown, we define the token-level event knowledge constraint \(f(Y)\) for the generated text \(Y\) as:
+\[
+\begin{gathered}
+f\left(y_{i}\right)=\left\{\begin{array}{rr}
+\tau_{1} w_{\tau_{1}, \tau_{2}} & y_{i} \in E^{p}, y_{i} \in E^{a} \\
+\tau_{2} w_{\tau_{1}, \tau_{2}} & y_{i} \in E^{p}, y_{i} \notin E^{a} \\
+w_{\tau_{1}, \tau_{2}} & y_{i} \notin E^{p}
+\end{array}\right. \\
+w_{\tau_{1}, \tau_{2}}=\frac{1}{|V|+\left(\tau_{1}-1\right) C_{a}+\left(\tau_{2}-1\right)\left(C_{p}-C_{a}\right)}
+\end{gathered}
+\]
+where \(E^{p}\) and \(E^{a}\) denote events in the text passage and the answer, respectively, \(E^{p}= \left\{e_{1}^{p}, e_{2}^{p}, \cdots, e_{C_{p}}^{p}\right\}, E^{a}=\left\{e_{1}^{a}, e_{2}^{a}, \cdots, e_{C_{a}}^{a}\right\}, \tau_{1} \in (0,1)\) and \(\tau_{2}>1\) are hyperparameters to control the temperature of the softmax weights. The equation assures that the weighted sum of all tokens in the vocabulary equals 1 . Conditional \(\tau_{1}\) and \(\tau_{2}\) ensure that the generation of an answer event will receive a reward while the generation of an irrelevant event will be penalized. \(f(\mathbf{y})\) is created by applying \(f\left(y_{i}\right)\) at all time steps during decoding.
+
+In the bottom right part of Figure 2, the preliminary probability \(p\left(Y^{\prime} \mid \mathbf{x}\right)\) mistakenly generates the second answer 'failed to restart ...'. This output does not align with the event knowledge constraint \(f\left(y_{i}\right)\), and therefore receives a large penalty. The regularized probability \(p(\hat{Y} \mid \mathbf{x})\) instead correctly generates the new answer 'accident occurred \(\ldots\) '.
+
+Learning objectives In the extractive QA setting, the event knowledge constraints are used to adjust the answer span extractive probability directly. However, in the generative QA setting, we found that directly modifying the posterior answer generative probability using the token-level knowledge constraints would lead to unstable results in our experiments. Therefore, we instead introduce a reward\&penalty term \(r_{t}\) via a new \(G\) function, and define its associated loss term below:
+\[
+r_{t}=G_{g e n}\left(f\left(v_{j}\right), p\left(y_{t}^{\prime}=v_{j} \mid \mathbf{y}_{<t}, \mathbf{x}\right)\right)
+\]
+\[
+G_{g e n}(*)=-f\left(v_{j}\right) \log \left(1-p\left(y_{t}^{\prime}=v_{j} \mid \mathbf{y}_{<t}, \mathbf{x}\right)\right)
+\]
+\[
+L_{R P}=\frac{1}{T} \sum_{t=1}^{T} r_{t}
+\]
+where \(p\left(y_{t}^{\prime}=v_{j} \mid \mathbf{y}_{<t}, \mathbf{x}\right)\) is the preliminary probability assigned to token \(v_{j}\) at \(t\)-th position given the input sequence \(\mathbf{x}\) and the output text sequence generated so far \(\mathbf{y}_{<t} . f\left(v_{j}\right)\) denotes the token-level event knowledge constraint score for token \(v_{j} . T\) denotes the total number of generated tokens in the model-output answer. We use the predefined constraint \(f\left(y_{i}\right)\) in Eq. (15) as the scaling weight with the preliminary probability \(p\left(y_{t}^{\prime}=v_{j} \mid \mathbf{y}_{<t}, \mathbf{x}\right)\) to create the unlikelihood term in Eq. (18), which ensures that the generation of an irrelevant event token receives a higher penalty score than any other tokens, while the generation of an answer event token receives a lower penalty score, and thus can be essentially considered as a reward.
+
+The overall loss is defined as:
+\[
+L_{g e n}=L_{g e n_{Q A}}+\lambda_{2}\left(L_{R P}\right)
+\]
+where \(\lambda_{2}\) is a hyperparameter used to balance the loss term. \(L_{g e n_{Q A}}\) is the loss of the main QA task:
+\[
+L_{g e n_{Q A}}=-\frac{1}{N_{a}+A-1} \sum_{t=1}^{N_{a}+A-1} y_{t} \log \hat{y}_{t}
+\]
+where \(N_{a}\) is the total token length of \(A\) ground truth answers separated by \(A-1\) ';' special tokens.
+
+\section*{4 Experiments}
+
+We conduct a thorough experimental evaluation to assess the impact of the regularization strategies on the extractive and generative event-centric QA tasks. We first discuss the experimental setup, then the quantitative impact of the regularization strategy, and we finally conclude with a discussion of relevant case studies and an error analysis.
+
+\subsection*{4.1 Experimental Settings}
+
+Datasets Two event-centric QA datasets are currently available in the literature: ESTER (Han et al., 2021) and TORQUE (Ning et al., 2020).
+
+The ESTER dataset consists of over 1.9 k TempEval3 (TE3) news snippets with annotated event triggers (UzZaman et al., 2013), composed by extracting 3-4 consecutive sentences from news paragraphs with at least 7 event triggers. The dataset further includes 6k crowd-sourced answerable event-centric questions. For each question, ESTER provides question-answer event relations from a predefined label set: Causal, Conditional, Counterfactual, Sub-event, and Co-reference, with the following proportion, respectively: \(43.1 \%, 21.3 \%\), \(7.1 \%, 15.6 \%\) and \(12.9 \%\) proportions, respectively. With the exception of Sub-event type questions having more than 3 answers on average, questions have generally 1-2 answers on average.
+
+The TORQUE dataset contains 30.4 k temporal event-centric questions for over 3.2 k news passages selected from the TE3 corpus. However, compared to ESTER, in TORQUE only two sentences were sampled to compose the final snippets. For each passage, TORQUE provides 3 hard-coded questions always enquiring about "past", "ongoing" and "future" events mentioned in text, and further additional user-generated questions querying the temporal relations between specific event triggers. Unlike ESTER whose answers are in the form of text spans, in TORQUE all the answers are lists of single event triggers occurring in text. Another difference regards the types of event questions, with ESTER covering semantic event questions and TORQUE focusing only on temporal event relations.
+
+The ESTER dataset has 4,547 training, 301 development and 1,170 test instances. The TORQUE dataset has 24,523 training, 1,483 development and 4,468 test instances. Due to the unavailability of ground-truth answers in the published test sets, the models are evaluated on the development sets.
+
+Baselines For the ESTER dataset, we report the original results of the fine-tuned RoBERTa-large model for the extractive QA, and the results obtained with the fine-tuned UnifiedQA-T5-large model for generative QA . We also include results from TranCLR (Lu et al., 2022), the state-of-the-art model on ESTER. As for TORQUE, we only list the results available in the literature on the finetuned RoBERTa-large pipeline. Hyperparameters and training costs are reported in Appendix A.
+
+\begin{table}
+\begin{tabular}{|l|l|l|l|l|l|l|}
+\hline & \multicolumn{3}{|c|}{ESTER} & \multicolumn{3}{|c|}{TORQUE} \\
+\hline Model & \(F_{1}^{T}\) & HIT@1 & EM & \(F_{1}\) & EM & C \\
+\hline TranCLR & 74.7 & 80.4 & 18.3 & / & / & / \\
+\hline Ro-L & 68.8 & 66.7 & 16.7 & 75.7 & 50.4 & 36.0 \\
+\hline Ro-L I-O & 73.7 & 77.4 & 15.3 & 75.8 & 50.8 & 36.1 \\
+\hline Ro-L PR & 74.0 & 81.7 & 18.3 & 76.2 & 50.8 & 37.5 \\
+\hline Ro-L PR (-trig) & 74.0 & 80.8 & 17.6 & 76.1 & 50.7 & 37.7 \\
+\hline
+\end{tabular}
+\captionsetup{labelformat=empty}
+\caption{Table 1: Extractive QA results on the ESTER and TORQUE datasets. TranCLR results are taken from (Lu et al., 2022). Ro-L refers to RoBERTa-large, the backbone encoder of all the reported models. Ro-L I-O identifies models to fine-tuned with the unified "I-O" tagging schema and balanced weights. Ro-L PR indicates the fine-tunined RoBERTa-large models using the proposed posterior regularization (PR) mechanism. RoL PR (-trig) refers to the ablation setting that performs answer extraction without using the event triggers during inference.}
+\end{table}
+
+Metrics To generate comparable results, we use the same evaluation metrics adopted in the dataset papers. Han et al. (2021) uses \(F_{1}^{T}, H I T @ 1\) and \(E M\) for both extractive and generative \(\mathrm{QA} . F_{1}^{T}\) considers overlaps of all unigrams between synthetic and the ground truth answers; HIT@1 detects if the top predicted answer contains the same event trigger as the leftmost golden answer, and Exact Match ( \(E M\) ) measures whether any synthetic answer matches exactly any reference answer of the ground truth set. Ning et al. (2020) uses standard token-level macro \(F_{1}\) and \(E M\) metrics. In addition, they add an \(E M\) consistency metric \(C\) computing the percentage of contrast groups for which a model's predictions have \(F_{1} \geq 80 \%\) for all the questions in a group. A higher \(C\) score indicates a better distinction on contrast questions.
+
+\subsection*{4.2 Experimental Results}
+
+Extractive QA Table 1 reports the extractive QA results. We implemented a unified "I-O" tagging schema with balancing weights for both datasets, as shown in Eq. (14). This is slightly different from the (Han et al., 2021) approach based on the "B-IO " tagging schema with a balancing weight for the positive labels "B" and "I", and the binary "I-O" tagging schema of (Ning et al., 2020) without any balancing weight. The "Ro-L I-O" model refers to the unified baseline based on the binary schema, in which the balancing weights are empirically set to 4.0 and 1.0 for the ESTER and TORQUE dataset, respectively. The consistent improvements across different metrics and datasets show the broad benefits of the proposed regularization approach.
+
+\begin{table}
+\begin{tabular}{lccc}
+\hline Model & \(F_{1}^{T}\) & \(H I T @ 1\) & \(E M\) \\
+\hline TranCLR (Lu et al., 2022) & \(\mathbf{7 4 . 2}\) & 86.4 & 25.6 \\
+Unified-T5-Large (Han et al., 2021) & 66.8 & \(\mathbf{8 7 . 2}\) & 24.4 \\
+Unified-T5-Large PR \(\left(\tau_{1}=0.5, \tau_{2}=1.5\right)\) & 71.4 & 86.7 & \(\mathbf{2 6 . 0}\) \\
+\hline
+\end{tabular}
+\captionsetup{labelformat=empty}
+\caption{Table 2: Generative QA results on the ESTER dataset. TranCLR results are taken from (Lu et al., 2022). Unified-T5-Large refers to fine-tuned T5-Large model in UnifiedQA pipeline (Khashabi et al., 2020). Unified-T5-Large PR refers to fine-tuning T5-Large model with our proposed posterior regularization.}
+\end{table}
+
+On the ESTER dataset, the introduction of the "I-O" tagging schema alone brings an absolute improvement of \(4.9 \%\) in \(F_{1}^{T}\) and \(10.7 \%\) in HIT@1, with a slightly worse EM score. Applying the proposed posterior regularization (PR), we see a further increase in performance across all metrics. Compared with TranCLR (Lu et al., 2022), which encodes the token-level event knowledge through contrastive learning, our sentencelevel event knowledge constraints can incorporate higher-level linguistic information, and gives a higher HIT@1 score. While on TORQUE, our proposed posterior regularization mechanism increases the token-level \(F_{1}\) and \(C\) scores by \(0.4 \%\) and \(1.4 \%\), respectively. The improvement on F1 is marginal since the answer spans here are only short event triggers, as shown in Figure 1. While all baselines assume the event trigger information is given during inference, we further conduct an ablation study "Ro-L PR (-trig)" by removing the information of event triggers, and predicting event scores over all tokens in Eq. (5). The performance remains nearly the same compared with the model where the actual event trigger positions are known.
+
+Generative QA Results of generative QA are reported in Table 2. Our PR approach gains \(4.6 \%\) and \(1.6 \%\) absolute improvements on unigram level \(F_{1}^{T}\) and \(E M\) scores. We obtain higher HIT@1 and \(E M\) scores compared with TranCLR, while a lower token-level \(F_{1}\) score. The values of the reward \& penalty temperatures \(\tau_{1}\) and \(\tau_{2}\) have some impact on the QA task. The grid-search results are reported in Appendix B.
+
+Case Study and Error Analysis We select two questions for case analysis in Figure 3. The first case is a "Causal" question. Extractive models perform better than generative ones. Specifically, RoBERTa-large PR model extracts all answers correctly, while the RoBERTa-large baseline misses several tokens at the end of the second answer. In
+[S1] A Metro train struck two employees working on the track near the U.S. capital, Washington, D.C., on Thursday, killing one and critically injuring another, officials said.
+[S2] The workers, both men, were walking the tracks doing routine inspections when the accident took place in the morning.
+[S3] They were hit by an empty four-car train from Huntington to the Alexandria rail yard, which was near the Eisenhower Station, in Alexandria, Virginia, Metro spokeswoman Cathy Asato said.
+[S4] A section of the Yellow Line was shut down following the accident, and shuttle buses were used to transport passengers in several stations. Officials said the accident was under investigation.
+[Q] (Causal) How did the Metro respond to the accident?
+[A] (1) a section of the yellow line was shut down; (2) shuttle buses were used to transport passengers in several stations
+[RoL IO] (1) a section of the yellow line was shut down; (2) shuttle buses were used to transport passengers
+[RoL PR] (1) a section of the yellow line was shut down; (2) shuttle buses were used to transport passengers in several stations
+[Unified-T5-Large] (1) shuttle buses were used to transport passengers
+[Unified-T5-Large PR] (1) section of the yellow line was shut down; (2) shuttle buses were used to transport passengers
+[Q] (Subevent) What events were included in the train accident? [A] (1) train struck two employees; (2) killing one; (3) critically injuring another; (4) They were hit by an empty four-car train
+[RoL 10] (1) metro train struck two employees working on the track; (2) killing one; (3) critically injuring another; (4) they were hit by an empty four-car train [RoL PR] (1) a metro train struck two employees working on the track; (2) killing one; (3) critically injuring another; (4) workers; (5) they were hit by an empty four-car train
+[Unified-T5-Large] (1) killing one and critically injuring another [Unified-T5-Large PR] (1) killing one; (2) critically injuring another
+
+Figure 3: Answers generated by different QA models on two types of typical event-centric questions.
+the generative QA setting, the Unified-T5-Large misses the first answer and only generates the second one, while the Unified-T5-Large PR correctly generates both answers. The second question is from the hardest "Sub-event" group. As in the previous case, extractive models are more accurate. Our RoBERTa-large PR model mistakenly extracts a "workers" answer, suggesting that the model incorrectly predicted a high relevance score for sentence 2. In this case, both generative models produce partial answers, although our PR model accurately splits the span into two answer events.
+
+\section*{5 Conclusions}
+
+We propose a simple yet effective mechanism to incorporate event knowledge via posterior regularization for event-centric QA. We designed knowledge constraints based on the event trigger annotations and used them to regularize the answer probabilities generated by the backbone models. In extractive QA , the sentence-level event knowledge constraint was set up to regularize the answer probability depending on whether a sentence contained the answer events. In generative QA , token-level regularization terms reward the generation of target events and penalize the prediction of irrelevant events. The experiments showed the effectiveness of our regularization mechanism on various eventcentric QA datasets and across different metrics.
+
+\section*{Limitations}
+
+Considering the different mechanisms for answer extraction and generation, we design sentence-level posterior constraints for extractive QA and tokenlevel posterior constraints for generative QA , respectively. Although the two settings are formulated in a unified framework in Eq. (2), the \(G\) function needs to be designed separately. Reinforcement learning could be applied in the future to automatically learn meta \(G\) function in connection with prior distribution, knowledge constraints and posterior distribution (Zoph and Le, 2016).
+
+The experimental results show the effectiveness of our methodology on various event-centric questions involving different event types and question formats. Nevertheless, our models only consider the explicitly annotated event triggers and reference answer information, and thus only obtain marginal improvements on the TORQUE dataset containing only single-token answers. It is worth exploring implicit event-related information (e.g. event arguments (Xiang and Wang, 2019) and event relations (Liu et al., 2021)) or external event knowledge (e.g. event knowledge graph (Gottschalk and Demidova, 2019)) for the event-centric QA task.
+
+\section*{References}
+
+Ashwin Devaraj, Byron C Wallace, Iain J Marshall, and Junyi Jessy Li. 2021. Paragraph-level simplification of medical texts. In Proceedings of the conference. Association for Computational Linguistics. North American Chapter. Meeting, volume 2021, page 4972. NIH Public Access.
+
+Jacob Devlin, Ming-Wei Chang, Kenton Lee, and Kristina Toutanova. 2018. Bert: Pre-training of deep bidirectional transformers for language understanding. arXiv preprint arXiv:1810.04805.
+
+Xinya Du and Claire Cardie. 2020. Event extraction by answering (almost) natural questions. arXiv preprint arXiv:2004.13625.
+
+Kuzman Ganchev, Joao Graça, Jennifer Gillenwater, and Ben Taskar. 2010. Posterior regularization for structured latent variable models. The Journal of Machine Learning Research, 11:2001-2049.
+
+Simon Gottschalk and Elena Demidova. 2019. Eventkg-the hub of event knowledge on the weband biographical timeline generation. Semantic Web, 10(6):1039-1070.
+
+Rujun Han, I Hsu, Jiao Sun, Julia Baylon, Qiang Ning, Dan Roth, Nanyun Peng, et al. 2021. Ester: A machine reading comprehension dataset for
+event semantic relation reasoning. arXiv preprint arXiv:2104.08350.
+
+Zhiting Hu, Zichao Yang, Ruslan Salakhutdinov, and Eric Xing. 2016. Deep neural networks with massive learned knowledge. In Proceedings of the 2016 Conference on Empirical Methods in Natural Language Processing, pages 1670-1679.
+
+Woojeong Jin, Rahul Khanna, Suji Kim, Dong-Ho Lee, Fred Morstatter, Aram Galstyan, and Xiang Ren. 2020. Forecastqa: A question answering challenge for event forecasting with temporal text data. arXiv preprint arXiv:2005.00792.
+
+Mandar Joshi, Danqi Chen, Yinhan Liu, Daniel S Weld, Luke Zettlemoyer, and Omer Levy. 2020. Spanbert: Improving pre-training by representing and predicting spans. Transactions of the Association for Computational Linguistics, 8:64-77.
+
+Daniel Khashabi, Sewon Min, Tushar Khot, Ashish Sabharwal, Oyvind Tafjord, Peter Clark, and Hannaneh Hajishirzi. 2020. Unifiedqa: Crossing format boundaries with a single qa system. arXiv preprint arXiv:2005.00700.
+
+Margaret Li, Stephen Roller, Ilia Kulikov, Sean Welleck, Y-Lan Boureau, Kyunghyun Cho, and Jason Weston. 2019. Don't say that! making inconsistent dialogue unlikely with unlikelihood training. arXiv preprint arXiv:1911.03860.
+
+Jian Liu, Yubo Chen, Kang Liu, Wei Bi, and Xiaojiang Liu. 2020. Event extraction as machine reading comprehension. In Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP), pages 1641-1651.
+
+Ya Liu, Jiachen Tian, Lan Zhang, Yibo Feng, and Hong Fang. 2021. A survey on event relation identification. In China Conference on Knowledge Graph and Semantic Computing, pages 173-184. Springer.
+
+Yinhan Liu, Myle Ott, Naman Goyal, Jingfei Du, Mandar Joshi, Danqi Chen, Omer Levy, Mike Lewis, Luke Zettlemoyer, and Veselin Stoyanov. 2019. Roberta: A robustly optimized bert pretraining approach. arXiv preprint arXiv:1907.11692.
+
+Junru Lu, Xingwei Tan, Gabriele Pergola, Lin Gui, and Yulan He. 2022. Event-centric question answering via contrastive learning and invertible event transformation. arXiv preprint arXiv:2210.12902.
+
+Qiang Ning, Hao Wu, Rujun Han, Nanyun Peng, Matt Gardner, and Dan Roth. 2020. Torque: A reading comprehension dataset of temporal ordering questions. arXiv preprint arXiv:2005.00242.
+
+Colin Raffel, Noam Shazeer, Adam Roberts, Katherine Lee, Sharan Narang, Michael Matena, Yanqi Zhou, Wei Li, and Peter J Liu. 2019. Exploring the limits of transfer learning with a unified text-to-text transformer. arXiv preprint arXiv:1910.10683.

@@ -1,0 +1,383 @@
+\title{
+NexusSum: Hierarchical LLM Agents for Long-Form Narrative Summarization
+}
+
+\author{
+Hyuntak Kim* Byung-Hak Kim* \(\dagger\) \\ CJ Corporation
+}
+
+\begin{abstract}
+Summarizing long-form narratives-such as books, movies, and TV scripts-requires capturing intricate plotlines, character interactions, and thematic coherence, a task that remains challenging for existing LLMs. We introduce NexusSum, a multi-agent LLM framework for narrative summarization that processes long-form text through a structured, sequential pipeline-without requiring fine-tuning. Our approach introduces two key innovations: (1) Dialogue-to-Description Transformation: A narrative-specific preprocessing method that standardizes character dialogue and descriptive text into a unified format, improving coherence. (2) Hierarchical Multi-LLM Summarization: A structured summarization pipeline that optimizes chunk processing and controls output length for accurate, high-quality summaries. Our method establishes a new state-of-the-art in narrative summarization, achieving up to a 30.0\% improvement in BERTScore (F1) across books, movies, and TV scripts. These results demonstrate the effectiveness of multiagent LLMs in handling long-form content, offering a scalable approach for structured summarization in diverse storytelling domains.
+\end{abstract}
+
+\section*{1 Introduction}
+
+Summarizing long-form narratives, such as books, movies, and TV scripts, remains an open challenge in NLP. Unlike news or document summarization, narratives require capturing intricate plotlines, evolving character relationships, and thematic coherence over tens of thousands of tokens (Zhao et al., 2022). The hybrid structure of narratives, which combines descriptive prose with multi-speaker dialogues, implicit inference, and dynamic topic shifts (see Figure 1), adds further complexity (Khalifa et al., 2021; Zou et al., 2021; Chen
+
+\footnotetext{
+*Equal contribution.
+\({ }^{\dagger}\) Corresponding author: bhak.kim@cj.net
+}
+
+\begin{figure}
+\includegraphics[width=\textwidth]{https://cdn.mathpix.com/cropped/2025_08_30_79e8e16a402092da416bg-1.jpg?height=702&width=788&top_left_y=744&top_left_x=1049}
+\captionsetup{labelformat=empty}
+\caption{Figure 1: Illustration of narrative structure, showcasing the interplay between descriptive text and multi-speaker dialogues. NexusSum enhances coherence by converting dialogues into structured prose for improved long-form summarization.}
+\end{figure}
+et al., 2022b; Saxena and Keller, 2024a), demanding an approach that preserves contextual integrity while condensing information effectively. Furthermore, the sheer length of narrative texts, typically ranging from 40 K to 160 K tokens (Kryscinski et al., 2022; Saxena and Keller, 2024b,a), poses significant challenges for standard summarization models.
+
+Despite advances in large language models (LLMs) for abstractive summarization (Pu et al., 2023), existing methods struggle with long-form narratives for three key reasons. First, context window limitations in LLMs (even with 200K-token capacities (Anthropic, 2024; OpenAI, 2023; Mistral AI, 2024)) lead to information loss when processing extended narratives (Liu et al., 2024). Second, extractive-to-abstractive pipelines (Ladhak et al., 2020; Liu et al., 2022; Saxena and Keller, 2024b) mitigate input constraints by selecting salient sections, but risk omitting critical details, disrupting
+
+\begin{figure}
+\captionsetup{labelformat=empty}
+\caption{BERTScore Improvements of NexusSum}
+\includegraphics[width=\textwidth]{https://cdn.mathpix.com/cropped/2025_08_30_79e8e16a402092da416bg-2.jpg?height=438&width=1386&top_left_y=285&top_left_x=345}
+\end{figure}
+
+Figure 2: Performance comparison of NexusSum with state-of-the-art summarization models using BERTScore (F1) across multiple benchmarks. NexusSum achieves up to a \(30.0 \%\) improvement, particularly excelling in BookSum, where hierarchical processing mitigates context truncation, demonstrating its advantage in long-form narrative summarization. Bold values indicate the new state-of-the-art score.
+narrative coherence. Third, zero-shot LLM approaches perform poorly compared to fine-tuned models in narrative summarization (Saxena and Keller, 2024b; Saxena et al., 2025), indicating the need for task-specific adaptations beyond prompt engineering.
+
+Recent Multi-LLM agent frameworks (Guo et al., 2024; Zhang et al., 2024; Chang et al., 2024) have introduced strategies to handle long-context documents through segmented inference and hierarchical processing. However, these studies focus primarily on generic document summarization and lack domain-specific optimizations for narrative discourse, character-driven coherence, and lengthcontrolled output generation.
+
+In this work, our aim is to address these challenges by investigating:
+- RQ1 How can a Multi-LLM agent system be designed to summarize long-form narratives while preserving narrative structure and coherence?
+- RQ2 What impact does dialogue-to-description transformation have on improving summarization consistency and readability?
+- RQ3 How does iterative compression affect summary length control and content retention?
+
+To address these challenges, we introduce NexusSum, a hierarchical multi-agent LLM framework for long-form narrative summarization. NexusSum employs a three-stage sequential pipeline to progressively refine summaries without finetuning:
+- Dialogue-to-Description Transformation Preprocessor agent converts character dialogues into structured narrative prose, reducing fragmentation and improving coherence.
+- Hierarchical Summarization Narrative Summarizer agent generates an initial comprehensive summary, preserving key plot points and character interactions.
+- Iterative Compression Compressor agent dynamically reduces summary length through controlled compression, ensuring key information retention while enforcing length constraints.
+
+By segmenting long inputs into manageable chunks and applying hierarchical processing across multiple LLM agents, NexusSum ensures highfidelity summarization with scalable length control. We evaluate NexusSum on four long-form narrative benchmarks: BookSum (Kryscinski et al., 2022), MovieSum (Saxena and Keller, 2024a), MENSA (Saxena and Keller, 2024b), and SummScreenFD (Chen et al., 2022a). As shown in Figure 2, NexusSum outperforms existing methods, achieving up to a \(30.0 \%\) improvement in BERTScore (F1) (Zhang et al., 2020) over previous state-of-the-art models. Our work makes the following contributions:
+- Dialogue-to-Description Transformation We introduce a novel LLM-based preprocessing step that improves narrative coherence by converting dialogue into structured prose, reducing ambiguity in multi-speaker interactions.
+
+\section*{- Hierarchical Multi-Agent Summarization}
+
+We design a structured LLM agent pipeline that refines summaries iteratively, mitigating information loss while preserving contextual dependencies.
+- Optimized Length Control and Chunk Processing Our framework employs iterative compression and dynamically adjusts chunk sizes, ensuring factual consistency while improving summary conciseness.
+- State-of-the-Art Results Our approach establishes new benchmarks for long-form narrative summarization, achieving higher accuracy, coherence, and length control than existing LLM-based summarization methods.
+
+By advancing multi-LLM agent frameworks for domain-specific narrative summarization, NexusSum provides a scalable, fine-tuning-free solution that enhances long-context understanding across diverse storytelling mediums.
+
+\section*{2 Related Work}
+
+Narrative summarization differs from traditional document summarization, requiring specialized techniques to handle complex plots, evolving characters, and mixed prose-dialogue structures. This section reviews related work on narrative summarization, long-context summarization, and multiagent LLMs, positioning NexusSum within this research landscape.
+
+\subsection*{2.1 Narrative Summarization}
+
+Benchmark datasets like BookSum, MENSA, MovieSum and SummScreenFD have advanced long-form narrative summarization research. Traditional extractive-to-abstractive pipelines (Ladhak et al., 2020; Liu et al., 2022) risk losing coherence by omitting character arcs and event dependencies. To address this, scene-based and discourse-aware techniques leverage graph-based models (Gorinski and Lapata, 2015) and transformer-based saliency classifiers (Saxena and Keller, 2024b). However, these methods struggle with full text processing, often truncating key content. Our approach overcomes this gap by introducing the dialogue-todescription transformation, allowing for a holistic narrative processing while preserving coherence.
+
+\subsection*{2.2 Long-Context Summarization}
+
+Long-context summarization techniques typically fall into two categories:
+
+Architectural Optimization Transformer models struggle with scalability due to the quadratic cost of self-attention. Solutions include sparse attention, memory-efficient encoding, and longcontext finetuning (Zaheer et al., 2020; Beltagy et al., 2020; Kitaev et al., 2020; Guo et al., 2022; Wang et al., 2020a). Expanded context windows (up to 200 K tokens) (Chen et al., 2023; OpenAI, 2023; Mistral AI, 2024) help but still degrade in multi-turn dependencies, entity tracking, and coherence (Liu et al., 2024).
+
+Chunking-Based Method Chunking-based approaches like SLED (Ivgi et al., 2023) and Unlimiformer (Bertsch et al., 2023) segment text for hierarchical summarization, while CachED (Saxena et al., 2025) improves efficiency via gradient caching but requires finetuning.
+
+Unlike prior methods, NexusSum offers a training-free alternative leveraging Multi-LLM agents, allowing full text summarization without truncation.
+
+\subsection*{2.3 Multi-Agent LLMs for Summarization}
+
+Recent multi-agent LLM frameworks, such as Chain of Agents (CoA) (Zhang et al., 2024) and BooookScore (Chang et al., 2024), improve document summarization through hierarchical merging and sequential refinement (HM-SR) (Jeong et al., 2025). However, they lack adaptations for narrative coherence, character interactions, and event dependencies. Retrieval-augmented generation (Lewis et al., 2020) improves factuality but struggles with long-form storytelling, often missing thematic continuity (Geng et al., 2022; Uthus and Ni, 2023). NexusSum addresses these gaps by integrating the dialogue-to-description transformation and systematic length control, ensuring coherent and contextually faithful summaries.
+
+\section*{3 NexusSum Framework}
+
+To address the challenges of long-form narrative summarization, we introduce NexusSum, a hierarchical multi-agent LLM framework that processes narratives through a three-stage pipeline: Preprocessing, Narrative Summarization, and Iterative Compression. The system is designed to preserve narrative coherence, optimize summary
+
+\begin{figure}
+\includegraphics[width=\textwidth]{https://cdn.mathpix.com/cropped/2025_08_30_79e8e16a402092da416bg-4.jpg?height=723&width=1352&top_left_y=234&top_left_x=348}
+\captionsetup{labelformat=empty}
+\caption{Figure 3: Overview of NexusSum, a hierarchical multi-agent LLM framework for long-form narrative summarization. It follows a three-stage pipeline: (1) Preprocessing converts dialogues into descriptive prose, (2) Narrative Summarization generates an initial summary, and (3) Iterative Compression refines it for length control while preserving key details.}
+\end{figure}
+length, and ensure information retention without requiring fine-tuning. Figure 3 provides a schematic of the framework. Each stage of NexusSum is optimized using a chunk-and-concat method, allowing for scalable summarization of narratives of arbitrary length while ensuring controlled compression. We detail the functionality of each stage below. \({ }^{1}\)
+
+\subsection*{3.1 Preprocessing Stage}
+
+Narrative texts combine dialogues and descriptions, often leading to fragmented summaries. The Preprocessor agent \(P\) enhances coherence by converting dialogues into structured third-person prose, simplifying input for summarization. Following (Xu et al., 2022), we prompt an LLM to reframe dialogues while preserving the intent of the speaker.
+
+To manage long input lengths efficiently, \(P\) segments the input text into scene-based chunks, following recent studies (Saxena and Keller, 2024b; Jeong et al., 2025) that demonstrate the effectiveness scenes as semantic units for processing narratives:
+\[
+N=n_{1} \oplus n_{2} \oplus \cdots \oplus n_{k}
+\]
+where \(N\) represents the input narrative, segmented into \(k\) chunks. The number of chunks \(k\) is dynamically computed based on a fixed scene-based
+
+\footnotetext{
+\({ }^{1}\) For a comprehensive breakdown of each stage, see Appendix A for the prompts used by each agent, and Appendix B for illustrative output samples.
+}
+chunk size \({ }^{2}\), and \(\oplus\) denotes concatenation. Once processed, the output is a preformatted narrative text \(N^{\prime}\), ready for summarization:
+\[
+N^{\prime}=P\left(n_{1}\right) \oplus P\left(n_{2}\right) \oplus \cdots \oplus P\left(n_{k}\right) .
+\]
+
+\subsection*{3.2 Narrative Summarization}
+
+The Narrative Summarizer agent \(S\) generates an initial abstract summary from the preprocessed text \(N^{\prime}\). To maintain coherence across long documents, \(N^{\prime}\) is further chunked into scene-based units:
+\[
+N^{\prime}=n_{1}^{\prime} \oplus n_{2}^{\prime} \oplus \cdots \oplus n_{j}^{\prime}
+\]
+where \(j\) is the number of chunks \({ }^{3}\). The summarization process follows:
+\[
+S_{0}=S\left(n_{1}^{\prime}\right) \oplus S\left(n_{2}^{\prime}\right) \oplus \cdots \oplus S\left(n_{j}^{\prime}\right)
+\]
+where \(S_{0}\) represents the initial summary. Unlike traditional single-pass models, NexusSum applies hierarchical chunk processing, allowing long-range information retention.
+
+\subsection*{3.3 Iterative Compression}
+
+While \(S_{0}\) is an informative summary, it may exceed the desired length constraints. The Compressor agent \(C\) applies iterative compression to refine \(S_{0}\) while preserving key narrative details. Our iterative compression method consists of two steps: sentence-based chunking followed by hierarchical compression.
+
+\footnotetext{
+\({ }^{2}\) We set the chunk size to 8 scenes, balancing context retention and processing efficiency, resulting in \(k=\) total scenes \(/ 8\).
+\({ }^{3}\) For simplicity, we set \(j=k\), ensuring each chunk contains eight scenes.
+}
+
+\begin{table}
+\begin{tabular}{|l|l|l|l|l|}
+\hline Dataset & BookSum & MovieSum & MENSA & SummScreenFD \\
+\hline Domain Eval Dataset Count & Novels 17 & Movies 200 & Movies 50 & TV Shows 337 \\
+\hline Avg. Input Length (Tokens) Avg. Output Length (Tokens) & 158,645 (98.06\%) 1,792 (46.43\%) & 42,999 (24.08\%) 902 (26.05\%) & 39,808 (21.27\%) 952 (17.02\%) & 9,464 (38.91\%) 151 (76.16\%) \\
+\hline
+\end{tabular}
+\captionsetup{labelformat=empty}
+\caption{Table 1: Overview of four narrative summarization datasets, highlighting diverse text structures and summary styles. Input and output lengths are reported with Coefficient of Variation (CV), with SummScreenFD's high CV (76.16\%) indicating significant variability, making it a challenging benchmark for consistency.}
+\end{table}
+
+Sentence-Based Chunking Unlike the previous scene-based chunking, compression requires sentence-level granularity. We divide \(S_{0}\) into smaller units:
+\[
+S_{0}=s_{0,1} \oplus s_{0,2} \oplus \cdots \oplus s_{0, l_{0}}
+\]
+where \(l_{0}\) is the number of chunks in the initial text, which is dynamically adjusted to maintain optimal compression ratios. Sentences are grouped into chunks up to a predetermined token size \(\delta\), allowing flexible compression rates. This \(\delta\) plays a crucial role in controlling the compression ratio of our system's output, as the smaller size of input yields lower compression (see our empirical analysis in Appendix C).
+
+Hierarchical Compression Following chunking, we apply hierarchical compression iteratively. In each iteration \(i\), the Compressor agent \(C_{i}\) refines the previous compressed summary \(S_{i-1}\), which is split into \(l_{i-1}\) chunks by Sentence-Based Chunking. The \(i\)-th Compressor agent \(C_{i}\) iteratively refines the summary:
+\[
+S_{i}=C_{i}\left(s_{i-1,1}\right) \oplus C_{i}\left(s_{i-1,2}\right) \oplus \cdots \oplus C_{i}\left(s_{i-1, l_{i-1}}\right) .
+\]
+
+The process continues for \(n\) iterations, dynamically determined by a target word count \(\theta^{4}\) :
+- If \(S_{i}\) exceeds \(\theta\), compression continues.
+- If \(S_{i}\) falls below \(\theta\), the previous iteration's output is used.
+
+To balance quality and computational efficiency, we limit compression to a maximum of 10 iterations.
+
+\section*{4 Experimental Setup}
+
+This section describes four datasets of narrative summarization benchmarks, state-of-the-art baselines, implementation details, and evaluation metrics used in our study to evaluate NexusSum.
+
+\footnotetext{
+\({ }^{4}\) If the output is already below \(\theta\), the final summary may also be shorter than the target.
+}
+
+\subsection*{4.1 Dataset}
+
+We conducted experiments on four diverse longform narrative summarization datasets covering novels, movies, and TV scripts. Table 1 summarizes the key statistics of the dataset.
+
+\section*{Dataset Descriptions}
+- BookSum: A novel-based summarization dataset with the longest input and output sequences requiring strong long-context comprehension.
+- MovieSum: Contains summaries of 200 movies with moderate-length documents.
+- MENSA: A script-based dataset combining ScriptBase (Gorinski and Lapata, 2015) and recent movie scripts, providing rich character interactions and scene-based storytelling.
+- SummScreenFD: A dataset from TV shows with concise and highly variable summaries ( \(\mathrm{CV}^{5}=76.16 \%\) ), testing the adaptability of NexusSum to various writing styles.
+
+\subsection*{4.2 Baselines}
+
+We compare NexusSum with three main baseline categories, covering long context modeling, extractive-to-abstractive methods, and Multi-LLM agent frameworks.
+
+Long Context Modeling Baselines These approaches modify model architectures to handle extended sequences:
+- Zero-Shot through GPT-4o (OpenAI, 2023) and Mistral-Large (Mistral AI, 2024): Uses maximum context window expansion but struggles with truncation.
+- SLED (Ivgi et al., 2023): Uses local attention with a sliding window mechanism.
+
+\footnotetext{
+\({ }^{5} \mathrm{CV}\) measures dispersion calculated as the ratio of the standard deviation to the mean, expressed as a percentage.
+}
+- Unlimiformer (Bertsch et al., 2023): Extends transformers with unlimited retrieval-based attention.
+- CachED (Saxena et al., 2025): A gradient caching approach for memory-efficient summarization.
+
+\section*{Extractive-to-Abstractive Baselines These approaches extract salient segments before abstractive summarization:}
+- Description Only (Saxena and Keller, 2024a): Selects descriptive sections for summarization.
+- Two-Stage Heuristics (Liu et al., 2022): Extracts character actions and key dialogues.
+- Summ N (Zhang et al., 2022): Generates coarse summaries, then refines outputs iteratively.
+- Select and Summ (Saxena and Keller, 2024b): Uses scene saliency classifiers to extract important moments.
+
+\section*{Multi-LLM Agent Frameworks}
+- HM-SR (Jeong et al., 2025): Applies hierarchical chunk merging with refinement agents.
+- CoA (Zhang et al., 2024): A multi-agent LLM pipeline, where each agent specializes in refining a specific summary aspect.
+
+\subsection*{4.3 Implementation Details}
+
+We implement NexusSum using Mistral-Large-Instruct-2407 (123B) (Mistral AI, 2024), with optimized inference via vLLM (Kwon et al., 2023) with temperature \(=0.3\), top-p \(=1.0\) and seed \(=42\). The model is run on four A100 GPUs. For Claude 3 Haiku (Anthropic, 2024), we set temperature = 0 to minimize randomness. For each benchmark, NexusSum's configuration of \(\delta\) and \(\theta\) are detailed in the Appendices D and E.
+
+To ensure that our LLM models were not exposed to evaluation datasets during training, we conducted an n-gram overlap analysis (see Appendix F ). The results confirmed that the overlap remained below \(2 \%\) on all benchmarks, indicating minimal data leakage and an unbiased evaluation.
+
+\subsection*{4.4 Evaluation Metrics}
+
+We evaluate NexusSum using a semantic similarity, length control metrics.
+- BERTScore (F1) measures semantic similarity beyond n-gram overlap, aligning with human judgement. We use DeBERTa-XLargeMNLI (He et al., 2021) as the base model, following established practices (Saxena et al., 2025; Saxena and Keller, 2024b). ROUGE (1/2/L) scores (Lin, 2004) are reported in Appendix G for comparability with prior work, though BERTScore better captures abstraction quality.
+- Length Adherence Rate (LAR) measures the degree to which a summary matches the target word counts, defined as
+\[
+\text { LAR }=1-\left|L_{\text {gen }}-L_{\text {target }}\right| \times L_{\text {target }}^{-1}
+\]
+to quantify the effectiveness of iterative compression in controlling summary length.
+
+\section*{5 Results and Analysis}
+
+We evaluate NexusSum against state-of-the-art baselines on four narrative summarization benchmarks, assessing performance gains, ablation results, length control and agent adaptability. Additional analyses on factuality, document utilization and inference time complexity are provided in Appendices H, I and J.
+
+\subsection*{5.1 Benchmark Performance}
+
+Table 2 summarizes the results, showing that Nexussum outperforms all baselines across datasets, achieving state-of-the-art performance with substantial improvements over prior methods:
+
+BookSum NexusSum outperforms CachED by +30.0\% BERTScore (F1), showcasing its effectiveness in processing extended narratives without context loss. Unlike CachED's static chunking approach, NexusSum dynamically optimizes chunk sizes and applies iterative compression, preserving key information while enhancing coherence in long-form summarization. Additionally, NexusSum surpasses CoA by \(+4.6 \%\) in ROUGE (geometric mean of \(1 / 2 / \mathrm{L}\) ), despite CoA leveraging Claude-3-Opus (Anthropic, 2024), a top-performing model for long-context summarization.
+
+\begin{table}
+\begin{tabular}{|l|l|l|l|l|}
+\hline Method & BookSum & MovieSum & MENSA & SummScreenFD \\
+\hline \multicolumn{5}{|l|}{Long Context Modeling} \\
+\hline Zero-Shot (Mistral Large, 123B) & 46.42 & 55.50 & 54.80 & 57.23 \\
+\hline Zero-Shot (GPT4o) & 47.24 & - & 52.8 & - \\
+\hline SLED (BART Large, 406M) & 52.4 & - & 58.3 & 59.9 \\
+\hline Unlimiformer (BART Base, 139M) & 51.5 & - & 58.7 & 58.5 \\
+\hline CachED (BART Large, 406M) & 54.4 & - & 64.6 & 61.59 \\
+\hline \multicolumn{5}{|l|}{Extractive-to-Abstractive} \\
+\hline Description Only (LED-Large, 459M) & - & 58.92 & - & - \\
+\hline Two-Stage Heuristic (LED-Large, 459M) & - & 58.54 & 56.34 & - \\
+\hline Summ N (LED-Large, 459M) & - & - & 40.87 & - \\
+\hline Select and Summ (LED-Large, 459M) & - & - & 57.46 & - \\
+\hline \multicolumn{5}{|l|}{Multi-LLM Agent} \\
+\hline HM-SR (GPT4o-mini) & - & 59.32 & 60.22 & - \\
+\hline CoA (Claude 3 Opus) & (17.47) & - & - & - \\
+\hline NexusSum (Mistral Large, 123B) & (18.27) / 70.70 & 63.53 & 65.73 & 61.59* \\
+\hline
+\end{tabular}
+\captionsetup{labelformat=empty}
+\caption{Table 2: Performance comparison of NexusSum with state-of-the-art summarization models using BERTScore (F1) and ROUGE (geometric mean of \(1 / 2 / \mathrm{L}\) ) in parentheses. NexusSum achieves its highest gains on BookSum ( \(+30.0 \%\) ) and MovieSum ( \(+7.1 \%\) ), outperforming Multi-LLM baselines like CoA and HM-SR. Baseline results are sourced from previous studies (Saxena and Keller, 2024a,b; Saxena et al., 2025; Jeong et al., 2025; Zhang et al., 2024). For open-source models, parameter sizes are shown in parentheses as (Model, Size).}
+\end{table}
+
+\begin{table}
+\begin{tabular}{l|c|c}
+\hline Method & |BERTScore (F1) & Improvement \\
+\hline Zero-Shot & 54.81 & - \\
+\(P+\) Zero-Shot & 57.26 & +2.45 \\
+\(P+S\) & 62.12 & +4.86 \\
+\(S+C\) & 63.90 & +1.78 \\
+\(P+S+C\) (NexusSum) & \(\mathbf{6 5 . 7 3}\) & +1.83 \\
+\hline
+\end{tabular}
+\captionsetup{labelformat=empty}
+\caption{Table 3: Ablation analysis on the MENSA dataset, showing contributions of each LLM agent stage to a final BERTScore (F1) of 65.73.}
+\end{table}
+
+MovieSum NexusSum outperforms HM-SR by \(+7.1 \%\), leveraging structured length control to maintain consistency in multi-scene script summaries. While HM-SR effectively merges hierarchical summaries, its lack of precise length constraints results in variable-length outputs.
+
+MENSA NexusSum achieves a +1.7\% gain over CachED, surpassing long-context models in screenplay summarization. It also outperforms \(\mathrm{Se}-\) lect and Summ by \(+14.4 \%\), demonstrating superior abstraction for character-driven plots, where even extractive-to-abstractive methods struggle with maintaining narrative depth beyond scene selection.
+
+SummScreenFD NexusSum matches the performance of CachED while ensuring better length control through iterative compression, reducing output variability compared to zero-shot baselines.
+
+\subsection*{5.2 Contribution of LLM Agents}
+
+Table 3 quantifies the contribution of each NexusSum component through an ablation study. ZeroShot summarization serves as the baseline, achieving BERTScore of 54.81. Introducing \(P\) improves
+
+\begin{table}
+\begin{tabular}{l|cccc}
+\hline Target Length & \(\mathbf{6 0 0}\) & \(\mathbf{9 0 0}\) & \(\mathbf{1 2 0 0}\) & \(\mathbf{1 5 0 0}\) \\
+\hline Length (Word) & & & & \\
+Zero-Shot & 453 & 540 & 571 & 592 \\
+Ours & \(\mathbf{6 7 0}\) & \(\mathbf{8 9 1}\) & \(\mathbf{1 3 8 5}\) & \(\mathbf{1 6 2 1}\) \\
+\hline LAR & & & & \\
+Zero-Shot & 0.245 & 0.400 & 0.524 & 0.605 \\
+Ours & \(\mathbf{0 . 8 8 3}\) & \(\mathbf{0 . 9 9 0}\) & \(\mathbf{0 . 9 8 8}\) & \(\mathbf{0 . 9 1 4}\) \\
+\hline \multicolumn{5}{l}{ BERTScore (F1) } \\
+Zero-Shot & 56.85 & 58.18 & 58.55 & 57.75 \\
+Ours & \(\mathbf{6 3 . 5 9}\) & \(\mathbf{6 5 . 7 3}\) & \(\mathbf{6 5 . 2 1}\) & \(\mathbf{6 2 . 8 6}\) \\
+\hline
+\end{tabular}
+\captionsetup{labelformat=empty}
+\caption{Table 4: Comparison of Nexussum and Zero-Shot summarization on length control, measured by word count deviation, LAR and BERTScore (F1). NexusSum achieves a higher BERTScore while maintaining an LAR close to 1.0 , demonstrating precise adherence to target length constraints.}
+\end{table}
+
+\begin{table}
+\begin{tabular}{l|c}
+\hline Method & BERTScore (F1) \\
+\hline NexusSum \(_{\text {base }}\) & 56.61 \\
+NexuSSUM \(_{\text {CoT }}\) & 58.61 \\
+NeXUSSUM \(_{\text {CoT+FewShot }}\) & \(\mathbf{6 1 . 5 9}\) \\
+\hline
+\end{tabular}
+\captionsetup{labelformat=empty}
+\caption{Table 5: Effect of prompt engineering on NexusSum performance in SummScreenFD. Incorporating CoT and Few-Shot learning results in a 5.0 -point BERTScore improvement, highlights NexusSum's adaptability to diverse summarization styles without parameter updates.}
+\end{table}
+coherence by converting dialogues into narrative text, raising BERTScore to 57.26 (+2.45). This confirms that \(P\) is insufficient alone for high-quality summarization. The addition of \(S\) further improves BERTScore to 62.12 (+4.86). Finally, \(C\) refines summary length while retaining critical details, producing the highest performance of 65.73. These results validate that each component of NexusSum contributes to performance improvements, with the multi-agent LLM framework being essential for
+long-form narrative coherence and retention.
+
+\subsection*{5.3 Length Control with Quality Preservation}
+
+We evaluated NexusSum's length control capabilities on the MENSA dataset. As a baseline, we use a Zero-Shot model with explicit length constraints applied via prompt instructions ("Write in [target length]"). As shown in Table 4, NexusSum effectively balances semantic quality (BERTScore (F1)) and length adherence (LAR) in all target lengths. This shows that NexusSum not only generates more semantically accurate summaries, but also enforces structured length control effectively than conventional prompting strategies.
+
+\subsection*{5.4 Adaptive Performance through Prompt Engineering}
+
+As a Multi-LLM agent framework, NexusSum leverages prompt engineering to adapt to diverse summarization tasks without requiring parameter updates. We evaluate this adaptability on SummScreenFD, a challenging dataset characterized by spoken dialogue format and high variable summary styles (CV=76.16\%, see Table 1). To enhance adaptation, we incorporate Chain of Thoughts (CoT) reasoning (Kojima et al., 2022) in \(P\) and Few-Shot learning (Wang et al., 2020b) in \(S\) and \(C\) to refine output style.
+
+Table 5 demonstrates that CoT alone improves BERTScore (F1) from 56.61 to 58.61 (+2.0 points), while adding Few-Shot learning further boosts performance to \(61.59(+2.98\) points). These results highlight NexusSum's ability to adapt to diverse summarization scenarios using simple prompt customization, ensuring robust generalization across narrative structures without additional training or fine-tuning.
+
+\subsection*{5.5 Human Preference Analysis}
+
+Setup To explore human preference for generated summaries across different narrative styles and genres, we create three different K-Drama summaries that vary in genres (Fantasy-Romance, Korean History and Modern Romantic-Comedy). Summaries were generated using three different methodologies (Zero-Shot, NexusSum and NexusSum \(_{\text {R }}\) ) to enable a comparative preference analysis.
+
+A total of three K-Drama experts participate in the evaluation, with at least two evaluators assessing each output for a given work. They score the
+summaries on a 5 -point Likert scale ( \(1=\) Not at all, 5 = Very much so) across four criteria:
+- Key Events: Are the key events included?
+- Flow: Is the contextual information demonstrated specifically?
+- Factuality: Does the summary have high factual accuracy?
+- Readability: Does the summary have high readability?
+In addition, all three evaluators provided qualitative comments to explain the reasons behind their scores (See Appendix K).
+
+Results First, we compare the Zero-Shot method with NexusSum. Each method aims to generate summaries with a target length of 600 words. ZeroShot is prompted to generate summaries with the target length of 600 as specified instruction in the prompt. NexusSum generates summaries by halting the iteration process at a lower bound \(\theta=600\). As shown in Table 6, NexusSum demonstrates superior summary length control, achieving an average summary length of 609 words, compared to Zero-Shot, which produces summaries with an average length of 219 words. NexusSum outperforms Zero-Shot in capturing key events (4.17), maintaining narrative flow (3.34), and ensuring factual accuracy (4). However, Zero-Shot demonstrates superior readability (4.17).
+
+To further enhance readability, we introduce a third method, NexusSumr. This approach incorporates an additional LLM agent that rewrites the original NexusSum summary to emulate the concise and fluent style characteristic of the ZeroShot method. The refining agent smooths sentence transitions, adjusts verbosity, and enhances fluency while preserving key narrative details. In Table 6, NexusSum \(_{\mathrm{R}}\) improves readability by +1.5 points compared to NexusSum, bridging the gap between structured factual summarization and humanpreferred fluency.
+
+\section*{6 Conclusion}
+
+We introduce NexusSum, a hierarchical multiagent LLM framework that advances long-form narrative summarization by improving coherence (RQ2), long-context processing (RQ1), and length control (RQ3). Our results demonstrate that structured multi-agent collaboration enhances information retention while maintaining coherence, laying
+
+\begin{table}
+\begin{tabular}{l|c|c|c}
+\hline & Zero-Shot & NEXUSSUM & NEXUSSUM \(_{\mathbf{R}}\) \\
+\hline Key Events & 3.5 & \(\mathbf{4 . 1 7}\) & \(\mathbf{4 . 1 7}\) \\
+Flow & 2.83 & 3.34 & 3 \\
+Factuality & 3.5 & 4 & 3.67 \\
+Readability & \(\mathbf{4 . 1 7}\) & 2.17 & \(\underline{3.67}\) \\
+\hline Avg. Output Len & 219 & 609 & 234 \\
+\hline
+\end{tabular}
+\captionsetup{labelformat=empty}
+\caption{Table 6: Expert evaluation of Zero-Shot, NexusSum, and NexusSum \({ }_{\mathrm{R}}\) on K-Drama summaries using a target length \((\theta)\) of 600 words. Scores reflect performance across four criteria. NexusSum introduces a reflection step to enhance readability while maintaining high content retention.}
+\end{table}
+the groundwork for scalable, adaptive AI summarization systems.
+
+Beyond state-of-the-art performance, NexusSum has broader implications for AI-driven storytelling, personalized summarization, and conversational AI. Our findings on Chain-of-Thoughtdriven self-planning suggest a path toward autonomous, context-aware LLM agents capable of refinement without retraining. However, human evaluation highlights a readability gap compared to Zero-Shot baselines. Future work should explore a fluency-enhancing summarization framework while preserving factual consistency and optimizing multi-agent collaboration efficiency.
+
+\section*{7 Limitations}
+
+While NexusSum introduces significant advancements in long-form narrative summarization, certain limitations remain, particularly in evaluation paradigms, readability, and adaptability. This section outlines key challenges and directions for future improvements.
+
+Limitation of Automated Metrics Automated evaluation metrics such as BERTScore and ROUGE provide useful approximations of summary quality but fail to capture readability, coherence, and user preference, which are critical for long-form narrative summarization. To address these gaps, we conducted an expert evaluation on three K-drama summaries from distinct genres (historical, fantasy, and slice-of-life) to assess readability, coherence, and factual accuracy (Section 5.5).
+
+As shown in Table 6, NexusSum produces summaries closer to the target length ( 609 words) than Zero-Shot (219 words). However, despite NexusSum achieving higher BERTScore and ROUGE, experts rated Zero-Shot outputs as more readable (4.17 vs. 2.17). This discrepancy suggests ZeroShot favors fluency and stylistic variation at the cost
+of factual accuracy, whereas NexusSum focuses on key event retention, leading to denser summaries that may feel less natural to human readers. These findings highlight a crucial limitation of current summarization evaluation paradigms-higher automated scores do not necessarily align with human preference.
+
+Future Directions Human feedback (Section 5.5, Appendix K) suggests that NexusSum \({ }_{\mathrm{R}}\) reduces rigid phrasing and improves narrative flow, making summaries more natural while retaining essential content. This demonstrates that an additional reflection step can significantly enhance human preference alignment, opening the door to adaptive post-processing techniques for long-form summarization to offer customizable and more engaging user experiences.
+
+\section*{Acknowledgments}
+
+We thank our colleagues at the AI R\&D Division for their insightful discussions that helped shape the direction of this work. We also thank the team at CJ ENM for their support with human evaluation and for providing valuable feedback throughout the project.
+
+\section*{References}
+
+Anthropic. 2024. The claude 3 model family: Opus, sonnet, haiku. https://www-cdn.anthropic.com/ de8ba9b01c9ab7cbabf5c33b80b7bbc618857627/ Model_Card_Claude_3.pdf. Online; accessed March 2024.
+
+Iz Beltagy, Matthew E. Peters, and Arman Cohan. 2020. Longformer: The long-document transformer. Preprint, arXiv:2004.05150.
+
+Amanda Bertsch, Uri Alon, Graham Neubig, and Matthew R. Gormley. 2023. Unlimiformer: Longrange transformers with unlimited length input. In Thirty-seventh Conference on Neural Information Processing Systems: NeurIPS 2023.
+
+Yapei Chang, Kyle Lo, Tanya Goyal, and Mohit Iyyer. 2024. Booookscore: A systematic exploration of book-length summarization in the era of 1 lms . In The Twelfth International Conference on Learning Representations, ICLR 2024, Vienna, Austria, May 7-11, 2024. OpenReview.net.
+
+Mingda Chen, Zewei Chu, Sam Wiseman, and Kevin Gimpel. 2022a. SummScreen: A dataset for abstractive screenplay summarization. In Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), ACL 2022, pages 8602-8615, Dublin, Ireland. Association for Computational Linguistics.
