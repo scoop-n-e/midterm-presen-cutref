@@ -1,0 +1,91 @@
+metadata:
+  title: string
+  authors: list[string]
+  year: integer
+  venue: string
+  paper_url: string
+
+problem_statement:
+  background: string  # 研究背景（2-3文）
+
+  gap_or_challenge: string  # 既存研究の問題点や未解決課題（3-4文）
+
+  research_objective: string  # この研究の目的（2-3文）
+
+artifacts:
+  - name: string # 例: "Causal-Narrative Dataset"
+    type: enum[dataset, model, metric, other]
+    description: string # 1-2文で説明
+
+tasks:
+  - task_name: string  # タスクの名称（例: "Story Cloze Test", "NarrativeQA"）
+    task_overview: string  # タスクの概要説明（2-4文）。このタスクが何を評価/実現しようとしているのかを説明
+    input_unit: enum[sentence, paragraph, document, multi_document, embedding, other]
+    output_type: enum[label, span, free_text, graph, ranking, embedding, other]
+    operation: enum[classification, generation, extraction, qa, retrieval, scoring, ordering, other]
+
+datasets:  # 複数データセットに対応（リスト形式）
+  - dataset_name: string | null # データセット名
+    # 例: "ROCStories"
+    
+    characteristics: string  # 特徴の説明（2-3文）
+    # 例: "Short commonsense stories with average length of 5 sentences,
+    # focusing on everyday events with clear causal chains. Each story
+    # includes two candidate endings, one correct and one incorrect."
+  
+    usage: list[enum[train, valid, test]] | null  # このデータセットの使用方法
+    
+    data_num: string  # データサイズ（optional）
+    # 例: "98K stories", "45K QA pairs", "1.2M sentences"
+
+    unit_type: enum[sentence, paragraph, document, multi_document, other()] | null
+    # 各データの規模
+    
+    domain: enum[fiction, news, scripts, children_stories, social_media, mixed, other] | null
+
+    is_new: boolean  # 新規作成データセットか
+    
+    new_dataset_contribution: string | null # 新規作成の場合の貢献（optional、2-3文）
+    # 例: "We collected 50K narratives with fine-grained annotations for
+    # causal relations and character emotional arcs. The dataset enables
+    # evaluation of multi-aspect narrative understanding."
+
+
+methods:
+  architecture_pattern: enum[single_model, composite]
+  
+  components:  # フラットなリスト形式で簡潔に
+    - type: enum[transformer_decoder, transformer_encoder, 
+                 transformer_enc_dec, gnn, embedding, symbolic, other]
+      role: enum[generator, encoder, classifier, scorer, 
+                 retriever, structure_builder]
+      model_name: string | null  # 具体的なモデル名（GPT-3, BERT等）
+  
+  training_strategy:  # 複数選択可能だが主要なもののみ
+    primary: enum[prompting, fine_tuning, contrastive, 
+                  reinforcement, from_scratch]
+    details: list[string] | null  # CoT, LoRA等の詳細
+  
+  integration: enum[sequential, parallel, attention_based, 
+                   latent_coupling, knowledge_grounded, none]
+  
+  external_resources: list[string] | null  # KG、検索エンジン等
+
+evaluations:
+  metrics_used: list[string]
+  results:                    # 構造化（文章でなく配列）
+    - dataset: string
+      split: string
+      metric: string
+      score: number|string
+      baseline_name: string | not_stated
+      baseline_score: number|string | not_stated
+      delta_abs: number | not_stated
+      eval_type: enum[automatic, human]
+  human_eval:
+    done: boolean
+    design: string | not_stated  # sentence
+
+conclusion:
+  limitations_stated: list[string]    # 著者が明記したものだけ
+  key_findings: list[string]          # 数値事実ベース

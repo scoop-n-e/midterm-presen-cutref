@@ -1,0 +1,101 @@
+# Factual extraction only: Extract only what is explicitly stated in the paper
+# No interpretation: Avoid subjective interpretation or inference
+# Use null when uncertain: If information is not clearly stated, use null and write comment
+# Quote evidence: For inference_data_scale, always provide supporting text from paper
+# Be consistent: Use exact terms from paper when possible
+# Write comment when you use other
+
+metadata:
+  title: string  # Full paper title as it appears in the publication
+  authors: list[string]  # List of author names (at least first author required)
+  year: integer  # Publication year (YYYY format)
+  venue: string  # Conference name or journal name (e.g., "ACL", "EMNLP", "TACL")
+  paper_url: string  # Direct URL to paper (arXiv, ACL Anthology, etc.)
+
+research_scope:
+  task_type: string  # Task name as explicitly stated in the paper (e.g., "causal reasoning", "story generation")
+  core_challenge: string  # Central problem the paper aims to solve (1-3 sentences, objective description)
+
+artifacts:  # List of new resources created by this work
+  - name: string  # Artifact name (e.g., "Causal-Narrative Dataset")
+    type: enum[dataset, model, metric, other]  # Type of artifact created
+    description: string  # Brief description (1-3 sentences max)
+
+tasks:  # Inference-time task definition (what the system actually solves)
+  main_task:
+    name: string  # Task name (e.g., "story ending prediction")
+    overview: string  # Brief task description (1-3 sentences)
+    input_type: string  # Type of input data (e.g., "story context", "premise-hypothesis pair")
+    output_type: string  # Type of output (e.g., "ending selection (binary)", "generated text")
+    
+    inference_data_scale:  # Scale of data processed during single inference
+      scale: enum[triplet, sentence, paragraph, document, book, multi_book]
+      # triplet: 3 elements (e.g., premise-hypothesis-label)
+      # sentence: 1-2 sentences
+      # paragraph: 3-10 sentences
+      # document: single article/chapter
+      # book: book-length text
+      # multi_book: multiple books/large corpus
+      
+      typical_size: string | null  # Typical size with units (e.g., "5-7 sentences", "500 tokens")
+      evidence: string  # Quote or reference from paper supporting this classification
+  
+  subtasks: list[string] | null  # List of auxiliary task names if any
+
+datasets:  # All datasets used in the paper
+  - dataset_name: string  # Official dataset name (e.g., "ROCStories", "ConceptNet")
+    
+    is_new: boolean  # True if created by this paper, False if existing dataset
+    
+    characteristics: string  # Key features of the dataset (2-3 sentences, factual description)
+    
+    lang: list[string]  # Language codes (e.g., ["en"], ["en", "zh"], ["multilingual"])
+    
+    usage: list[enum[train, valid, test]] | null  # How this dataset is used in the paper
+    
+    size:
+      num: string | null  # Dataset size with units (e.g., "98K stories", "45K QA pairs")
+      scale: enum[sentence, paragraph, document, multi_document, other] | null
+      # Scale of individual data points in the dataset
+    
+    source: enum[fiction, news, scripts, children_stories, social_media, mixed, other] | null
+    # Domain/genre of the data source
+
+methods:
+  method_overview: string  # High-level approach description (2-3 sentences)
+  
+  architecture_pattern: enum[single_model, composite]
+  # single_model: one model handles all processing
+  # composite: multiple models/components work together
+  
+  components:  # List all major components
+    - model_name: string | null  # Specific model name if using existing (e.g., "GPT-3", "BERT-base")
+      
+      type: enum[transformer_decoder, transformer_encoder, transformer_enc_dec, 
+                 gnn, embedding, other_neural, symbolic, other]
+      # Architecture type of the component
+      
+      role: enum[generator, encoder, classifier, scorer, retriever, structure_builder, other]
+      # Functional role in the system
+      
+      training_strategy:
+        primary: enum[prompting, fine_tuning, contrastive, reinforcement, from_scratch] | null
+        # Main training/adaptation approach
+        
+        details: list[string] | null  # Specific techniques (e.g., ["CoT", "LoRA", "few-shot"])
+  
+  external_resources: list[string] | null  # External KBs, search engines, APIs used
+
+evaluation:
+  metrics: list[string]  # All evaluation metrics used (e.g., ["accuracy", "BLEU", "F1"])
+  
+  main_results:  # Key numerical results
+    - metric: string  # Metric name
+      score: string  # Score with units (e.g., "73.5%", "0.82")
+      baseline_comparison: string | null  # Comparison if stated (e.g., "+5.2% over BERT")
+
+key_contributions:  # Main contributions as stated by authors (2-3 bullet points)
+  - string  # Each contribution as a complete sentence
+
+limitations:  # Limitations explicitly acknowledged by authors
+  - string  # Each limitation as stated in the paper (not inferred)
