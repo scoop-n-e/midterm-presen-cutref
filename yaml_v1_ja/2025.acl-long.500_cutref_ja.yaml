@@ -1,0 +1,139 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "NEXUSSUM: Hierarchical LLM Agents for Long-Form Narrative Summarization"
+  authors:
+    - "Hyuntak Kim"
+    - "Byung-Hak Kim"
+  year: 2025
+  venue: "ACL"
+  paper_url: null  # Not provided in the paper
+
+problem_statement:
+  background: "本、映画、テレビ脚本などの長編物語の要約はNLPにおいて依然として困難です。ニュースや文書要約とは異なり、物語は何万トークンにもわたって複雑なプロットライン、進化するキャラクター関係、テーマの一貫性を捉える必要があります。記述的散文と多話者対話、暗示的推論、動的な話題変化を組み合わせたハイブリッド構造がさらなる複雑さを追加します。"
+  
+  gap_or_challenge: "既存の手法は3つの主要な理由で長編物語に苦労します：（1）LLMにおけるコンテキストウィンドウの制限により、拡張された物語を処理する際に情報損失が生じる、（2）抽出-抽象化パイプラインは重要な詳細を省略し物語の一貫性を破壊するリスクがある、（3）ゼロショットLLMアプローチは物語要約において微調整されたモデルと比較して性能が劣り、プロンプトエンジニアリングを超えたタスク固有の適応の必要性を示している。"
+  
+  research_objective: "この研究では次の質問を調査することで課題に対処します：RQ1 - 物語構造と一貫性を保持しながら長編物語を要約するために、Multi-LLMエージェントシステムをどのように設計できるか？ RQ2 - 対話から記述への変換は要約の一貫性と可読性の改善にどのような影響を与えるか？ RQ3 - 反復的圧縮は要約長制御と内容保持にどのように影響するか？"
+  
+  significance: "NEXUSSUMは微調整を必要とせず構造化された逐次パイプラインを通じて長編テキストを処理するマルチエージェントLLMフレームワークを導入し、物語ベンチマーク全体でBERTScore（F1）において最大30.0%の改善を達成し、多様な物語ドメインにおける構造化要約のためのスケーラブルなアプローチを提供します。"
+
+tasks:
+  - task_name: "Long-Form Narrative Summarization"
+    
+    task_overview: "プロットの一貫性、キャラクター関係、テーマ要素を保持する長編物語（本、映画、テレビ脚本）の包括的要約を生成。このタスクは40Kから160Kトークンの範囲のテキストを扱い、記述的散文と対話のハイブリッド構造を処理し、情報を効果的に凝縮しながら文脈的完全性を維持する必要があります。"
+    
+    input_description: "小説（BookSum - 平均158Kトークン）、映画（MovieSum - 平均43Kトークン、MENSA - 平均40Kトークン）、テレビ脚本（SummScreenFD - 平均9.5Kトークン）からの長編物語テキスト。テキストは多話者相互作用を持つ散文-対話混合構造を含みます。"
+    
+    output_description: "データセットに応じて151から1,792トークンの範囲の制御された長さの抽象的要約。要約は一貫性と事実的正確性を維持しながら、主要なプロットポイント、キャラクター相互作用、物語テーマを捉える必要があります。"
+
+methodology:
+  method_name: "NEXUSSUM - Hierarchical Multi-Agent LLM Framework"
+  
+  approach_type: "neural"
+  
+  core_technique: "NEXUSSUMは特化したLLMエージェントを持つ3段階の逐次パイプラインを採用します。第1段階 - 前処理：対話から記述への変換がキャラクター対話を前処理エージェントPを使用して構造化された三人称散文に変換し、入力をシーンベースのチャンクに分割（チャンクあたり8シーン）。第2段階 - 物語要約：物語要約エージェントSが長距離一貫性を維持するために階層的チャンク処理を使用して前処理されたテキストから初期抽象要約を生成。第3段階 - 反復的圧縮：圧縮エージェントCが文ベースチャンキングと階層的洗練を通じて反復的圧縮を適用し、目標語数θに基づいて動的に調整。システムはMistral-Large-Instruct-2407（123B）をベースモデルとして使用、temperature=0.3で4つのA100 GPUでvLLMを介して実装。各段階は任意長物語のスケーラブル処理のためにchunk-and-concat手法を使用。"
+  
+  base_models:
+    - "Mistral-Large-Instruct-2407 (123B)"
+    - "Claude 3 Haiku (for comparison)"
+    - "GPT-4o (baseline)"
+    - "GPT-4o-mini (baseline)"
+  
+  key_innovations:
+    - "対話を物語散文に変換する対話から記述への変換前処理"
+    - "要約の各段階に特化したエージェントを持つ階層的マルチエージェントパイプライン"
+    - "文脈保持と処理効率のバランスを取る動的チャンクサイズ最適化"
+    - "精密な長さ制御のための文レベル粒度を持つ反復的圧縮"
+    - "プロンプトエンジニアリングとマルチエージェント協力を活用する訓練不要アプローチ"
+
+datasets:
+  - dataset_name: "BookSum"
+    characteristics: "最長入力（平均158,645トークン）と出力（平均1,792トークン）を持つ小説ベース要約データセット。多様なテキスト長を示す高い変動係数（入力98.06%、出力46.43%）。"
+    usage: "長いコンテキスト理解能力の評価"
+    size: "17 test samples"
+    domain: "fiction"
+    is_new: false
+    new_dataset_contribution: null
+  
+  - dataset_name: "MovieSum"
+    characteristics: "中程度の長さの文書を持つ映画要約（平均42,999トークン入力、902トークン出力）。"
+    usage: "マルチシーン脚本要約のテスト"
+    size: "200 test samples"
+    domain: "mixed"
+    is_new: false
+    new_dataset_contribution: null
+  
+  - dataset_name: "MENSA"
+    characteristics: "ScriptBaseと最新映画脚本を組み合わせた脚本ベースデータセット（平均39,808トークン入力、952トークン出力）。豊富なキャラクター相互作用とシーンベース物語。"
+    usage: "キャラクター主導プロット要約の評価"
+    size: "50 test samples"
+    domain: "mixed"
+    is_new: false
+    new_dataset_contribution: null
+  
+  - dataset_name: "SummScreenFD"
+    characteristics: "簡潔で高度に変動する要約を持つテレビ番組データセット（出力CV 76.16%）。最短入力（平均9,464トークン）と出力（平均151トークン）。"
+    usage: "様々な執筆スタイルへの適応性テスト"
+    size: "337 test samples"
+    domain: "mixed"
+    is_new: false
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "意味的類似性メトリック（DeBERTa-XLarge-MNLIでのBERTScore F1）、長さ制御メトリック（Length Adherence Rate）、人間の好み分析を使用した包括的評価。3つのベースラインカテゴリとの比較：Long Context Modeling（Zero-Shot GPT-4o/Mistral-Large、SLED、Unlimiformer、CachED）、Extractive-to-Abstractive（Description Only、Two-Stage Heuristics、Summ N、Select and Summ）、Multi-LLM Agents（HM-SR、CoA）。アブレーション研究は各パイプライン段階の貢献を評価。K-Drama要約での人間評価は主要イベント、流れ、事実性、可読性に対して5点リッカート尺度を使用。"
+  
+  main_results: "NEXUSSUMは最先端性能を達成：BookSum CachEDに対して+30.0% BERTScore改善（70.7 vs 54.4）、MovieSum HM-SRに対して+7.1%（63.5 vs 59.3）、MENSA CachEDに対して+1.7%（65.7 vs 64.6）、SummScreenFD CachEDと同等（61.6）。目標長（600-1500語）全体で1.0に近いLength Adherence Rate。アブレーションは各段階が貢献することを示す：P +2.45、S +4.86、C +1.83 BERTScoreポイント。人間評価は可読性トレードオフを明示：NEXUSSUMは主要イベント（4.17 vs 3.5）で高得点だが可読性（2.17 vs 4.17）はZero-Shotより低い。"
+  
+  metrics_used:
+    - "BERTScore (F1)"
+    - "ROUGE (1/2/L)"
+    - "Length Adherence Rate (LAR)"
+    - "Human preference scores (5-point Likert)"
+    - "Inference time complexity"
+  
+  human_evaluation_summary: "3人のK-Drama専門家がファンタジーロマンス、時代劇、ロマンティックコメディジャンル全体で要約を評価。NEXUSSUMはより良い長さ制御（609 vs 219語）と事実的正確性を達成するが、Zero-Shotより可読性は低い。NEXUSSUMR（洗練エージェント付き）の導入により、内容品質を維持しながら可読性を2.17から3.67に改善。"
+
+results_analysis:
+  key_findings:
+    - "マルチエージェント協力が性能に不可欠 - 各段階が段階的に貢献"
+    - "対話から記述への変換が+2.45 BERTScoreポイントで一貫性を改善"
+    - "反復的圧縮がすべての目標長で精密な長さ制御を可能（LAR >0.88）"
+    - "事実的密度と可読性のトレードオフ - 流暢さには後処理が必要"
+    - "プロンプトエンジニアリングが微調整なしで適応を可能（CoT+Few-Shotで+5.0 BERTScore）"
+    - "最長物語での性能向上が最高（BookSum +30.0%）"
+  
+  ablation_summary: "Zero-Shotベースライン：54.81 BERTScore。P追加：57.26（+2.45）。P+S：62.12（+4.86）。S+C：63.90（+1.78）。完全なNEXUSSUM（P+S+C）：65.73（+1.83）。最適性能には各コンポーネントが必要。"
+
+contributions:
+  main_contributions:
+    - "微調整なしで長編物語要約のために特別に設計された初のマルチエージェントLLMフレームワーク。"
+    - "対話を構造化された散文に変換することで物語の一貫性を改善する新しい対話から記述への変換前処理。"
+    - "文脈的依存関係を保持しながら要約を段階的に洗練する特化エージェントを持つ階層的要約パイプライン。"
+    - "最大30.0%のBERTScore改善で最先端性能を実証、特に本の長さの物語で優秀。"
+  
+  limitations:
+    - "自動メトリック（BERTScore、ROUGE）は可読性とユーザー好みを捉えられない"
+    - "人間評価は可読性ギャップを明示 - 要約はZero-Shotより密度が高く自然さに欠ける"
+    - "マルチ段階処理による計算オーバーヘッド"
+    - "非英語物語での評価が限定的"
+    - "人間に好まれる流暢さには追加の洗練エージェントが必要"
+
+narrative_understanding_aspects:
+  - "Story Retelling / Abstract Summaries"
+  - "Character / Event-centric Summaries"
+  - "Plot / Storyline Extraction"
+  - "Narrative Consistency Check"
+
+keywords:
+  - "multi-agent LLM"
+  - "long-form narrative summarization"
+  - "dialogue-to-description transformation"
+  - "hierarchical summarization"
+  - "iterative compression"
+  - "length control"
+  - "narrative coherence"
+  - "chunk-and-concat"
+  - "scene-based processing"
+
+notes: "Work demonstrates potential of multi-agent LLM frameworks for domain-specific narrative summarization. Future work should explore fluency-enhancing frameworks and autonomous context-aware refinement."

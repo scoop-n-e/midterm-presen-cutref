@@ -1,0 +1,159 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Story Embeddings – Narrative-Focused Representations of Fictional Stories"
+  authors:
+    - "Hans Ole Hatzel"
+    - "Chris Biemann"
+  year: 2024
+  venue: "EMNLP"
+  paper_url: "https://aclanthology.org/2024.emnlp-main.339/"
+  
+problem_statement:
+  background: "物語理解は最近多くの注目を集めており、物語ベースの質問応答や穴埋め評価でモデルをテストするアプローチがあります。研究者は架空のコンテキストにおいて、narrativeとstoryという用語を明確な区別なしに使用することがよくあります。"
+  
+  gap_or_challenge: "表面レベルの「どのように」語られるかではなく、物語、つまり「何が」起こっているかを優先するストーリー埋め込みに焦点を当てるアプローチが不足しています。既存のモデルは、同じストーリーの異なる定式化において物語的類似性を捉えることに失敗しています。現在の手法は、エンティティ名をショートカットとして焦点を当てるか、異なる設定、キャラクター、または短縮版を持つ構造的に類似したストーリーを特定する能力を欠いています。"
+  
+  research_objective: "この研究は、どのように語られるかではなく、何が起こっているかを優先する表現を作成し、物語に焦点を当てたストーリー埋め込みに取り組むことを目指しています。このアプローチは、同じストーリーの再定式化が類似した表現をもたらす埋め込みを開発し、より良い物語検索と理解を可能にすることを目的としています。"
+  
+  significance: "このアプローチは、推薦システムや文学の計算分析への応用を通じて、膨大なストーリーデータセットの探索に役立ちます。表面的特徴ではなく物語構造に焦点を当てながら、再話や翻案の識別を可能にします。"
+
+tasks:
+  - task_name: "Story Similarity Retrieval"
+    
+    task_overview: "このタスクは、大規模コレクションから物語的に類似したストーリーを検索するモデルの能力を評価します。システムは、言語間バージョン、映画のリメイク、再話を含む、同じストーリーの異なる定式化を特定する必要があります。このタスクは、埋め込みが設定、キャラクター名、ストーリーの長さの変化に対して堅牢でありながら、物語的類似性を捉えることができるかどうかをテストします。"
+    
+    input_description: "モデルは入力テキストとしてストーリー要約を受信します。これらの要約は、Wikipedia言語間バージョン、映画のリメイク、文学的再話を含む異なるソースからのもので、10から50文の長さの範囲があります。"
+    
+    output_description: "システムは各ストーリーを表す埋め込みベクトルを生成します。類似した物語は高いコサイン類似度を持ち、異なるストーリーは低い類似度を持つべきです。検索はコサイン距離ランキングを使用して実行されます。"
+
+methodology:
+  method_name: "StoryEmb"
+  
+  approach_type: "neural"
+  
+  core_technique: "StoryEmbは、対比学習を使用して類似性タスク用にファインチューニングされたMistral-7B因果言語モデルです。モデルは、Mistral-7Bのアダプターファインチューニング変種であるE5を基盤として使用します。トレーニングは、限られたハードウェアで大きなバッチサイズ（1000の正例ペアとバッチ内負例）を可能にするためにGradient Cacheを採用します。このアプローチは、LoRAアダプター（rank=16、α=32）を使用した類似性トレーニングのために対比MSE-lossを使用します。主要な革新は、Tell-Me-Againデータセットからのデータ拡張戦略で、エンティティ名が偽名化（各要約内で一貫して置換）されることで、モデルが名前をショートカットとして使用することを防ぎます。モデルはE5の評価セットアップに合わせるためにクエリプレフィックス「与えられたストーリーに類似した物語を持つストーリーを検索する：」を追加します。"
+  
+  base_models:
+    - "Mistral-7B"
+    - "E5 (adapter-finetuned Mistral-7B)"
+  
+  key_innovations:
+    - "エンティティ名を類似性ショートカットとして使用することへの依存を減らす偽名化ベースのデータ拡張"
+    - "表面レベル特徴ではなく物語的類似性に最適化された対比学習アプローチ"
+    - "物語構造の表現としてのストーリー要約への焦点"
+    - "定式化間での物語一貫性を捉えるための言語間Wikipedia要約でのトレーニング"
+    - "物語類似性に特化しながらベースモデル機能を保持するアダプターベースファインチューニング"
+
+datasets:
+  - dataset_name: "Tell-Me-Again"
+    
+    characteristics: "複数のWikipedia言語バージョンから抽出され自動的に英語に翻訳された、それぞれ最大5つの異なる要約を持つ約30,000のストーリーを含みます。エンティティ名が体系的に置換されたオリジナルと偽名化バージョンの両方を含みます。"
+    
+    usage: "ストーリー埋め込みモデルの主要トレーニングおよび評価データセット"
+    
+    size: "それぞれ複数の要約を持つ約30,000のストーリー"
+    
+    domain: "mixed"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+    
+  - dataset_name: "Movie Remake Dataset"
+    
+    characteristics: "Wikipediaから抽出された、同じ映画の複数のリメイクからの266の要約の小規模コレクション。リメイクは異なる設定とキャラクターの詳細を持つことが多いため、言語間要約よりも多くの変動を示します。"
+    
+    usage: "ドメイン適応と一般化をテストするための評価データセット"
+    
+    size: "266要約"
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+    
+  - dataset_name: "Retellings Dataset"
+    
+    characteristics: "文学的再話とそのオリジナルの合計30のストーリー要約を持つ13のクラスターのコレクション。再話はテーマを保持しながらストーリーを大幅に変更することが多いです。手動ウェブ検索を通じて検証されたChatGPT提案を使用して作成されました。"
+    
+    usage: "主要な物語変動を持つストーリーの検索をテストするための評価データセット"
+    
+    size: "13クラスター中30のストーリー要約"
+    
+    domain: "fiction"
+    
+    is_new: true
+    
+    new_dataset_contribution: "様々な程度の物語類似性を持つ文学的再話の検索をテストするために特別に設計された初のデータセット。異なる物語構造を持つテーマ的に関連したストーリーを特定するモデルの能力の評価を可能にします。"
+    
+  - dataset_name: "ROCStories"
+    
+    characteristics: "Story Cloze Taskのための5文の常識ストーリーのデータセット。システムは2つの選択肢から正しい結末を選択する必要があります - 一つは一貫性があり、もう一つは一貫性がないが表面レベルで一致しています。"
+    
+    usage: "物語理解能力の評価"
+    
+    size: null
+    
+    domain: "mixed"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "複数の検索タスクと物語理解にわたる包括的評価。検索タスクは、P@1（精度）、P@N（Nがゴールドアイテム数のN精度）、MAP、NDCG、R-Precision指標を使用します。セグメント検索では、LLM審査員（GPT-4）と人間注釈者の両方が1-10スケールで物語類似性を評価します。Story Cloze評価は、分類ヘッドなしの従来とは異なる埋め込み距離アプローチを使用します。"
+  
+  main_results: "StoryEmbは、偽名化テキストで65.89%、オリジナルテキストで85.90%のP@NでTell-Me-Againデータセットにおいて最先端を達成します。映画リメイクでは83.26%のP@1を達成し、先行研究より20ポイント以上改善しました。モデルはリメイクで6ポイント低下に対してSentence-T5の17ポイント低下と比較して優れた汎化性を示します。再話では60%のP@1に達します（非拡張バリアント）。ROCStoriesでは、ゼロショット埋め込み距離アプローチを使用して89.2%の精度を達成します。人間評価では、StoryEmbはE5（5.8/10）よりも物語的に類似したセグメント（6.6/10）を検索することを示します。"
+  
+  metrics_used:
+    - "P@1 (Precision at 1)"
+    - "P@N (Precision at N)"
+    - "MAP (Mean Average Precision)"
+    - "NDCG"
+    - "R-Precision"
+    - "Narrative similarity scores (1-10 scale)"
+    - "Accuracy (Story Cloze)"
+  
+  human_evaluation_summary: "第一著者が物語類似性について1-10スケールで100のセグメントペアを注釈しました。StoryEmb-retrieved類似セグメントは6.6/10対E5の5.8/10でスコアを獲得しました。非類似セグメントでは、StoryEmbは3.6/10対E5の4.6/10でスコアを獲得し、より良い判別を示しました。"
+
+results_analysis:
+  key_findings:
+    - "偽名化データ拡張は、エンティティ名重複のないテキストでのパフォーマンスを劇的に改善します"
+    - "拡張データで訓練されたモデルは、非偽名化テキストでもより良いパフォーマンスを示し、エンティティ名への過適合を防ぎます"
+    - "StoryEmbは類似したTell-Me-Againパフォーマンスにもかかわらず、Sentence-T5と比較して映画リメイクへの優れた汎化性を示します"
+    - "帰属分析は、拡張後にモデルが固有名詞への重点を減らし動詞により多く置くことを確認します"
+  
+  ablation_summary: "拡張対非拡張トレーニングの比較は、偽名化の明確な利点を示します。非拡張モデルは偽名化Tell-Me-Againで47.63%のP@1のみに達し、拡張モデルの82.6%対比です。非拡張モデルの追加トレーニングステップは最小限の改善を示します。"
+
+contributions:
+  main_contributions:
+    - "表面特徴よりもプロット構造を優先する物語焦点ストーリー埋め込みを作成する初のアプローチ。偽名化要約での対比学習が物語類似性を効果的に捉えることを実証します。"
+    - "モデルが名前をショートカットとして使用することを防ぐエンティティ名置換を使用したデータ拡張戦略の導入。この技法が偽名化とオリジナルテキストの両方でパフォーマンスを向上させることを示します。"
+    - "Tell-Me-Againと映画リメイクデータセットを含む複数の物語検索タスクでの最先端結果。リメイク識別において先行研究より20ポイント以上の改善を実証します。"
+    - "タスク固有のトレーニングなしで埋め込み距離を使用するStory Clozeの新しい評価アプローチ。物語理解能力を実証する89.2%の精度を達成します。"
+  
+  limitations:
+    - "表現はスキーマベースの物語モデリングアプローチと比較して解釈可能性を欠きます"
+    - "計算制約により帰属分析は単一文に限定されます"
+    - "ROCStoriesテストセットが非公開のため評価できません"
+
+narrative_understanding_aspects:
+  - "Story Cloze / Next Event Prediction"
+  - "Narrative Consistency Check"
+  - "other"  # Story similarity and retrieval
+
+keywords:
+  - "story embeddings"
+  - "narrative similarity"
+  - "contrastive learning"
+  - "data augmentation"
+  - "story retrieval"
+  - "narrative understanding"
+  - "pseudonymization"
+  - "cross-language summaries"
+  - "movie remakes"
+  - "literary retellings"
+
+notes: "モデルと再話データセットはコードと共に公開されています。表面特徴ではなく物語構造に焦点を当てることで、異なる定式化にわたるストーリー類似性のより良い識別を可能にすることを実証します。"

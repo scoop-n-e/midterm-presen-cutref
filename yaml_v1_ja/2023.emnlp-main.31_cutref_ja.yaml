@@ -1,0 +1,143 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Diversity Enhanced Narrative Question Generation for StoryBooks"
+  authors:
+    - "Hokeun Yoon"
+    - "JinYeong Bak"
+  year: 2023
+  venue: "EMNLP 2023"
+  paper_url: "https://aclanthology.org/2023.emnlp-main.31/"
+
+problem_statement:
+  background: "与えられたコンテキストからの質問生成は、学習や会話環境における理解、エンゲージメント、評価、そして全体的な効果を向上させることができます。物語的質問の生成は、子どもたちの読解スキル開発において特に重要で、学習者がコンテキスト全体にわたって関係、実体、イベントについての知識を結合し、推論することを要求するからです。"
+  
+  gap_or_challenge: "質問生成における最近の進歩にも関わらず、生成された質問の多様性を向上させたり測定したりする課題は、しばしば対処されないままになっています。現在のアプローチは、黄金の質問との意味的類似性の自動評価に依存する傾向があり、質問の多様な側面の可能性を見落とすことがよくあります。複数の質問を生成する際、既存の手法は明示的質問のみに焦点を当てるか、多様性を制限するヒューリスティックアプローチに制約されています。"
+  
+  research_objective: "本論文では、コンテキストと質問に焦点を当てて複数の、多様で、回答可能な質問を生成できる多質問生成モデル（mQG）を紹介します。このモデルは、意味的正確性と回答可能性を維持しながら多様な物語質問を生成することを目的とし、特に絵本の教育的応用をターゲットとしています。"
+  
+  significance: "多様で複数の物語質問を生成できるシステムは、教育リソースへの価値ある向上として機能し、生徒のエンゲージメントを支援し、学習教材のより深い理解を促進することができます。これは子どもの教育において特に重要で、物語質問がより良い読解スキルの開発を助けるからです。"
+
+tasks:
+  - task_name: "Multi-Question Generation for Narrative Comprehension"
+    
+    task_overview: "このタスクは、絵本のコンテキストから複数の多様な物語質問を生成するモデルの能力を評価します。このタスクは、明示的質問（読み物から直接答えが見つかる）と暗示的質問（推論的推理を必要とする）の両方の生成に焦点を当てています。モデルは、7つのwh語タイプ（what, when, where, which, who, why, how）にわたって質問を生成し、タイプ、構文、内容の多様性を確保する必要があります。質問は文脈的に関連し、回答可能で、物語の異なる側面をカバーする必要があります。"
+    
+    input_description: "モデルは絵本セクションからのコンテキスト、質問タイプ（wh語）、および参照として同じコンテキストから以前に生成された質問を受け取ります。コンテキストは幼稚園から8年生の生徒向けに設計された絵本の段落レベルのセクションです。"
+    
+    output_description: "システムはコンテキストごとに複数の物語質問を出力し、各質問は特定のwh語タイプに対応しています。生成された質問は評価モデルによって明示的、暗示的、または回答不可能として分類されます。出力は高い多様性と回答可能性を持つセクションあたり28の質問（タイプごとに4つ）を目指します。"
+
+methodology:
+  method_name: "Multi-Question Generation Model (mQG)"
+  
+  approach_type: "neural"
+  
+  core_technique: "mQGはBARTに基づいて構築され、最大質問類似性損失（LMQS）を採用して、訓練中に参照質問と目標質問の間の類似した表現を促進します。このモデルは、以前に生成された質問が後続の生成ステップの入力として戻される再帰的生成フレームワークを使用します。エンコーダは3つの入力を受け取ります：質問タイプ、コンテキスト、同じコンテキストからの正解質問。平均プーリング層が質問表現を文レベル表現に変換します。LMQS損失は、意味的正確性を維持しながら異なる質問の表現を類似させることで、多様な質問生成を促進します。推論時、再帰的フレームワークは以前に生成されたものを考慮しながら複数の質問の生成を可能にします。"
+  
+  base_models:
+    - "BART-large"
+    - "DeBERTa-base (for answerability evaluation)"
+  
+  key_innovations:
+    - "意味的正確性を維持しながら多様性を促進する最大質問類似性損失（LMQS）"
+    - "以前に生成された質問を入力として戻す再帰的生成フレームワーク"
+    - "質問を明示的、暗示的、または回答不可能として分類するためにSQuAD2.0で訓練された回答可能性評価モデル"
+    - "多様性を向上させるために同じコンテキストからの正解質問を参照する訓練アプローチ"
+
+datasets:
+  - dataset_name: "FairytaleQA"
+    
+    characteristics: "幼稚園から8年生の生徒向けの絵本に基づく教育データセット。物語要素/関係を捉える7つの質問タイプで注釈された物語質問回答ペアを含む。質問は、答えがコンテキストで直接見つかるかどうかに基づいて明示的または暗示的として分類される。"
+    
+    usage: "多質問生成モデルの訓練と評価のための主要データセット"
+    
+    size: "278冊の本、9,595のQAペア（複数段落質問を除去後）"
+    
+    domain: "children_stories"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "TellMeWhy"
+    
+    characteristics: "ROCStoriesの短いセクションのイベントに関連する自由形式のwhy質問。約28.82%の暗示的質問を含む。クラウドソーシングされた回答を持つテンプレートベースの変換を使用して作成。"
+    
+    usage: "why質問への汎化をテストするゼロショット評価"
+    
+    size: "1,134セクション、10,689質問（テスト分割）"
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "SQuAD1.1"
+    
+    characteristics: "Wikipediaの記事による機械読解に焦点を当てた包括的ベンチマーク。幅広いトピックをカバーする明示的質問のみを含む。"
+    
+    usage: "ドメイン外汎化をテストするゼロショット評価"
+    
+    size: "2,429セクション、12,010質問（テスト分割）"
+    
+    domain: "mixed"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "自動メトリクスと人間評価の両方を使用した包括的評価。品質は、生成された質問と正解質問の間の最高意味類似性スコアを見つけることで、Rouge-L、BERTScore、BLEURTを使用して測定される。多様性はSelf-BLEUスコアを使用して測定される。回答可能性はSQuAD2.0でファインチューニングされたDeBERTaベースのモデルを使用して評価される。人間評価は3つの次元（タイプ、構文、内容）での多様性と2つの次元（適切性、回答可能性）での品質を評価する。"
+  
+  main_results: "FairytaleQAにおいて、mQGはセクションあたり28の質問を生成し、23.08の回答可能質問を達成し、58.90 Rouge-L F1、0.9394 BERTScore、0.5698 BLEURT、0.6389 Self-BLEU（多様性では低い方が良い）を達成。これはQAG（53.77 Rouge-L、15.95回答可能）やEQG（41.05 Rouge-L、3.80回答可能）を含むベースラインを大幅に上回る。人間評価では、mQGはタイプ多様性で77%、構文多様性で70.5%、内容多様性で60%のケースで1位にランク。TellMeWhyでのゼロショット評価では56.17 Rouge-Lと2.10回答可能質問を達成し、SQuAD1.1では45.38 Rouge-Lと20.15回答可能質問を達成。"
+  
+  metrics_used:
+    - "Rouge-L F1"
+    - "BERTScore F1"
+    - "BLEURT"
+    - "Self-BLEU (diversity)"
+    - "Answerability rate"
+    - "Human evaluation scores"
+  
+  human_evaluation_summary: "5人の注釈者が40セクションを評価し、mQGをQAGとEQGベースラインと比較。多様性について、mQGは77%（タイプ）、70.5%（構文）、60%（内容）のケースで1位にランク。品質について、すべてのモデルが正解（4.71/4.76）と比較して類似した適切性（4.79/5）と回答可能性（4.47/5）スコアを達成。"
+
+results_analysis:
+  key_findings:
+    - "mQGはベースラインと比較して最も多くの回答可能質問（セクションあたり23.08）を生成"
+    - "再帰的フレームワークとLMQS損失が多様性を大幅に向上（Self-BLEU 0.6389 vs 0.7529なし）"
+    - "タイプあたり4質問の設定が品質と多様性の最適なトレードオフを示す"
+    - "モデルは異なるドメインにわたって明示的および暗示的質問の両方を成功裏に生成"
+    - "ゼロショット性能はドメイン外データセットへの強い汎化を示す"
+  
+  ablation_summary: "LMQSを除去するとSelf-BLEUが0.6389から0.7006に増加（多様性が低下）。LMQSと参照質問の両方を除去すると、多様性がさらに低下（Self-BLEU 0.7529）し、Rouge-Lが58.90から54.76に減少。再帰的フレームワークは品質と多様性の両方を維持するために不可欠。"
+
+contributions:
+  main_contributions:
+    - "我々は答えの知識に関係なく包括的な質問セットを生成し、その後評価モデルを通じて回答可能または回答不可能として分類することで、質問生成の範囲を拡張します。"
+    - "我々は、意味的正確性を保持しながら多様な質問を生成するための再帰的参照プロセスを伴う最大質問類似性損失（LMQS）を使用して訓練された新しいモデルmQGを紹介します。"
+    - "我々は質問を暗示的、明示的、または回答不可能として分類できる回答可能性評価モデルを紹介し、生成された質問の包括的評価を可能にします。"
+  
+  limitations:
+    - "再帰的フレームワークにおいて、以前に生成された質問の品質が悪い場合、後続の質問の品質に悪影響を与える可能性"
+    - "質問数が最大トークン閾値によって制限される"
+    - "評価モデルによる誤分類により、回答不可能な質問が回答可能として分類される可能性"
+    - "人間評価における比較的低い注釈者間一致"
+
+narrative_understanding_aspects:
+  - "Narrative QA"  # Generating questions about story content
+  - "Free-Form QA"  # Generating questions requiring causal and abstract reasoning
+  - "Question Generation (QG)"  # Automatic generation of narrative questions
+  - "Reading Comprehension"  # Questions to assess story understanding
+
+keywords:
+  - "narrative question generation"
+  - "multi-question generation"
+  - "diversity in NLG"
+  - "educational NLP"
+  - "storybook comprehension"
+  - "recursive generation"
+  - "maximum question similarity"
+  - "answerability evaluation"
+
+notes: "この研究は子どもの絵本の教育的応用を特にターゲットとしており、教育的文脈での物語理解に特に関連性があります。再帰的生成フレームワークと多様性に焦点を当てた訓練は、多質問生成への新しいアプローチを表しています。"

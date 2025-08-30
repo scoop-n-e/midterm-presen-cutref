@@ -1,0 +1,143 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Transferring Procedural Knowledge Across Commonsense Tasks"
+  authors:
+    - "Yifan Jiang"
+    - "Filip Ilievski"
+    - "Kaixin Ma"
+  year: 2023
+  venue: "ECAI 2023"
+  paper_url: "https://github.com/1171-jpg/LEAP"
+
+problem_statement:
+  background: "日常状況についてのストーリーは人間コミュニケーションの本質的部分であり、これらのストーリーを確実に理解できるAIエージェントの開発の必要性を動機づけています。ストーリー完成と手続き的理解のための教師あり手法の長いリストにもかかわらず、現在のAIは手続き的推論を未見のストーリーに汎化することに失敗します。"
+  
+  gap_or_challenge: "ストーリー理解には記述されたイベントの意味の理解、異常な行動の検出、代替案の投射が必要です。最先端手法は通常、語用論的推論を欠き、中間推論の透明性なしに最終タスク目標予測のみに焦点を当てます。ベンチマーク固有の訓練の要件は新しいベンチマークとタスクへの汎化を制限します。密な注釈は高価な手動ラベリングを要求します。"
+  
+  research_objective: "この論文では、下流予測を細粒度モデリングとストーリー内の手続き的知識の抽象化と関連付けることで汎化を改善できるという仮説をテストします。この論文はAIモデルが透明な方法でストーリーベースタスク間で手続き的知識を転移する能力を研究します。"
+  
+  significance: "LEAPはドメイン内手続き的理解タスクで新しい最先端結果を達成し、ドメイン外ストーリータスクへの強い汎化を実証します。このフレームワークは細粒度目的がモデルがショートカットを学習することを防ぎ、汎化を改善することを示します。自動ラベラーは手動努力なしに密な注釈を可能にします。"
+
+tasks:
+  - task_name: "Story Understanding with Procedural Reasoning"
+    
+    task_overview: "同時予測：（1）全体的ストーリー妥当性、（2）非妥当ストーリーでの対立文ペア、（3）すべてのステップでの参加者の物理状態。ストーリーペア上での3層推論により妥当性判断、参加者状態追跡、異常検出、推論説明を行う。"
+    
+    input_description: "各nセンテンスを持つストーリーペア（妥当と非妥当）。各ストーリーに以下を注釈：すべてのステップでの各参加者の各属性の前提条件と効果、非妥当ストーリーの対立文ペア、妥当性ラベル。"
+    
+    output_description: "ストーリー妥当性分類、対立文検出、各ステップでの参加者属性状態予測（前提条件と効果）。"
+  
+  - task_name: "Zero-Shot Story Completion"
+    
+    task_overview: "タスク固有訓練なしで妥当なストーリー終了または継続の選択を要求するストーリークロージタスク。未見の物語理解ベンチマークへの汎化をテスト。"
+    
+    input_description: "完成のための複数選択肢を持つ部分ストーリーコンテキスト（ROCStories、PIQA、aNLI、CODAH、RICA）。"
+    
+    output_description: "提供された選択肢から最も妥当なストーリー継続または終了の選択。"
+
+methodology:
+  method_name: "LEAP (Learning from Experience by Annotating Procedures)"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "3つの主要コンポーネントを持つ包括的フレームワーク：（1）ストーリーモデリング - 参加者固有入力とタイムステップ埋め込みを持つ単一ストーリーモデル、または並列でペアを処理する結合ストーリーモデル。（2）訓練制度 - ストーリー中心（3つの損失すべて）、参加者中心（対立参加者にのみストーリーラベル）、または文中心（ストーリー損失省略）。（3）データ拡張 - ドメイン内：参加者抽象化（上位語で置換）と語挿入。外部：自然ストーリー（ROCStories）と合成ストーリー（CSKGから3K）。参加者抽出のための意味解析とCodexでの属性注釈のための少数ショットプロンプトを使用する新しい自動ラベラー。"
+  
+  base_models:
+    - "RoBERTa-Large (main model)"
+    - "Codex (for attribute annotation)"
+    - "spaCy (for participant extraction)"
+    - "TRIPS parser (for semantic analysis)"
+  
+  key_innovations:
+    - "意味解析と少数ショットプロンプトを組み合わせた自動ラベラー"
+    - "参加者抽象化拡張戦略"
+    - "合成損失を持つ結合ストーリーモデリング"
+    - "3層推論アーキテクチャ"
+    - "構造化属性注釈のためのコードスタイルプロンプト"
+    - "2段階属性注釈（アクティブ検出後状態注釈）"
+
+datasets:
+  - dataset_name: "TRIP"
+    characteristics: "密な手続き的注釈を持つ800ストーリーペア。各ストーリーは20の物理属性の前提条件/効果、対立文、妥当性ラベルを持つ。"
+    usage: "訓練のためのソースタスク"
+    size: "800 story pairs"
+    domain: "fiction"
+    is_new: false
+    new_dataset_contribution: null
+  
+  - dataset_name: "ROCStories"
+    characteristics: "日常イベントのストーリークロージタスク。妥当なストーリー終了の2選択選択。"
+    usage: "ゼロショット評価と拡張ソースのターゲットタスク"
+    size: null  # Not specified
+    domain: "fiction"
+    is_new: false
+    new_dataset_contribution: null
+  
+  - dataset_name: "Synthetic Stories (CSKG)"
+    characteristics: "心理学的公理に基づくCommonsense Knowledge Graphから生成された100k+ストーリー。3つのストーリータイプ：満たされない期待、置換、オブジェクト修正。"
+    usage: "拡張データソース"
+    size: "3K stratified sample used"
+    domain: "fiction"
+    is_new: false
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "精度、一貫性（ストーリーと対立の両方が正しい）、検証可能性（3つのコンポーネントすべてが正しい）メトリックでのTRIPテストセットでのドメイン内評価。5つのドメイン外タスクでのゼロショット評価：ROCStories、PIQA、aNLI、CODAH、RICA。異なるモデルアーキテクチャ、訓練制度、拡張戦略を比較。ラベラーコンポーネントの内在的評価。"
+  
+  main_results: "ドメイン内：LEAP 97.3%精度、78.4%一貫性、27.6%検証可能性（新SOTA）。拡張ありドメイン外：ROCStories 90.6%、CODAH 68.7%、PIQA 68.6%、aNLI 71.8%、RICA 57.5%（3-23ポイント改善）。ストーリー中心損失を持つ結合ストーリーモデリングが最高性能。外部拡張が汎化に重要。ラベラー：参加者で90%精度、93.5%再現率；属性で61.2%精度、70.3% F1。"
+  
+  metrics_used:
+    - "Accuracy"
+    - "Consistency"
+    - "Verifiability"
+    - "Precision/Recall/F1 (for labeler)"
+  
+  human_evaluation_summary: null  # No human evaluation reported
+
+results_analysis:
+  key_findings:
+    - "ストーリー中心損失を持つ結合ストーリーモデリングが最高性能を達成"
+    - "外部拡張はドメイン外を3-23ポイント改善するがドメイン内を悪化"
+    - "LEAPラベラーは12/13ゼロショット評価でCGLIを上回る"
+    - "参加者抽象化と語挿入がドメイン外性能を悪化"
+    - "PIQAの66.7%未見参加者 vs aNLIの43.7%が性能に影響"
+    - "密な注釈がショートカット学習を防止"
+    - "ドメイン内適合とドメイン外汎化間のトレードオフ"
+  
+  ablation_summary: "拡張なし：強いドメイン内だが貧弱なドメイン外。CSKG単独：89.6% ROCStories。ROCStories単独：CSKGと同等。組み合わせ最高：90.6%。参加者抽象化：ドメイン外悪化。語挿入：ドメイン外悪化。ストーリー中心 > 参加者中心 > 文中心がほとんどのタスクで。"
+
+contributions:
+  main_contributions:
+    - "LEAP：手続き的ストーリー理解のためのモデリング、訓練、拡張戦略を統合する包括的フレームワーク。"
+    - "手動努力なしの密な注釈のための意味解析と少数ショットプロンプトを組み合わせた新しい自動ラベラー。"
+    - "ドメイン外タスクへの強い汎化を示す広範な評価。"
+    - "ストーリー理解のためのアーキテクチャ/訓練/拡張相互作用への洞察。"
+    - "細粒度手続き的モデリングが汎化を改善するという証拠。"
+  
+  limitations:
+    - "ラベラーは精神状態ではなく物理属性に限定"
+    - "現在の属性はほとんど二進、細粒度でない"
+    - "拡張ストーリーはタスクに動的選択されない"
+    - "短いストーリーに評価限定"
+    - "ラベリングのためのCodexへのAPIアクセスへの依存"
+
+narrative_understanding_aspects:
+  - "Story Cloze / Next Event Prediction"  # Story completion tasks
+  - "Narrative Consistency Check"  # Plausibility and conflict detection
+  - "Character / Entity Understanding"  # Participant state tracking
+  - "other"  # Procedural reasoning and knowledge transfer
+
+keywords:
+  - "procedural reasoning"
+  - "story understanding"
+  - "knowledge transfer"
+  - "automatic labeling"
+  - "few-shot prompting"
+  - "semantic parsing"
+  - "data augmentation"
+  - "zero-shot evaluation"
+  - "participant states"
+  - "commonsense reasoning"
+
+notes: "Code and data available at https://github.com/1171-jpg/LEAP. Paper demonstrates that fine-grained procedural objectives improve generalization by preventing shortcut learning. Automatic labeler enables scaling dense annotation."

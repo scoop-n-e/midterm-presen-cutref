@@ -1,0 +1,138 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "OpenToM: A Comprehensive Benchmark for Evaluating Theory-of-Mind Reasoning Capabilities of Large Language Models"
+  authors:
+    - "Hainiu Xu"
+    - "Runcong Zhao"
+    - "Lixing Zhu"
+    - "Jinhua Du"
+    - "Yulan He"
+  year: 2024
+  venue: "ACL 2024"
+  paper_url: "https://aclanthology.org/2024.acl-long.466/"
+
+problem_statement:
+  background: "Theory-of-Mind（ToM）は、他者が世界を異なって認識し、そのような違いを追跡する能力であり、社会的相互作用の中核をなします。認知科学の研究では、Sally-Anneテストなど、人間のToM能力を調査するための数多くの誤信念テストを設計しています。"
+  
+  gap_or_challenge: "既存のNeural Theory-of-Mind（N-ToM）ベンチマークには、曖昧で人工的な物語の存在、人格特性と好みの欠如、登場人物の心理的精神状態を問う質問の欠如、質問の多様性の限界など、いくつかの欠点があります。既存のベンチマークの登場人物には人格特性や好みがなく、彼らの行動に動機がありません。"
+  
+  research_objective: "私たちは、（1）より長く明確な物語、（2）明確な人格特性を持つ登場人物、（3）登場人物の意図によって引き起こされる行動、（4）物理的世界と心理的世界の両方における登場人物の精神状態をモデル化するLLMの能力に挑戦するよう設計された質問、を含む新しいN-ToM評価ベンチマークOpenToMを構築します。"
+  
+  significance: "この研究は、最先端のLLMが物理的世界における精神状態の特定の側面のモデル化では優れているが、心理的世界における登場人物の精神状態の追跡では不足していることを明らかにする包括的なベンチマークを提供します。"
+
+tasks:
+  - task_name: "Theory-of-Mind Reasoning with Location Questions"
+    
+    task_overview: "位置（Loc）質問は登場人物のエンティティ位置の知覚をテストします。ベンチマークには2つのバージョンがあります：Loccoarseはエンティティが初期位置にあるかを問い、Locfineはエンティティの明確な位置を尋ねます。これは一次ToM（登場人物の知覚）と二次ToM（登場人物の他の登場人物の精神状態に対する信念）の両方をテストします。"
+    
+    input_description: "2人の主人公（移動者と観察者）、関心対象のエンティティ、容器、位置を含む完全な物語。物語には登場人物の好み、人格特性、意図、行動が目撃されたかどうかが明示的に含まれます。"
+    
+    output_description: "異なる登場人物の視点からのエンティティ位置に関する二項または三項分類答え。モデルは各登場人物がアクセス可能な情報を推定し、それに応じて答える必要があります。"
+  
+  - task_name: "Multi-Hop Reasoning Questions"
+    
+    task_overview: "マルチホップ（MHop）質問は、位置質問の上に推論ステップを追加することで3ホップ推論を要求します。これには容器の満杯状態の変化とエンティティのアクセシビリティに関する質問が含まれ、社会的常識の理解（例：許可なく他人の所有物から物を取らない）をテストします。"
+    
+    input_description: "位置質問と同じ物語構造で、容器の状態と社会的規範に追加的に焦点を当てます。"
+    
+    output_description: "物理的状態変化と社会的アクセシビリティに関する多段階推論を要求する二項/三項分類答え。"
+  
+  - task_name: "Attitude Questions for Psychological Mental States"
+    
+    task_overview: "態度（Att）質問は登場人物の心理的精神状態を解釈するLLMの能力に挑戦します。モデルは好みと目撃された出来事に基づいて、観察者の移動者の行動に対する潜在的態度を推定する必要があります。"
+    
+    input_description: "明確な登場人物の好み、人格特性（思いやりのある/思いやりのない/否定的）、観察者の好みと対立する可能性がある行動を含む物語。"
+    
+    output_description: "移動者の行動に対する観察者の態度（肯定的/否定的/中立）の分類。社会的常識とアクセス可能な情報の理解を要求します。"
+
+methodology:
+  method_name: "OpenToM Benchmark Construction with Human-in-the-Loop Pipeline"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "4段階のhuman-in-the-loop生成パイプライン：（1）登場人物の人格化プロセス - 登場人物に人格特性（思いやりのある/思いやりのない/否定的）と好みを割り当て、お互いの好みについて誤った信念を持たせることで偽の相関を軽減；（2）意図と実行の生成 - 人格と好みに基づいて登場人物の意図をGPT-3.5-Turboを使用して生成；（3）ストーリープロットの構築 - 好み、初期世界状態、主要イベントを含む3段落の物語を作成；（4）人間による注釈と修正 - 品質検査と語彙の重複と曖昧さを減らすための手動修正。質問は人間注釈とルールベースのラベルの両方を持つ二項/三項分類タスクとして定式化されます。"
+  
+  base_models:
+    - "GPT-3.5-Turbo (for narrative generation)"
+    - "GPT-4-Turbo (for extra-long narratives)"
+    - "Llama2-Chat (7B, 13B, 70B)"
+    - "Mixtral-8x7B-Instruct"
+    - "GPT-3.5-Turbo (evaluation)"
+    - "GPT-4-Turbo (evaluation)"
+  
+  key_innovations:
+    - "行動の動機となる明確な人格特性と好みを持つ登場人物"
+    - "好みに関する誤った信念による偽の相関の軽減"
+    - "物理的世界と心理的精神状態の両方をカバーする質問"
+    - "観察者が移動者の行動を目撃したかどうかの明示的な包含"
+    - "アクセシビリティ質問における社会的常識の統合"
+
+datasets:
+  - dataset_name: "OpenToM"
+    
+    characteristics: "人格化された登場人物、動機のある行動、一次および二次ToMをカバーする物語あたり23の質問を含む696の物語（標準596 + 超長100）。標準は平均194.3トークン、長い物語は491.6トークン。登場人物は人格特性と好みを持ちます。"
+    
+    usage: "N-ToM能力評価のための主要ベンチマーク"
+    
+    size: "合計16,008問を含む696の物語"
+    
+    domain: "fiction"
+    
+    is_new: true
+    
+    new_dataset_contribution: "人格化された登場人物、動機のある行動、物理的世界の理解と並んで心理的精神状態を扱う質問を持つ初のN-ToMベンチマーク。登場人物の行動を駆動する明確な人格特性と好みを含みます。"
+
+evaluation:
+  evaluation_strategy: "二項/三項分類タスクにおけるマクロ平均F1スコアによるゼロショット評価。バニラプロンプティング、Chain-of-Thought（CoT）、SimulatedToM（SimToM）技法を含むテスト。Llama2-Chat-13Bを使用したファインチューニングベースライン。100の物語で3人の注釈者による人間のパフォーマンス測定。忠実性テスト、登場人物の役割パフォーマンスギャップ、心理状態理解の分析を含みます。"
+  
+  main_results: "GPT-4-Turboが最高の全体的パフォーマンスを達成しますが、依然として人間レベルには及びません。一次位置：GPT-4-Turbo 0.643 F1 対 人間 0.990。マルチホップ：GPT-4-Turbo 0.658 F1 対 人間 0.855。態度：GPT-4-Turbo 0.544 F1 対 人間 0.862。ファインチューニングは位置（0.978）とマルチホップ（0.936）を劇的に改善しますが、態度（0.547）では限定的な改善です。"
+  
+  metrics_used:
+    - "Macro-averaged F1 score"
+    - "Unfaithful Rate (for consistency checking)"
+    - "Inter-annotator agreement"
+    - "Performance gap between character roles"
+  
+  human_evaluation_summary: "3人の独立した注釈者によって注釈された100の物語。高い注釈者間一致により主観性が最小限であることを実証。人間のパフォーマンス：位置 0.990-0.993 F1、マルチホップ 0.770-0.855 F1、態度 0.862 F1。"
+
+results_analysis:
+  key_findings:
+    - "LLMは粗粒度と細粒度の間の矛盾する答えにより位置質問で非忠実性を示します"
+    - "移動者対観察者の精神状態モデル化のパフォーマンスギャップは質問タイプによって異なります"
+    - "LLMは人格特性との偽の相関により態度質問に苦戦します"
+    - "CoTは位置とマルチホップを改善しますが態度質問は改善しません"
+    - "態度質問でのGPT-4-Turboエラーの95%以上が移動者の人格と相関します"
+  
+  ablation_summary: "位置質問のJoint対Separateプロンプティングは、GPTモデルの非忠実率を減少させるJointアプローチを示します。登場人物の役割分析は、移動者の精神状態がマルチホップでは簡単で、二次位置では困難であることを明らかにします。人格相関分析は、LLMが移動者の特性を観察者の態度と誤って関連付けることを示します。"
+
+contributions:
+  main_contributions:
+    - "自然な物語、明確な人格特性と好みを持つ人格化された登場人物、動機のある行動、物理的および心理的知覚の理解に挑戦する多様化された質問を含む包括的なN-ToMベンチマークOpenToMを構築しました。"
+    - "最先端のLLMが物理的世界の精神状態のモデル化では優秀だが心理的精神状態では失敗することを明らかにする広範な評価を実施しました。GPT-4-Turboは態度質問で0.544 F1のみ達成（人間パフォーマンス0.862対比）。"
+    - "推論における非忠実性（矛盾する答え）、登場人物の役割への感受性、人格特性と感情状態の偽の相関を含む主要な欠点を特定しました。"
+  
+  limitations:
+    - "計算制約により評価されたLLMに限定"
+    - "LLMによって生成された物語にはバイアスが含まれる可能性"
+    - "登場人物の感情は単一の行動から直接推測可能なものに限定"
+    - "すべての物語は線形の時系列順序に従う"
+
+narrative_understanding_aspects:
+  - "Character / Entity Understanding"  # Character personality, preferences, and mental states
+  - "Reading Comprehension"  # Understanding narrative events and character actions
+  - "Free-Form QA"  # Theory-of-Mind reasoning questions
+  - "Narrative Consistency Check"  # Faithfulness in location reasoning
+
+keywords:
+  - "Theory-of-Mind"
+  - "Neural Theory-of-Mind"
+  - "false belief"
+  - "social commonsense"
+  - "psychological mental states"
+  - "character personality"
+  - "narrative comprehension"
+  - "benchmark"
+  - "large language models"
+
+notes: "この研究は、現実的な登場人物の動機と心理的次元を導入することでN-ToMベンチマーキングにおける重要な進歩を表しています。物理的世界の質問で強いパフォーマンスにもかかわらずLLMが態度質問に苦戦するという発見は、現在のモデルの社会的知性における重要なギャップを浮き彫りにします。"

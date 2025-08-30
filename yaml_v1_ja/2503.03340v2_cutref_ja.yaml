@@ -1,0 +1,140 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "EnigmaToM: Improve LLMs' Theory-of-Mind Reasoning Capabilities with Neural Knowledge Base of Entity States"
+  authors:
+    - "Hainiu Xu"
+    - "Siya Qi"
+    - "Jiazheng Li"
+    - "Yuxiang Zhou"
+    - "Jinhua Du"
+    - "Caroline Catmur"
+    - "Yulan He"
+  year: 2025
+  venue: "arXiv"
+  paper_url: "https://github.com/seacowx/EnigmaToM"
+
+problem_statement:
+  background: "心の理論（ToM）は、他者が自分とは異なる認識と心的状態を持つことを理解する能力であり、効果的なコミュニケーションと社会的相互作用の基本です。ToM推論は他者の心的状態を理解する一次的なものや、他者の信念についての信念に関する再帰的思考を要求する高次のものがあります。高次ToM推論は交渉などの実世界文脈で特に重要です。"
+  
+  gap_or_challenge: "既存のToM推論手法は知覚的視点取得で有望性を示していますが、しばしば市販のLLMに過度に依存し、効率性を減少させ高次ToM推論への適用可能性を制限しています。SimulatedToMやDWMなどの手法はLLM能力に大きく依存しています。SymbolicToMはToM推論の深度が増すにつれて効率性を欠き、より能力の低いモデルを使用して信念グラフを構築し、汎化可能性を制限します。"
+  
+  research_objective: "この研究では、エンティティ状態のNeural Knowledge Base（Enigma）を統合してToM推論を強化する新しいニューロシンボリックフレームワークEnigmaToMを提示します。これは（1）正確な視点取得を促進する心理学インスパイア反復マスキングメカニズムと（2）重要なエンティティ情報を引き出す知識注入のためです。"
+  
+  significance: "EnigmaToMは様々なサイズのLLM全体でToM推論を大幅に改善し、特に高次推論シナリオで優れています。このフレームワークはSymbolicToMのO(Σ m!/(m-i)!)に対して線形複雑度O(m)で高次ToM推論の非実用性に対処します。3次と4次ToM推論でそれぞれ最大0.160±0.003と0.148±0.004の平均改善を達成します。"
+
+tasks:
+  - task_name: "Theory-of-Mind Question Answering"
+    
+    task_overview: "複数のキャラクターが関与するイベントシーケンスとキャラクターの信念についてのクエリが与えられたとき、潜在的信念から最も可能性の高い信念を決定。タスクは他者の心的状態を理解する一次推論や、他者の信念についての信念に関する再帰的思考を含む高次推論を含む可能性があります。視点取得が重要で、キャラクターによって観察可能なイベントを特定し、観察不可能なものを除去します。"
+    
+    input_description: "複数のキャラクターC = {cj}m_j=1が関与するイベントシーケンスE = {ϵi}n_i=1と、特定のキャラクターc ∈ Cの信念に関するクエリqc。イベントは簡潔な行動（ToMi）、多ターン対話（FANToM）、または長いシーケンス（HiToM）の可能性があります。質問は自由形式生成または多肢選択として形式化。"
+    
+    output_description: "すべての潜在的信念Bcからの最も可能性の高い信念b*c。ToMiの場合：2つの可能な回答から選択。HiToMの場合：多肢選択選択。FANToMの場合：特別な<answer>トークンで囲まれた自由形式と多肢選択応答の両方。"
+
+methodology:
+  method_name: "EnigmaToM (Entity-Guided Masking Theory-of-Mind)"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "3つの主要コンポーネントを持つニューロシンボリックフレームワーク：（1）Neural Knowledge Base（Enigma） - 構造化エンティティ-状態情報を生成するためにOpenPI2.0データセット（25,600エンティティ状態変化）で微調整されたLlama3.1-8B。エンティティ-属性誘導アプローチでクエリ。（2）知識注入（KI） - 報告バイアスを補償するために細粒度エンティティ状態詳細でイベントを拡張。E_aug = ⊕(ϵi ⊕ ŝϵi)ここでŝϵiは空間情報を除外。（3）反復マスキング（IM） - 視点取得のための心理学インスパイアメカニズム。空間シーングラフを構築：全知的GE_augとキャラクター中心Gc。k次ToMに対してマスキングG_masked_c1:k = GE_aug ⊗ ⊗Gcjを適用。反復的信念適用を通じて高次ToMを一次に変換。代替案の順列問題のO(m)線形複雑度。"
+  
+  base_models:
+    - "Llama3.1-8B (Enigma base)"
+    - "Llama3.3-70B (Enigma scaling)"
+    - "Qwen2.5-7B/72B"
+    - "Llama3.1-8B/Llama3.3-70B"
+    - "Gemma2-9B/27B"
+    - "GPT-4o"
+  
+  key_innovations:
+    - "エンティティ状態生成と追跡のためのNeural Knowledge Base"
+    - "心理学理論に基づいた反復マスキングメカニズム"
+    - "高次ToM推論の線形複雑度O(m)"
+    - "報告バイアスに対処する知識注入"
+    - "視点取得のための空間シーングラフ"
+    - "再帰的信念モデリングを通じたToM次数削減"
+
+datasets:
+  - dataset_name: "ToMi"
+    characteristics: "簡潔なイベントシーケンスを持つ曖昧さ除去バージョン。場所変更とキャラクター移動を伴う偽信念テストシナリオ。シーケンスあたり平均9.85イベント。"
+    usage: "1次と2次ToM推論の評価"
+    size: "114 questions per 100-sequence subset (5 subsets total)"
+    domain: "fiction"
+    is_new: false
+    new_dataset_contribution: null
+  
+  - dataset_name: "HiToM"
+    characteristics: "最大4次ToM推論をテストする簡潔なイベントの長いシーケンス。シーケンスあたり平均26.49イベント。ネストされた信念を持つ複雑な多キャラクターシナリオ。"
+    usage: "高次ToM推論の評価（最大4次）"
+    size: "614 questions per 100-sequence subset (5 subsets total)"
+    domain: "fiction"
+    is_new: false
+    new_dataset_contribution: null
+  
+  - dataset_name: "FANToM"
+    characteristics: "多ターン発話を持つ対話ベースデータセット。シーケンスあたり平均23.14発話。自由形式と多肢選択ToM推論の両方をテスト。"
+    usage: "対話ベースToM推論の評価"
+    size: "577 questions per 50-dialogue subset (5 subsets total)"
+    domain: "fiction"
+    is_new: false
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "データセットあたり5つのランダムサブセットでの制御実験（シード：12、42、96、2012、2024）。貪欲復号化（temperature=0）でのゼロショットプロンプト。質問形式：ToMiは2つの回答から選択する自由形式生成、HiToMは多肢選択、FANToMは元論文形式に従う。評価にはKIとIMコンポーネントを個別に除去するアブレーション研究を含む。高次ToM性能、LLMとEnigmaモデル両方のスケーリング効果の分析。"
+  
+  main_results: "ToMi：EnigmaTはバニラの0.722±0.045に対して0.825±0.030（Qwen2.5-7B）を達成。HiToM：EnigmaPはバニラの0.521±0.006に対して0.733±0.017（GPT-4o）に到達。FANToM：EnigmaTはバニラの0.486±0.022に対して0.610±0.021（Llama3.3-70B）を達成。高次ToM：3次で0.160±0.003、4次で0.148±0.004の平均改善。アブレーション：IM除去で-0.165（ToMi）、-0.172（HiToM）、-0.103（FANToM）の低下。EnigmaT_70BはToMiを改善（+5.3%精度）するがFANToMを低下（より長い応答により-7.3%）。"
+  
+  metrics_used:
+    - "Accuracy (mean and variance over 5 runs)"
+    - "Relative advantage vs baselines"
+    - "F1-score for entity recognition (0.910 ToMi, 0.923 FANToM)"
+    - "Relevance and accuracy scores for Enigma outputs"
+  
+  human_evaluation_summary: null  # No human evaluation reported
+
+results_analysis:
+  key_findings:
+    - "EnigmaToMは特に小さなLLMで効果的（Qwen2.5-7Bが72Bベースラインを超える）"
+    - "EnigmaPはイベントベースデータセットに、EnigmaTは対話ベースに良い"
+    - "ToM次数が増すにつれて利点も増加（最大4次まで）"
+    - "SymbolicToMのO(Σ m!/(m-i)!)に対して線形複雑度O(m)"
+    - "知識注入はFANToMに重要だがToMi/HiToMには少ない"
+    - "Enigmaの8Bから70BへのスケーリングはToMiを改善するがFANToMを悪化"
+    - "LLMはエンティティ認識で高精度（F1>0.91）"
+  
+  ablation_summary: "反復マスキング（IM）が重要：除去で-0.165（ToMi）、-0.172（HiToM）、-0.103（FANToM）の平均低下。知識注入（KI）はデータセット依存：大きなLLMが報告バイアスを処理するToMi/HiToMでは重要性が低いが、スパース対話情報を圧縮するFANToMでは不可欠。EnigmaT_70B vs EnigmaT_8B：わずか2.075トークン増加でToMi精度を5.3%改善するが、21.544トークン増加で幻覚を引き起こしFANToMを7.3%低下。"
+
+contributions:
+  main_contributions:
+    - "EnigmaToM：線形複雑度でToM推論にNeural Knowledge Baseを活用する初のニューロシンボリックフレームワーク。"
+    - "信念グラフをO(Σ m!/(m-i)!)からO(m)複雑度に削減する心理学に基づく反復マスキングメカニズム。"
+    - "EnigmaToMが多様なLLM全体で4次まで ToM推論を改善することの実証。"
+    - "イベント記述の報告バイアスに対処するエンティティ状態知識注入メカニズム。"
+    - "小さなLLMと高次推論での特別な効果性を示す包括的評価。"
+  
+  limitations:
+    - "感情/意図/欲求ではなく知覚ベースToM推論に限定"
+    - "Neural Knowledge Baseはより豊富なエンティティ関係を組み込める"
+    - "複雑な依存関係での反復マスキングでのエラー伝播リスク"
+    - "前提条件として正確なエンティティ認識を要求"
+    - "非線形イベント依存関係にシンボリックマスキングの強化が必要な可能性"
+
+narrative_understanding_aspects:
+  - "Character / Entity Understanding"  # Entity state tracking and character perception modeling
+  - "Free-Form QA"  # Theory-of-Mind questions about beliefs
+  - "other"  # Perspective-taking and belief reasoning
+
+keywords:
+  - "theory-of-mind"
+  - "perspective-taking"
+  - "neural knowledge base"
+  - "entity states"
+  - "iterative masking"
+  - "neuro-symbolic"
+  - "high-order reasoning"
+  - "belief graphs"
+  - "spatial scene graphs"
+  - "knowledge injection"
+
+notes: "Code and Enigma model available at https://github.com/seacowx/EnigmaToM and https://huggingface.co/SeacowX/Enigma. Framework achieves linear complexity for high-order ToM through innovative masking mechanism. Particularly effective for complex narrative understanding tasks."

@@ -1,0 +1,126 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Large Language Models Fall Short: Understanding Complex Relationships in Detective Narratives"
+  authors:
+    - "Runcong Zhao"
+    - "Qinglin Zhu"
+    - "Hainiu Xu"
+    - "Jiazheng Li"
+    - "Yuxiang Zhou"
+    - "Yulan He"
+    - "Lin Gui"
+  year: 2024
+  venue: "Findings of ACL"
+  paper_url: "https://aclanthology.org/2024.findings-acl.454/"
+
+problem_statement:
+  background: "マルチエージェント相互作用やキャラクター中心の物語理解などのタスクは、複数のエンティティ間の複雑な関係をより深く理解することを要求します。様々な時点で明かされる複数のアイデンティティを採用するキャラクターが登場する推理小説は、複雑な関係を推論するLLMの能力を評価する最も適切なテストベッドです。"
+  
+  gap_or_challenge: "物語理解のための既存のデータセットは、LLMが訓練した既知の物語で構築されるか、子供の物語のようなより単純なテキストで構成されています。現実の関係は不完全で不確実な情報によって特徴づけられ、異なる視点に基づいて対立する可能性のある異なる解釈を持ちます。キャラクターは複数のアイデンティティ、少数のみが知る秘密、複数の視点からの推論を必要とする関係を持つ可能性があります。"
+  
+  research_objective: "本研究は、推理小説から複雑なキャラクター関係グラフを抽出・分析するために設計された新しいベンチマーク、Conan（COntextual Narrative ANalysis）を導入します。このベンチマークは階層的関係カテゴリーと、公的関係と秘密の関係の両方を含む様々なキャラクターの視点からのロール指向関係を組み込んでいます。"
+  
+  significance: "このベンチマークは微妙な関係力学を理解するLLMの推論能力を評価するための重要なテストとして機能します。複雑な関係を推論し、より長い物語を処理する現在のLLMの能力における重要な限界を明らかにし、物語理解能力を改善するための貴重な洞察を提供します。"
+
+tasks:
+  - task_name: "Character Extraction"
+    task_overview: "このタスクは与えられた推理小説に登場するすべてのキャラクターを特定することを含みます。キャラクターは物語の異なる時点で表面化する異なるアイデンティティや別名を持つ可能性があります。LLMは対象エンティティを組織、アイテム、場所などの他のタイプと混同し、長距離言及にわたる共参照解決に苦労することが多いため、このタスクは困難になります。"
+    input_description: "単一キャラクターの視点からの推理小説テキスト、またはすべてのキャラクターの視点を組み合わせたもの。"
+    output_description: "複数のアイデンティティや別名を持つキャラクターを含む、物語で特定されたすべてのキャラクターのリスト。"
+
+  - task_name: "Entity Linking"
+    task_overview: "このタスクは特定のキャラクターの視点からキャラクター関係を認識することを含みます。単一キャラクターが複数のアイデンティティを持つシナリオを考慮しながら、明示的・暗示的関係の両方を抽出することを要求します。このタスクは異なるキャラクターによって関係が異なって知覚される可能性がある視点ベースの変動を処理しなければなりません。"
+    input_description: "特定キャラクターの視点からの物語と、分析される視点を持つキャラクター。"
+    output_description: "(ci, cj, ri,j)形式の関係トリプレット。ri,jはciの視点からのキャラクターciとcjの間の関係を意味します。"
+
+  - task_name: "Relation Deduction"
+    task_overview: "このタスクはすべてのキャラクター視点からの物語を集合的に考慮することでキャラクター間の実際の関係を推論します。不完全な知識、秘密、誤解、キャラクター間の嘘から生じる対立する情報を解決することを含みます。このタスクは関係の真の性質を正確に推論するために真実、欺瞞、知覚を区別することを要求します。"
+    input_description: "同じイベントと関係に対する複数の視点を提供するすべてのキャラクター中心物語の集合。"
+    output_description: "対立を解決し、すべてのキャラクターにわたって関係の真の性質を推論する統一関係グラフ。"
+
+methodology:
+  method_name: "Conan Benchmark Framework"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "このフレームワークは関係検出のための3つの異なる戦略を採用します。AllTogetherは物語から完全な関係グラフを直接出力します。DirRelationはまずキャラクターを抽出してから関係を生成してエラー伝播を最小化します。PairRelationはキャラクターを抽出し、各キャラクターペアの関係を照会してから結果を集約します。このアプローチは社会科学の定義に基づく階層的関係カテゴリー（5つのトップレベル、54の中間レベル、163の詳細レベル）を使用します。LLM入力制限を超える長い物語に対しては、この手法はテキストをセグメント化し、関係グラフを反復的に更新します。推理小説専門家による手動注釈が基準真理を提供し、公的関係（多くに知られる）、秘密関係（少数に知られる）、推論関係（総合から推論される）を区別します。"
+  
+  base_models:
+    - "GPT-3.5-turbo-16k"
+    - "GPT-4-turbo"
+    - "Llama-2-70b-chat"
+  
+  key_innovations:
+    - "微妙な評価のために3レベルに組織された163の細粒度カテゴリーを持つ階層的関係分類システム"
+    - "公的、秘密、推論関係を捕捉する複数キャラクター視点からのロール指向関係注釈"
+    - "課題の異なる側面に対処する3つの異なる関係検出戦略"
+    - "LLMコンテキスト制限を超える物語を処理するための反復的グラフ更新メカニズム"
+    - "複雑な物語理解における特定の失敗モードを明らかにする包括的エラー分析"
+
+datasets:
+  - dataset_name: "Conan (COntextual Narrative ANalysis)"
+    
+    characteristics: "中国の殺人ミステリーゲームからの100の高品質推理小説。複数のアイデンティティ、秘密、対立する視点を持つ複雑なキャラクター関係を特徴とします。物語あたり平均27,695トークン、ストーリーあたり平均18.72キャラクター。既存ベンチマークよりも大幅に長く複雑な物語。"
+    
+    usage: "推理小説における複雑なキャラクター関係を理解するLLM能力を評価するための主要ベンチマーク"
+    
+    size: "100の物語（24は人間注釈付きで7,951関係、76はGPT-4注釈付き）"
+    
+    domain: "fiction"
+    
+    is_new: true
+    
+    new_dataset_contribution: "推理小説における複雑な関係抽出を特別に設計した初のベンチマーク。階層的関係カテゴリー、多視点注釈、公的/秘密/推論関係の区別を特徴とします。既存の物語理解データセットよりも大幅に長く複雑です。"
+
+evaluation:
+  evaluation_strategy: "3つの階層的関係レベルでF1スコアを使用したマルチレベル評価。キャラクター抽出は精度/再現率で別途評価。関係抽出はトリプレットマッチングで評価。複雑な関係（秘密/推論）の特別評価。フォーマット準拠の腐敗率分析。3つの戦略と物語長にわたる比較。注釈者間合意は確立されたトリプレット合意測定に従ってF1スコアで測定。"
+  
+  main_results: "GPT-4はAllTogether戦略を使用した単一キャラクター視点でF1 0.276の最高性能を達成し、すべての視点では0.125に低下。キャラクター抽出F1：GPT-4 0.772、GPT-3.5 0.680、Llama2 0.620。物語長による大幅な性能低下 - F1は短い物語の約0.4から70K+トークンでほぼ0に低下。複雑な関係（秘密/推論）は公的関係よりも低い精度を示します。高い腐敗率：Llama2 44.5%、GPT-3.5 31%、GPT-4 14.3%（修正前）。"
+  
+  metrics_used:
+    - "F1-score (character extraction, relationship extraction)"
+    - "Precision and Recall"
+    - "Corruption Rate"
+    - "Inter-annotator Agreement (Fleiss-kappa: 0.974 for characters, 0.782 for relationships)"
+  
+  human_evaluation_summary: "4人の注釈者（推理小説ファン）が高い合意を達成：キャラクター抽出で0.974、関係ペアで0.817、完全関係トリプレットで0.782。手動注釈は物語あたり時給31.92ドルで10時間と推定。曖昧な関係のため1つの物語を除去。"
+
+results_analysis:
+  key_findings:
+    - "LLMは複雑な関係に大幅に苦労 - GPT-4の最高F1は単一視点で0.276のみ"
+    - "'lost in the middle'現象により物語長とともに性能が急激に低下"
+    - "秘密・推論関係は全関係（0.082）と比較して低い精度（0.072）を示す"
+    - "キャラクター抽出は予想外に困難 - GPT-4の精度は視点間で0.755から0.736に低下"
+    - "PairRelation戦略は再現率を向上させるが幻覚を増幅し、全体的に最も効果が低い"
+  
+  ablation_summary: "ゴールドキャラクターリストはモデル間で関係抽出F1を31-74%改善。Llama2/GPT-3.5にはDirRelationが最適、GPT-4にはAllTogetherが最適。自己修正はLlama2/GPT-3.5には有益だがGPT-4には逆効果。"
+
+contributions:
+  main_contributions:
+    - "Conanベンチマークの導入 - 階層カテゴリーと多視点注釈を持つ推理小説における複雑な関係抽出を特別に設計した初のデータセット。"
+    - "複雑な物語関係を理解する現在のLLMの根本的限界を明らかにする包括的評価。最高モデルでもF1スコア27.6%のみ達成。"
+    - "関係抽出のための3つの異なる戦略の開発と、異なるシナリオと物語長にわたるそれらの効果の実証的分析。"
+    - "lost-in-middle現象、キャラクター複製、秘密/推論関係での体系的困難を含む特定の失敗モードの特定。"
+  
+  limitations:
+    - "明確なガイドラインにも関わらず注釈者の解釈が異なる可能性"
+    - "コストのため24の人間注釈付き物語に限定（時給約31.92ドル、物語あたり10時間）"
+    - "高い計算コストのため各LLMの単一実行評価"
+    - "データセットは推理小説に限定され、他の物語タイプに一般化されない可能性"
+
+narrative_understanding_aspects:
+  - "Character / Entity Understanding"
+  - "other"  # Complex relationship extraction and inference
+
+keywords:
+  - "character relationships"
+  - "detective narratives"
+  - "narrative understanding"
+  - "entity linking"
+  - "relation extraction"
+  - "multi-perspective analysis"
+  - "LLM evaluation"
+  - "complex inference"
+
+notes: "データセットは暴力に関する内容警告を含みます。コードとデータセットは https://github.com/BLPXSPG/Conan で利用可能。中国語の原物語と英訳が提供されます。"

@@ -1,0 +1,144 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Set-Aligning Framework for Auto-Regressive Event Temporal Graph Generation"
+  authors:
+    - "Xingwei Tan"
+    - "Yuxiang Zhou"
+    - "Gabriele Pergola"
+    - "Yulan He"
+  year: 2024
+  venue: "NAACL"
+  paper_url: "https://aclanthology.org/2024.naacl-long.214/"
+
+problem_statement:
+  background: "イベント時系列グラフは、テキスト内のイベント間の複雑な時系列関係を表現する便利で効果的な表現として示されています。最近の研究では、事前訓練された言語モデルを用いて線形化されたグラフを自己回帰的に生成し、イベント時系列グラフを構築する手法が採用されています。"
+  
+  gap_or_challenge: "現在の手法では、線形化されたグラフは集合的特性を示すものの、言語モデルによって逐次的に扱われるため、最適化されていないグラフ生成につながります。この乖離は従来のテキスト生成目的に起因し、目標シーケンス内の要素の不整合によって引き起こされる正しい予測の誤った罰則化をもたらします。目標シーケンス（イベント時系列関係のリスト）は順序不変であり、順序付きシーケンスではなく集合として扱われるべきです。"
+  
+  research_objective: "本研究では、このタスクを条件付き集合生成問題として再定式化し、大規模言語モデルの効果的な活用に特化したSet-aligning Framework（SAF）を提案します。このフレームワークは、線形化されたグラフエッジシーケンスに関連するテキスト生成損失ペナルティを軽減するために設計されたデータ拡張と集合特性正則化を組み込んでいます。"
+  
+  significance: "このフレームワークはより多くの関係エッジの生成を促進し、特に訓練例が限られている場合にモデルの汎化性能を向上させます。ゼロショット設定において、フレームワークによって導入される構造的知識は性能を顕著に改善します。"
+
+tasks:
+  - task_name: "Event Temporal Graph Generation"
+    
+    task_overview: "このタスクは、生テキストからエンドツーエンドでイベント時系列グラフを直接生成することを含みます。イベント時系列グラフは、ノードがイベントを表し、エッジが時系列関係（前、後、同時）を表す有向グラフです。このグラフは生成のためにDOTグラフ記述言語を使用して線形化されます。このタスクは言語モデルの能力を維持しながら、エッジシーケンスの集合特性に対処することを要求します。"
+    
+    input_description: "物語的な内容を含む生のテキスト文書。文書はNew York Timesコーパスと既存のイベント関係データセットから取得されます。平均的な文書は目標グラフにおいて約46ノードと約58エッジを含みます。"
+    
+    output_description: "イベントノードと時系列関係エッジを含むDOT形式の線形化イベント時系列グラフ。イベントは文脈のために名詞句で前置され、オブジェクトで後置されます。"
+
+methodology:
+  method_name: "Set-Aligning Framework (SAF)"
+  
+  approach_type: "neural"
+  
+  core_technique: "SAFはFlan-T5をバックボーンモデルとして採用し、3つの主要コンポーネントを持ちます。第一に、データ拡張はDOT形式構造を保持しながら訓練例のエッジ順序をランダムに置換します。第二に、Set Property Regularisations（SPR）には以下が含まれます：（1）適切なエッジ生成を促進する濃度正則化、（2）要素の重複を罰する重複正則化、（3）生成されたエッジ集合と目標エッジ集合間の意味的類似性を測定するHausdorff距離を用いた一致正則化。エッジ埋め込みはデコーダー隠れ状態から計算されます。第三に、大規模訓練データ作成のためのCAEVOを用いた弱教師あり学習。訓練は拡張データを用いた初期エポックに続いてSPRを用いたエポックを含みます。このフレームワークは重み付き平均を通じて従来の言語モデリング損失と集合対応正則化をバランスさせます。"
+  
+  base_models:
+    - "Flan-T5-base"
+    - "GPT-2 (baseline comparison)"
+    - "ChatGPT (gpt-3.5-turbo for zero-shot comparison)"
+  
+  key_innovations:
+    - "自己回帰的イベント時系列グラフ生成における集合不整合問題に対処する初のフレームワーク"
+    - "濃度、重複、一致正則化を組み合わせた新しいSet Property Regularisations（SPR）"
+    - "エッジ順序を置換しながらDOT形式を保持するデータ拡張"
+    - "意味的エッジ集合比較のためのHausdorff距離に基づく一致正則化"
+    - "SAFが従来のアプローチより24-48%多くのエッジを生成することの実証"
+
+datasets:
+  - dataset_name: "NYT Temporal Event Graph Dataset"
+    
+    characteristics: "New York Timesコーパスから18,263の訓練文書、1,000のテスト文書。MATRES/TBDデータセットのトピックモデリングを用いて文書を選択。平均グラフは46ノードと58エッジを持ち、イベントあたり2.52の関係を持ちます。時系列関係はCAEVOツールを用いて抽出。さらに、イベントスパンのIOU 0.8986、関係のCohen's κ 0.7465で22の人間注釈テスト文書を含みます。"
+    
+    usage: "イベント時系列グラフ生成の訓練と評価のための主要データセット"
+    
+    size: "18,263 train, 1,000 test, 22 human-annotated test documents"
+    
+    domain: "mixed"  # News articles from various topics
+    
+    is_new: true
+    
+    new_dataset_contribution: "文書レベルイベント時系列グラフ生成のための初の大規模データセット。以前の研究の4ノードと5エッジに対して平均46ノードと58エッジの複雑なグラフを含みます。訓練データとは異なるラベル分布を持つ人間注釈テストセットを含みます。"
+  
+  - dataset_name: "MATRES"
+    
+    characteristics: "イベント間の人間注釈時系列関係を持つ20のテスト文書。ゼロショット評価に使用。"
+    
+    usage: "NYTデータセットで訓練されたモデルのゼロショット評価"
+    
+    size: "20 documents"
+    
+    domain: "mixed"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "TB-Dense (TBD)"
+    
+    characteristics: "密な時系列関係注釈を持つ9のテスト文書。ゼロショット評価に使用。"
+    
+    usage: "NYTデータセットで訓練されたモデルのゼロショット評価"
+    
+    size: "9 documents"
+    
+    domain: "mixed"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "評価はノードとエッジ予測の両方に対する精度、再現率、F1スコアを使用します。主要メトリックはノードとエッジの品質の両方を反映するエッジF1です。モデルはNYT-test、NYT-human、およびMATRES/TBDでのゼロショットで評価されます。実験はビームサイズ5、最大長2048のビームサーチを使用します。訓練は同じ訓練ステップ数で手法間でバランスをとります。結果は3つのランダムシードで平均化されます。"
+  
+  main_results: "NYT-test: SAFはベースライン39.73%に対してエッジF1 44.80%を達成（+5.07%）。NYT-human: SAFはベースライン24.14%に対してエッジF1 31.52%を達成（+7.38%）。SAFはベースラインより24-48%多くのエッジを生成します。ゼロショットMATRES: SAF 15.96% vs ベースライン9.25%およびChatGPT 8.09%。ゼロショットTBD: SAF 17.05% vs ベースライン7.67%およびChatGPT 9.66%。性能改善は主に類似の精度を維持しながらより高い再現率からもたらされます。"
+  
+  metrics_used:
+    - "Edge Precision/Recall/F1"
+    - "Node Precision/Recall/F1"
+    - "Number of generated edges (normalized comparison)"
+    - "Inter-annotator agreement (IOU for events, Cohen's κ for relations)"
+  
+  human_evaluation_summary: "Prolificプラットフォームのクラウドワーカーによって22文書が注釈されました。注釈者間のイベントスパンIOU 0.8986。関係注釈Cohen's κ 0.7465。人間の注釈は訓練時の2.39%に対して同時関係により寛容な基準（9.66%）を示します。"
+
+results_analysis:
+  key_findings:
+    - "SAFフレームワークはグラフ生成における集合不整合問題に成功的に対処"
+    - "SAFを用いたモデルは精度を維持しながら24-48%多くのエッジを生成"
+    - "性能改善は主により高い再現率からもたらされる"
+    - "SAFからの構造的知識は特にゼロショット設定で有益"
+    - "ChatGPTは微調整されたモデルを下回り、イベントをより広範な高レベル概念として概念化"
+  
+  ablation_summary: "拡張のみを使用するSAF（w/o SPR）はNYT-testで3%、NYT-humanで6%改善。SPRのみを使用するSAF（w/o DA）はNYT-testで1.5%、NYT-humanで4.5%改善。両コンポーネントを組み合わせた完全なSAFが最高性能を達成。"
+
+contributions:
+  main_contributions:
+    - "新しいSet-Property Regularisations、データ拡張、弱教師あり学習技術を組み込んだイベント時系列グラフ生成のためのモデル非依存Set-Aligning Framework（SAF）の導入。"
+    - "複雑なグラフを持つ文書レベルイベント時系列生成のために特別に設計された初の人間注釈テストセットと弱教師ありデータセット。"
+    - "SAFが様々なデータセットで以前のアプローチより少なくとも24%多くのエッジを生成するよう言語モデルを促進することを示す広範な実験的検証。"
+    - "SAFフレームワークによって導入される構造的知識が、特に限られた訓練データシナリオにおいてモデルの汎化性能を顕著に改善することの実証。"
+  
+  limitations:
+    - "CAEVOからのノイズラベルは想像上のイベント、些細なイベント、否定表現を含む"
+    - "CAEVOは'did not fire'のような句をイベントとして識別するが、時系列グラフには適さない可能性"
+    - "潜在的な将来の発展の記述をイベントとして扱うことは混乱を招く"
+    - "解決には顕著な物語イベントに焦点を当てたより高品質の教師信号が必要"
+
+narrative_understanding_aspects:
+  - "other"  # Event temporal graph generation and temporal relation extraction
+
+keywords:
+  - "event temporal graph"
+  - "set generation"
+  - "autoregressive generation"
+  - "temporal relations"
+  - "set property regularisation"
+  - "Hausdorff distance"
+  - "data augmentation"
+  - "weak supervision"
+  - "narrative understanding"
+
+notes: "Code and data available at https://github.com/Xingwei-Warwick/Set-Aligning-Event-Temporal-Graph-Generation. Dataset DOI: https://doi.org/10.35111/77ba-9x74"

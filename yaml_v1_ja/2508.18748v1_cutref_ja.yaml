@@ -1,0 +1,111 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Chronological Passage Assembling in RAG framework for Temporal Question Answering"
+  authors:
+    - "Byeongjeong Kim"
+    - "Jeonghyun Park"
+    - "Joonho Yang"
+    - "Hwanhee Lee"
+  year: 2025
+  venue: "arXiv"
+  paper_url: null  # Not provided in paper
+
+problem_statement:
+  background: "物語タスクでの長いコンテキスト質問応答は、正しい回答がしばしば限られたコンテキストウィンドウで文脈的流れを保持しながらイベントの一貫したタイムラインを再構築することに依存するため困難です。現代のTransformerベースLLMは極端に長い形式のテキストで基本的限界に直面 - 毎クエリで広範な文書を処理することは主要な計算非効率をもたらし、コンテキストが長くなるにつれて、モデルの関連情報を正確に特定し優先順位付けする能力は低下します。"
+  
+  gap_or_challenge: "ほとんどのRAGフレームワークに基本的方法論的ギャップが存在します：それらは主に文書を独立して検索される短い情報断片のコレクションとして扱います。この方法論は長編物語の連続的性質と根本的に対立します。物語テキストはその構造によって独特に定義されます；それらは極めて長く、その個別パッセージは順番に読まれない限りしばしば完全なストーリーを伝えることができず、パッセージ間の時系列的・関係的接続を把握することが理解に不可欠です。"
+  
+  research_objective: "この研究では物語テキストに特化した新しいRAGフレームワークChronoRAGを提案します。このアプローチは2つの本質的側面に焦点：散在する文書情報を一貫した構造化パッセージに洗練することと、検索されたパッセージ間の時間的順序を明示的に捉え維持することで物語の流れを保持すること。"
+  
+  significance: "ChronoRAGはNarrativeQAデータセットでの事実的特定と複雑な連続関係の理解の両方を要求するタスクで実質的改善を実証します。このフレームワークは既存の要約とグラフベース手法より軽いグラフ構築と検索メカニズムを使用して重要な改善を達成し、時間的順序での推論が物語QA解決に重要であることを強調します。"
+
+tasks:
+  - task_name: "Long-Context Narrative Question Answering"
+    
+    task_overview: "イベントシーケンスと時間関係の理解を要求する物語テキストについての質問に回答。このタスクは文脈的流れを保持しながらイベントの一貫したタイムラインを再構築することを含みます。質問はしばしば複数の関連イベントでの推論とパッセージ間の時系列接続の理解を要求します。"
+    
+    input_description: "エピソード/チャンクに分割されたNarrativeQAデータセットからの長い物語文書（ストーリー、脚本）。時間的推論を要求する可能性のあるユーザークエリ、特に'When'、'While'、'During'、'After'、'Before'などの時間的キーワードを含む'Time Questions'。"
+    
+    output_description: "時間的コンテキストとイベントシーケンスを活用してクエリに正確に応答する生成回答。回答は人間参照との重複についてROUGE-Lメトリックで評価。"
+
+methodology:
+  method_name: "ChronoRAG"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "2段階フレームワーク：（1）オフライングラフ構築 - 文書チャンキング（100トークン）、チャンク要約（10チャンクをグループ化）、要約からのエンティティ-関係抽出、物語順序でのインデックス化、コンテキストのための近傍アセンブリング。2層グラフを作成：レイヤー0（元チャンク）とレイヤー1（関係記述）。（2）オンラインパッセージ検索 - レイヤー1（高精度関係）からレイヤー0（詳細チャンク）への階層的検索を子インデックスを使用して実行。キーを関係記述、値をインデックス順序で連結された隣接パッセージとするキー-値分離。これは孤立した事実ではなく一貫した局所的ストーリーラインを保持。"
+  
+  base_models:
+    - "meta-llama-3-8B-Instruct (summarization/extraction)"
+    - "arctic-Snowflake-embed-l (embeddings)"
+    - "unifiedqa-v2-t5-3b-1363200 (answer generation)"
+  
+  key_innovations:
+    - "物語の流れを保持する時系列パッセージアセンブリング"
+    - "検索のためのキー-値分離（キーとしての関係、値としてのコンテキスト）"
+    - "物語順序インデックスを持つ2層階層グラフ"
+    - "周囲コンテキストを提供する近傍アセンブリング"
+    - "エンティティ抽出より時間関係に焦点"
+
+datasets:
+  - dataset_name: "NarrativeQA"
+    characteristics: "10,557質問-回答ペアを持つ355ストーリーと脚本。複数の関連イベントでの検索と推論を要求する時間的キーワードを含む1,111'Time Questions'のサブセットを含む。短い、代名詞の多い回答がROUGE-Lを評価に効果的にする。"
+    usage: "物語QAの主要評価データセット"
+    size: "10,557 QA pairs (1,111 Time Questions)"
+    domain: "fiction"
+    is_new: false
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "ChronoRAGを5つのベースラインと比較：NaiveRAG（標準チャンク検索）、RAPTOR（再帰要約ツリー）、LightRAG（エンティティ-関係グラフ）、GraphRAG（詳細関係重み付け）、Propositionizer（原子事実）。すべての手法で同一ハイパーパラメータ使用：top-k=20検索、1500トークンコンテキスト制限、処理に同一LLM。完全NarrativeQAとTime Question サブセットでROUGE-Lメトリック使用評価。"
+  
+  main_results: "完全データセット：ChronoRAG 0.308、RAPTOR-CT 0.297、RAPTOR-TT 0.295、Propositionizer 0.262、NaiveRAG 0.255、LightRAG 0.240、GraphRAG 0.200。Time Questions：ChronoRAG 0.268、RAPTOR-CT 0.261、RAPTOR-TT 0.259、Propositionizer 0.238、NaiveRAG 0.227、LightRAG 0.214、GraphRAG 0.185。ChronoRAGが両セットで最高性能を達成。"
+  
+  metrics_used:
+    - "ROUGE-L (Longest Common Subsequence overlap)"
+  
+  human_evaluation_summary: null  # No human evaluation reported
+
+results_analysis:
+  key_findings:
+    - "ChronoRAGが完全データセットとTime Questionsの両方でベースラインすべてを上回る"
+    - "イベントを明確な時間順序に再構築することが最も一貫したコンテキストを提供"
+    - "GraphRAGは徹底的なエンティティ抽出がノイズを作るため最悪の性能"
+    - "要約ベース手法（RAPTOR）が続くがまだ遅れを取る"
+    - "アブレーションはチャンク要約が重要であることを示す（なしで0.308→0.272）"
+    - "パッセージアセンブリングがTime Questionsに重要（なしで0.268→0.252）"
+    - "トレードオフ：リンキングウィンドウ拡張は検索品質を削減"
+  
+  ablation_summary: "要約なし：0.272（全体）、0.233（時間）。パッセージアセンブリングなし：0.295（全体）、0.252（時間）。関係抽出なし：0.255（全体）、0.227（時間）。チャンク要約は二重効果：検索を容易にしアセンブリング中の流れを明確化。"
+
+contributions:
+  main_contributions:
+    - "物語QA解決にはイベント時系列の活用と文脈的流れの保持が必要であることの特定。"
+    - "ChronoRAG：明示的時間リンクで生テキストを構造化パッセージに洗練する新しいRAGフレームワーク。"
+    - "隣接イベントを接続する単純なパッセージ拡張が複雑なグラフ手法を上回ることの実証。"
+    - "エンティティ抽出よりイベント-イベント関係が物語理解の性能向上を駆動するという証拠。"
+  
+  limitations:
+    - "リンキングウィンドウサイズと検索パッセージ数間のトレードオフ"
+    - "グラフ構築のための文書長に伴う線形コスト増加"
+    - "物語テキストに特化されたフレームワーク、他ドメインに汎化しない可能性"
+    - "単一データセット（NarrativeQA）に限定された評価"
+
+narrative_understanding_aspects:
+  - "Narrative QA"  # Core focus on narrative question answering
+  - "Plot / Storyline Extraction"  # Temporal order and event sequences
+  - "other"  # Chronological coherence and temporal reasoning
+
+keywords:
+  - "retrieval-augmented generation"
+  - "narrative question answering"
+  - "temporal reasoning"
+  - "chronological coherence"
+  - "passage assembling"
+  - "hierarchical retrieval"
+  - "NarrativeQA"
+  - "event sequences"
+  - "contextual flow"
+
+notes: "Paper demonstrates that maintaining temporal order and contextual flow is crucial for narrative understanding. ChronoRAG achieves state-of-the-art results with simpler mechanisms than existing graph-based methods."

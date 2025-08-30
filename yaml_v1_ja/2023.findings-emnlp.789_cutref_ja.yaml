@@ -1,0 +1,139 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Affective and Dynamic Beam Search for Story Generation"
+  authors:
+    - "Tenghao Huang"
+    - "Ehsan Qasemi"
+    - "Bangzheng Li"
+    - "He Wang"
+    - "Faeze Brahman"
+    - "Muhao Chen"
+    - "Snigdha Chaturvedi"
+  year: 2023
+  venue: "EMNLP 2023 Findings"
+  paper_url: "https://aclanthology.org/2023.findings-emnlp.789/"
+
+problem_statement:
+  background: "物語は何千年もの間、人間文化の中核的部分であり、社会、アイデンティティ、信念を形作ってきました。しかし、なぜ一部の物語は私たちを魅了し、他の物語は無関心のまま放置するかという問題は興味深いものです。人間は巧みに興味深い物語を作ることができますが、最も最新のAIモデルでも、読者を十分長く引き込むことができる物語を作ることはできません。"
+  
+  gap_or_challenge: "GPTなどの大規模言語モデル（LLM）は一貫性のあるテキスト生成において事実上の勝者ですが、人間の興味を引く物語を作る能力は多くの改善の余地があります。LLMの一貫性は主に、必ずしも人間の品質判断や文体と相関しないテキスト尤度を奨励する訓練目標に根ざしています。「興味深い物語」の概念は非常に主観的で文脈依存です。以前の研究は構造的計画により「興味」を高めるが、テキストの複雑性と品質も興味深さを高めることを無視しています。"
+  
+  research_objective: "我々は興味深い物語を自動生成するタスクに取り組みます。テキストの一貫性を制御し、語の感情的次元を活用してテキストの興味深さを促進するAffective Story Generator (AFFGEN)を提案します。我々の手法は2つの重要なアイデアに基づきます：時折より大きなビームを探索することで、確率は低いが潜在的により興味深い単語の生成を助ける、大小のビーム間の切り替えが一貫性と興味深さのバランスを維持するのに役立つ。"
+  
+  significance: "興味深い物語を自動生成できることは、物語を興味深くするパターンを明らかにすることで認知研究を助ける可能性があります。応用の観点から、この能力は娯楽、教育、治療などの分野に革命をもたらす可能性があります。この研究は一貫性を維持しながら読者の興味を引く興味深いひねりを持つ物語の生成を可能にします。"
+
+tasks:
+  - task_name: "Interesting Story Generation"
+    
+    task_overview: "このタスクは、単一の文プロンプトから興味深い5文の物語を生成するモデルの能力を評価します。このタスクは、一貫性を維持しながら感情的内容と興味深いひねりを通して人間の興味を引く物語を生成することを要求します。モデルは一貫性のための高尤度語と興味深さのための低確率だがより感情的に充電された語の間でバランスを取らなければなりません。生成された物語は、エンゲージメントを向上させるために適切な位置に興味深いひねりを含む必要があります。"
+    
+    input_description: "モデルは物語の最初の文を表す単一の文プロンプト（s1）を受け取ります。プロンプトは日常の常識シナリオから描かれます。モデルは5文の物語を完成させるために残りの4文を生成しなければなりません。"
+    
+    output_description: "システムは完全な物語を形成する生成された文のシーケンス（s2, s3, ..., s5）を出力します。一つの文が興味深いひねりとして機能します。出力は一貫性（UNION、RUBERスコア）、興味深さ（覚醒スコア）、感情的エンゲージメント、共感、全体的好みに関する人間判断で評価されます。"
+
+methodology:
+  method_name: "Affective Story Generator (AFFGEN)"
+  
+  approach_type: "neural"
+  
+  core_technique: "AFFGENは2段階で動作します：最初にWritingPromptsデータセットに基づくデータ駆動アプローチを使用して興味深いひねりの位置を特定し、次に異なる復号戦略を使用して物語を生成します。通常の文については、標準ビーム探索が一貫性を維持します。興味深いひねり文については、AFFGENは覚醒スコア、イベントトリガー尤度、シーケンス長、困惑度を含むコンテキスト特徴に基づいてビームサイズ（10, 30, 60）間を動的に切り替える文脈的k腕バンディットモデル（LinUCBアルゴリズム）を使用したDynamic Beam Sizingを採用します。バンディットは覚醒（興味深さ）、困惑度（一貫性）、計算コストのバランスを取る報酬関数を最適化します。次に、Affective Rerankingが覚醒スコアと先行する物語との価値コントラストに基づいて最良の候補を選択します。この組み合わせは、確率は低いがより感情的に充電された語の選択を促進します。"
+  
+  base_models:
+    - "GPT-2 (fine-tuned on ROCStories)"
+    - "GPT-3 (used as stronger baseline)"
+    - "RoBERTa (for event trigger prediction)"
+  
+  key_innovations:
+    - "適応的ビームサイズ選択のための文脈的多腕バンディットモデルを使用したDynamic Beam Sizing"
+    - "覚醒と価値コントラストに基づいて文を優先するAffective Reranking"
+    - "WritingPromptsデータセットを使用した最適な興味深いひねり位置を特定するためのデータ駆動アプローチ"
+    - "覚醒、困惑度、計算効率のバランスを取る報酬関数"
+    - "ビームサイズ決定のための覚醒スコア、イベントトリガー尤度、困惑度を含むコンテキスト特徴"
+
+datasets:
+  - dataset_name: "ROCStories"
+    
+    characteristics: "日常的なイベントについての100k個の5文「常識」物語の大きなコレクション。物語は短く、人間評価中の物語品質の手動評価が実行可能。平均的な物語長により、日常生活の物語から学習し、それらを興味深くするように即興するモデルの能力をテストできる。"
+    
+    usage: "ベース物語生成器の訓練と評価に使用。各々1k物語を検証とテスト用に保留。各物語の最初の文をプロンプトとして使用。"
+    
+    size: "100k個の5文物語"
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "WritingPrompts"
+    
+    characteristics: "n番目の文で興味深いひねりを観察する確率のための分布D(n)を学習するために使用される人間が書いた物語のコレクション。識別可能な転換点と劇的瞬間を持つより長い物語を含む。"
+    
+    usage: "興味深いひねり位置を特定するためのデータ駆動アプローチを訓練するために使用"
+    
+    size: "指定なし"
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "自動メトリクスと人間判断の両方を使用した包括的評価。自動評価は困惑度、物語生成品質のためのUNIONスコア、対話品質のためのRUBERスコア、感情的内容のための覚醒スコアを測定。Amazon Mechanical Turkでの人間評価では、100の物語ペアが各3人の注釈者によって5つの基準で評価：一貫性、感情的エンゲージメント、共感、興味深さ、全体的好み。専門注釈者を使用したChatGPTとの追加比較。アブレーション研究で動的ビームサイジングと感情的再ランキングの重要性をテスト。"
+  
+  main_results: "AFFGEN-3は0.53の覚醒スコアを達成（GPT-3: 0.46に対して）、比較可能な一貫性を維持（UNION: 0.029 vs 0.028, RUBER: 0.1547 vs 0.1541）。人間評価でAFFGEN-3がGPT-3を大幅上回る：一貫性（50.5%勝利）、感情的エンゲージメント（53.0%）、共感（53.8%）、興味深さ（54.9%）、全体的好み（52.7%）。ChatGPTに対してAFFGENは一貫性は低い（14.5%勝利）が、感情的エンゲージメント（55.5%）、共感（40.8%）、興味深さ（45.3%）は高い。アブレーション研究で動的ビームサイジングが一貫性と興味深さのバランスに重要であることを確認。"
+  
+  metrics_used:
+    - "Perplexity (PPL)"
+    - "UNION score"
+    - "RUBER score"
+    - "Arousal score (per-token)"
+    - "Human judgments (5 criteria)"
+    - "Inter-annotator agreement (0.58)"
+  
+  human_evaluation_summary: "AMTのマスター注釈者による100の物語ペアの評価、ペアあたり3人の注釈者。AFFGEN-3はすべての基準でGPT-3を有意に上回る（一貫性はp<0.1を除きp<0.05）。ChatGPTに対して、専門注釈者はAFFGENがより一貫性は低いがより共感を呼び起こし興味深いと判定。審査員はAFFGEN物語が気分の変化、予想外のひねり、感情表現を持つと指摘。"
+
+results_analysis:
+  key_findings:
+    - "動的ビームサイジングは一貫性を犠牲にすることなく、より興味深い内容の生成を可能にする"
+    - "興味深い語が典型的に現れる文の始まりでより大きなビームサイズがより頻繁に使用される"
+    - "モデルは約30%の時間でビームサイズ間を遷移し、適応的行動を示す"
+    - "感情的再ランキングは覚醒スコアに特に重要（それなしでは-0.070）"
+    - "興味深いひねりとプロット合併症を持つ物語がより感情的に魅力的と評価"
+  
+  ablation_summary: "静的ビームサイズはトレードオフを示す：AFFGEN60はより覚醒的な物語を生成（+0.047）するが一貫性は低い（-0.005 UNION）。感情的再ランキングなしでは覚醒が劇的に低下（-0.070）。動的ビームサイジングは興味深さと一貫性のバランスに重要。モデルは最初の数トークンでより大きなビーム、後でより小さなビームを使用。"
+
+contributions:
+  main_contributions:
+    - "我々は興味深い物語を生成するタスクを提案し、物語生成における現在のLLMの重要な限界に対処します。"
+    - "我々は一貫性を維持しながら興味深いひねりを持つ物語を生成するために、文脈的バンディットを使用したDynamic Beam SizingとAffective Rerankingを組み合わせた新しいフレームワークAFFGENを導入します。"
+    - "我々は自動・人間評価を通じて、AFFGENが感情的に充電され興味深い物語の生成において強力なベースライン（GPT-2、GPT-3）を大幅に上回ることを実証します。"
+    - "我々は動的ビーム探索と感情的内容選択が物語の興味深さにどのように貢献するかを明らかにする包括的なアブレーション研究と分析を提供します。"
+  
+  limitations:
+    - "物語の興味深さを向上させるために単一の興味深いひねり文が十分であると仮定"
+    - "物語文脈を考慮しないひねり位置選択のための単純なデータ駆動アプローチ"
+    - "離散化されたビームサイズが連続的ビームサイズ空間の探索を制限"
+    - "英語での短い（5文）フィクション物語に限定"
+    - "バイアスや毒性除去方法を採用していない"
+
+narrative_understanding_aspects:
+  - "Story Generation"  # Core task of generating interesting narratives
+  - "Character / Entity Understanding"  # Stories involve character emotions and empathy
+  - "Plot / Storyline Extraction"  # Identifying and generating intriguing twists
+  - "Narrative Assessment"  # Evaluating story interestingness and engagement
+
+keywords:
+  - "story generation"
+  - "affective computing"
+  - "dynamic beam search"
+  - "contextual multi-arm bandit"
+  - "narrative interestingness"
+  - "intriguing twists"
+  - "emotional engagement"
+  - "arousal and valence"
+  - "LinUCB algorithm"
+
+notes: "この研究は物語生成において一貫性と興味深さを成功裏にバランスする新しい復号戦略を導入します。ビームサイズ選択のための文脈的バンディットの使用は、適応的復号への革新的アプローチを表します。人間評価は、この手法が興味深いひねりを持つより感情的に魅力的な物語を生成することを確認しています。"

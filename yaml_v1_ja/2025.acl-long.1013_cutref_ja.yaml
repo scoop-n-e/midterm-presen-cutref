@@ -1,0 +1,142 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Classifying Unreliable Narrators with Large Language Models"
+  authors:
+    - "Anneliese Brei"
+    - "Katharine Henry"
+    - "Abhisheik Sharma"
+    - "Shashank Srivastava"
+    - "Snigdha Chaturvedi"
+  year: 2025
+  venue: "ACL"
+  paper_url: "https://github.com/adbrei/unreliable-narrators"
+
+problem_statement:
+  background: "一人称の記述を読むとき、読者はしばしば語り手の信頼性に疑問を抱きます：この語り手が出来事を認識し、描写している方法を信頼できるか？作家もまた、自分のアイデアをテキスト化する方法について関心を持ちます：私は信頼できる方法で情報を共有しているか？物語の信頼性の欠如を理解することは、安全な情報伝達にとって重要です。"
+  
+  gap_or_challenge: "信頼性の欠如の手がかりは多くの場合微妙で文脈に依存し、テキスト全体に散らばっており、明示的に述べられていることを超えた深い理解を必要とします。語り手の感情的・精神的状態についての抽象的な推論が必要です。語り手の信頼性の欠如を自動的手法で分析した既存の研究はなく、利用可能なラベル付きデータセットもありません。"
+  
+  research_objective: "この研究では、意図せずに情報を誤って伝える信頼できない語り手を特定するために計算手法を使用することを提案します。物語学から借用し、この研究では3つの形の信頼性の欠如（intra-narrational、inter-narrational、inter-textual）を定義し、分類タスクのための複数ドメインにわたる人間注釈データセットTUNAを導入します。"
+  
+  significance: "この研究では、信頼できない語り手を特定する初の自動アプローチを導入し、レビュー、オンラインコメント、カバーレター、エッセイを含む多様な実世界ドメインに適用できるフレームワークを提供します。物語の信頼性評価でLLMを支援に使用する可能性を実証します。"
+
+tasks:
+  - task_name: "Intra-narrational Unreliability Classification"
+    
+    task_overview: "語り手が出来事を語る際の不確実性を示すバーバルティック（verbal tics）を示すかどうかを決定する二分類タスク。これらには曖昧な言語（'I think'、'maybe'）、防御的な調子、脱線、矛盾、選択的記憶の認識、または潜在的不信の陳述が含まれます。このタスクは語り手が信頼できない可能性を示唆する微妙な語彙的手がかりの特定を必要とします。"
+    
+    input_description: "フィクション、ブログ投稿、subreddit投稿、またはホテルレビューからの24から1050トークンの範囲の一人称物語テキスト。"
+    
+    output_description: "二分類：A（バーバルティックを含む - 信頼できない）またはR（バーバルティックなし - 信頼できる）。"
+
+  - task_name: "Inter-narrational Unreliability Classification"
+    
+    task_overview: "語り手が二次的視点から信頼できないかを決定する多クラス分類。2つのケース：（A）Same-unreliable-character-over-time - 語り手が変化を示すことなく過去の信頼性の欠如を振り返る、（B）Other-character-contradiction - 別のキャラクターが対話を通じて語り手と矛盾する。タスクは時間的一貫性とキャラクター相互作用の理解を必要とします。"
+    
+    input_description: "複数ドメインからの潜在的対話または時間的言及を持つ一人称物語テキスト。"
+    
+    output_description: "3クラス分類：A（same-unreliable-character-over-time）、B（other-character-contradiction）、またはR（どちらでもない - 信頼できる）。"
+
+  - task_name: "Inter-textual Unreliability Classification"
+    
+    task_overview: "語り手が文学理論から確立された信頼できないキャラクタートロープに適合するかを決定する多クラス分類。4つのトロープ：（A）Naïf - 認識が欠けた素朴な観察者、（B）Madman - 熱狂的な声を持つ高度に感情的な語り手、（C）Pícaro - 見込みを改善しようと試みる狡猾な悪漢、（D）Clown - 新しい光で葛藤を再解釈する語り手。抽象的パターンマッチングと深いキャラクター理解を必要とします。"
+    
+    input_description: "キャラクターの特性、感情状態、行動パターンの分析を必要とする一人称物語テキスト。"
+    
+    output_description: "5クラス分類：A（naïf）、B（madman）、C（pícaro）、D（clown）、またはR（なし - 信頼できる）。"
+
+methodology:
+  method_name: "Multi-Method LLM Evaluation Framework"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "このフレームワークは複数の訓練戦略を採用します。ゼロショットと少数ショットプロンプティングがベースライン性能を提供。微調整は8ビット量子化で3エポック、Low-Rank Adaptation（LoRA）を用いたParameter-Efficient Fine-Tuningを使用。カリキュラム学習（CL）は訓練データを簡単（候補ラベルが少ない）と困難（複数の妥当なラベル）のサブセットに分割。CLでは、LLMが各ラベルの特性カウントを生成してサンプル困難度を決定。モデルは最初にSubset-Easyで訓練し、次にSubset-Difficultで訓練。実験では6つのLLMを使用：Llama3.1-8B、Llama3.3-70B、Mistral-7B、Phi3-medium、GPT-4o mini、o3-mini。小さなLM分類器（BERT、ModernBERT）がベースラインを提供。モデルはフィクション断片で訓練し、ドメイン外汎化のために実世界ドメイン（ブログ投稿、subreddit投稿、レビュー）でテスト。"
+  
+  base_models:
+    - "Llama3.1-8B"
+    - "Llama3.3-70B"
+    - "Mistral-7B"
+    - "Phi3-medium"
+    - "GPT-4o mini"
+    - "o3-mini (reasoning model)"
+    - "BERT"
+    - "ModernBERT"
+  
+  key_innovations:
+    - "信頼できない語り手を特定する初の自動アプローチ"
+    - "物語学からの3レベル信頼性の欠如分類法（語彙的から抽象的へ）"
+    - "実質的な評価者間一致を持つ専門家注釈データセット"
+    - "サンプルの曖昧さ/困難度に基づくカリキュラム学習"
+    - "フィクションから実世界テキストへのクロスドメイン汎化"
+
+datasets:
+  - dataset_name: "TUNA (Texts with Unreliable Narrators)"
+    
+    characteristics: "4ドメインからの817の一人称物語。フィクション：Project Gutenbergからの499断片（24-924トークン）。ブログ投稿：PersonaBankからの106（114-1050トークン）。Subreddit：r/AITAからの112（73-858トークン）。レビュー：Deceptive Opinionコーパスからの100ホテルレビュー（53-460トークン）。英文学学位保持者10人による専門家注釈。各サンプルは最低2回注釈、Cohen's Kappa：intra-narrational κ=0.75、inter-narrational κ=0.71、inter-textual κ=0.73。"
+    
+    usage: "フィクションドメインでの訓練（373 train/valid、126 test）、ドメイン内・ドメイン外評価のための全ドメインでのテスト"
+    
+    size: "817 narratives total (499 fiction, 318 real-world)"
+    
+    domain: "mixed"
+    
+    is_new: true
+    
+    new_dataset_contribution: "専門家注釈を持つ信頼できない語り手分類のための初のデータセット。クロスドメイン汎化研究を可能にする複数テキストドメインにわたる。平均21.2トークンの詳細な注釈記述を持つ3つの形の信頼性の欠如を含む。実質的な評価者間一致は注釈品質を実証。"
+
+evaluation:
+  evaluation_strategy: "マクロ平均F1スコアによる多ドメイン評価。フィクションテストセットでのドメイン内テスト、ブログ投稿、subreddit投稿、レビューでのドメイン外テスト。p<0.05で統計的有意性テスト。語り手の性別効果、語り方（会話的対記述的）、感情調子、Llama3.3-70Bを用いた属性推論を使用するキャラクター数の分析を含む。"
+  
+  main_results: "カリキュラム学習がほとんどのケースで他の手法を上回る。CLを用いたLlama3.1-8B：intra-narrational F1 57.42%、inter-narrational 34.18%、inter-textual 19.30%。Intra-narrationalが最も簡単なタスク、inter-textualが抽象的推論を必要とする最も困難。ドメイン外性能はドメイン内と同等で汎化能力を実証。大きなモデル（Llama3.3-70B）は少数ショット学習で競争力のある性能を達成。LM分類器は特にドメイン外でLLMを下回る（intra-narrationalでBERT平均17.77% vs CL 57.42%）。"
+  
+  metrics_used:
+    - "Macro-averaged F1 scores"
+    - "Class-wise precision, recall, F1"
+    - "Statistical significance testing (p<0.05)"
+    - "Inter-annotator agreement (Cohen's Kappa)"
+  
+  human_evaluation_summary: "英文学学位を持つ10人の専門家注釈者。各サンプルは読み取りと注釈に約5分かかる。総注釈時間約172時間。注釈者は信頼性の欠如の観察を説明する記述を書く（平均21.2トークン、最大299トークン）。意見の相違は議論または第三の注釈者仲裁により解決。"
+
+results_analysis:
+  key_findings:
+    - "タスク困難度は増加：intra-narrational < inter-narrational < inter-textual"
+    - "カリキュラム学習は特に小さなモデルで性能を改善"
+    - "男性語り手は全モデルで女性語り手より正確に予測"
+    - "会話スタイルはバーバルティック検出が容易、記述スタイルは抽象的タスクに良い"
+    - "ネガティブ感情物語はintra-narrationalで容易、ポジティブ感情は他のタスクで良い"
+    - "複数キャラクターはinter-narrationalとinter-textualタスクで困難度を増加"
+    - "LLMはフィクションから実世界ドメインに汎化、LMは汎化しない"
+  
+  ablation_summary: "曖昧さ（妥当なラベル数）でサンプルを分割するカリキュラム学習が標準微調整を上回る。簡単なサンプルでの最初の訓練が困難なサンプルのより良い基盤を提供。少数ショット学習は大きなモデル（Llama3.3-70B）で競争力があるが小さなモデルでは不十分。"
+
+contributions:
+  main_contributions:
+    - "計算手法で信頼できない語り手を自動的に特定するタスクの導入。"
+    - "分類のために3つの多様で徐々に抽象的な形の信頼性の欠如を提供する物語学的定義の適応。"
+    - "TUNAデータセット：実質的な評価者間一致でフィクションと実世界ドメインにわたる817の一人称物語の専門家注釈コレクション。"
+    - "LLMがフィクションから信頼性の欠如パターンを学習し実世界テキストに汎化できることの実証、ただし性能は困難（最も簡単なタスクで最高F1約57%）。"
+  
+  limitations:
+    - "短いテキストに限定（最大1050トークン）"
+    - "英語のみデータセット"
+    - "性別分析は二分法プラスその他/曖昧に限定"
+    - "注釈コストによる比較的小さなデータセットサイズ"
+    - "フィクション断片は完全な物語構造を欠く可能性"
+
+narrative_understanding_aspects:
+  - "Character / Entity Understanding"
+  - "other"  # Narrator reliability assessment
+
+keywords:
+  - "unreliable narrator"
+  - "narratology"
+  - "first-person narrative"
+  - "verbal tics"
+  - "character tropes"
+  - "curriculum learning"
+  - "cross-domain generalization"
+  - "narrative reliability"
+  - "inter-textual analysis"
+
+notes: "Code and dataset available at https://github.com/adbrei/unreliable-narrators. Work bridges narratology and NLP, demonstrating challenging nature of narrative reliability assessment even for modern LLMs."

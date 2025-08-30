@@ -1,0 +1,136 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "NarrativePlay: Interactive Narrative Understanding"
+  authors:
+    - "Runcong Zhao"
+    - "Wenjia Zhang"
+    - "Jiazheng Li"
+    - "Lixing Zhu"
+    - "Yanran Li"
+    - "Yulan He"
+    - "Lin Gui"
+  year: 2024
+  venue: "EACL (System Demonstrations)"
+  paper_url: "https://aclanthology.org/2024.eacl-demo.10/"
+  
+problem_statement:
+  background: "最近の研究では、物語から抽出された人格特性によってガイドされた人間らしい応答を生成するためにLarge Language Models（LLM）を活用しています。この進歩は、ウエストワールドなどの本やショーの動的なストーリーラインに類似した没入型インタラクティブ環境を作成する機会を提供します。"
+  
+  gap_or_challenge: "インタラクティブエージェントのための現在のLLMベースの手法は、事前決定されたシナリオの特定の能力に焦点を当て、しばしばキャラクターと環境の手動設定に依存しています。これは重要な手動入力を必要とし、一般化可能性を欠いています。さらに、長く複雑な物語から包括的なキャラクター特性を抽出することは困難であり、主に未探索のままです。既存の研究は主に手動構築されたサンドボックス内でのエージェント行動に集中しています。"
+  
+  research_objective: "この研究は、ユーザーが架空のキャラクターをロールプレイし、没入型環境で物語の他のキャラクターと対話できる新しいシステムNarrativePlayを開発することを目的としています。システムは、物語から抽出された人格特性によってガイドされた人間らしい応答を生成するためにLLMを活用し、自動生成された視覚表示とキャラクター音声を組み込みます。"
+  
+  significance: "NarrativePlayは、インタラクティブ物語理解のための興味深い道筋を開き、より洗練された対話システムと文学テキストのより深い分析を可能にします。広範な手動設定を必要とすることなく、さまざまなシナリオに対応する適応可能なAIエージェントを設計するための一般的なフレームワークを提供します。"
+
+tasks:
+  - task_name: "Interactive Narrative Role-Playing"
+    
+    task_overview: "このタスクは、ユーザーが物語から選択された架空のキャラクターとしてロールプレイし、没入型環境で他のキャラクターと対話することを可能にします。システムは、抽出された人格特性、記憶、物語のコンテキストに基づいて非プレイヤーキャラクターの人間らしい応答を生成します。ユーザーは選択したキャラクターの視点から主要なストーリーラインイベントを進行します。"
+    
+    input_description: "ユーザーは物語テキストを提供し、自分の視点としてキャラクターを選択し、その後ストーリーイベント中に他のキャラクターに向けた会話クエリや行動を入力します。システムは、関連するキャラクター記憶と現在のイベントコンテキストと共にユーザー入力を受信します。"
+    
+    output_description: "システムは、抽出された人格と物語の役割との一貫性を保ちながら、非プレイヤーキャラクターからコンテキストに適した応答を生成します。出力には、テキスト応答、キャラクター肖像画、音声合成、物語設定の視覚的表現が含まれます。"
+
+methodology:
+  method_name: "NarrativePlay"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "NarrativePlayは、物語抽出、マルチモーダル合成、ストーリーライン進行を組み合わせたマルチモジュールアーキテクチャを採用します。システムはChatGPT（gpt-3.5-turbo）を使用して、入力物語からキャラクター、イベント、会話、設定を含む構造化情報を抽出します。キャラクター記憶は、関連性、最新性、重要性を考慮した重み付き検索システムを使用して管理されます。視覚合成のために、システムはstable diffusionモデル（openjourney、Hotpot AI、Midjourney）を活用してキャラクター肖像画と環境画像を生成します。FakeYouプラットフォームのテキスト音声変換モデルが各キャラクターに固有の声を提供します。このアプローチは、完全なサンドボックス環境ではなく主要なストーリーラインイベントに焦点を当て、没入感を維持しながら複雑さを簡素化します。"
+  
+  base_models:
+    - "ChatGPT (gpt-3.5-turbo)"
+    - "Stable Diffusion models"
+    - "FakeYou TTS models"
+  
+  key_innovations:
+    - "手動設定なしで物語から包括的なキャラクター特性を自動抽出"
+    - "事前定義されたサンドボックスの代わりに、ユーザー選択キャラクター視点からの主要ストーリーラインイベントに焦点"
+    - "コンテキスト対応応答のための関連性、最新性、重要性を組み合わせた重み付き記憶検索システム"
+    - "強化された没入感のためのマルチモーダル合成（テキスト、画像、音声）の統合"
+    - "多様な物語シナリオにわたってエージェントを設計するための一般化可能なフレームワーク"
+
+datasets:
+  - dataset_name: "Charlie and the Chocolate Factory (CCF)"
+    
+    characteristics: "評価に使用されるアドベンチャーストーリー物語。明確なキャラクター紹介、分かりやすいプロット進行、明確に定義されたキャラクター特性を特徴とします。キャラクターはストーリー全体を通して一貫した人格を維持します。"
+    
+    usage: "情報抽出品質とエージェント応答評価を含むシステム評価に使用"
+    
+    size: null
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+    
+  - dataset_name: "Murder on the Orient Express (MOE)"
+    
+    characteristics: "複雑なキャラクターアイデンティティ、隠された動機、欺瞞的なインタラクションを持つ推理小説物語。キャラクターは真のアイデンティティを隠すことが多く、手がかりが段階的に明かされ、より大きな抽出の課題を提示します。"
+    
+    usage: "信頼できない語り手を持つ複雑な物語の処理をテストするためのシステム評価に使用"
+    
+    size: null
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "人間評価とLLaMA-2-70Bによる自動評価の両方を使用した包括的評価。3人の注釈者が完全な物語を読み、Character、Clarification、Relationships、Strategy、Hypothetical questionsの5つのカテゴリにわたる特別に設計された質問でエージェントの応答を評価しました。評価は、Consistency、Relevance、Empathy、Commonsenseの4つの側面に焦点を当てました。"
+  
+  main_results: "情報抽出について、CCFはキャラクター要約で86.8%、意図で81.6%の精度を達成し、一方MOEは要約で89.8%を示しましたが、隠されたアイデンティティのため意図では57.6%にとどまりました。人間評価では、エージェントは関連性（2.97-3.0/3）と常識（2.0/2）で良好なパフォーマンスを示しましたが、一貫性（1.9-2.4/3）と共感（2.2-2.4/3）では不足していました。記憶装備エージェントは記憶なしベースラインを上回りました。CCFでは主要キャラクターがマイナーキャラクターよりも優れたパフォーマンスを示しましたが、複雑さのためMOEでは逆でした。"
+  
+  metrics_used:
+    - "Extraction accuracy (characters, summaries, intents, appearance)"
+    - "Consistency score (1-3 scale)"
+    - "Relevance score (1-3 scale)"
+    - "Empathy score (1-3 scale)"
+    - "Commonsense score (1-2 scale)"
+    - "Fleiss' kappa for inter-rater agreement"
+  
+  human_evaluation_summary: "3人の注釈者が完全な物語を読んだ後エージェント応答を評価しました。評価者間一致は異なる側面にわたって0.317から1.0（Fleiss' kappa）の範囲でした。記憶ありエージェントは一貫して記憶なしエージェントを上回りましたが、人間とLLaMA-2-70B自動評価の間にはギャップが存在しました。"
+
+results_analysis:
+  key_findings:
+    - "推理物語は、隠されたアイデンティティと段階的啓示のため、アドベンチャーストーリーよりも大幅に大きな抽出の課題を提示します"
+    - "より長いプロンプトは必ずしも改善されたパフォーマンスをもたらすわけではなく、核心情報からモデルの注意をそらす可能性があります"
+    - "記憶検索はエージェント応答の一貫性と共感を大幅に改善します"
+    - "キャラクター抽出精度は物語の複雑さに基づいて変化し、MOEはCCFの19.1%対比で27.2%の誤ったキャラクター識別を示しました"
+  
+  ablation_summary: "記憶検索ありとなしの評価では、記憶が使用された場合に一貫した改善が示されました。関連性、最新性、重要性を組み合わせた重み付き記憶検索は、コンテキスト対応応答の維持に有効であることが証明されました。"
+
+contributions:
+  main_contributions:
+    - "物語入力を没入型インタラクティブ体験に変換する新しいウェブベースプラットフォームNarrativePlayを開発しました。システムは、高度なマルチモーダルLLMを使用してテキストをストーリー設定、キャラクター肖像画、音声の視覚表示と同期させます。"
+    - "事前定義された役割に従いながら人間らしい応答を生成する本物のキャラクター生成のために、物語からキャラクター特性を抽出することを提案しました。これは、手動設定なしで多様なシナリオにわたってエージェントを設計するための一般的なフレームワークとして機能します。"
+    - "リソース集約的な事前定義サンドボックスの代わりに、ユーザー選択視点からの主要ストーリーラインイベントに焦点を当てることを導入しました。このアプローチは、適応性を向上させながら複雑な世界を管理可能な視覚に簡素化します。"
+    - "プレイヤー行動を分類し、エージェント応答品質を評価するためにインタラクティブ物語における一般的な質問をコンパイルしました。人間と自動評価方法を含む包括的評価フレームワークを提供しました。"
+  
+  limitations:
+    - "API アクセスの欠如によりMidjourneyの画像生成に手動入力が必要"
+    - "FakeYou API待機時間がリアルタイム音声生成に悪影響"
+    - "システムは線形イベントタイムラインを想定し、時間ジャンプやフラッシュバックを除外"
+
+narrative_understanding_aspects:
+  - "Character / Entity Understanding"
+  - "Story Generation"
+  - "Narrative Question Answering"
+  - "other"  # Interactive narrative role-playing
+
+keywords:
+  - "interactive narrative"
+  - "narrative understanding"
+  - "large language models"
+  - "character extraction"
+  - "multimodal synthesis"
+  - "personality traits"
+  - "memory retrieval"
+  - "immersive storytelling"
+  - "agent-based interaction"
+
+notes: "システムデモンストレーションはhttp://narrative-play.eastus.cloudapp.azure.com/で利用可能。手動サンドボックス構築を必要とすることなく、静的な物語を動的でインタラクティブな体験に変換することに焦点を当てています。"

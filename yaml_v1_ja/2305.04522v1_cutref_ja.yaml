@@ -1,0 +1,129 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Event Knowledge Incorporation with Posterior Regularization for Event-Centric Question Answering"
+  authors:
+    - "Junru Lu"
+    - "Gabriele Pergola"
+    - "Lin Gui"
+    - "Yulan He"
+  year: 2023
+  venue: "arXiv"
+  paper_url: "https://github.com/LuJunru/EventQAviaPR"
+
+problem_statement:
+  background: "質問応答は、QAペアがエンティティに関する知識を中心とするエンティティ中心コーパスで広範に探求されています。最近、時間的、因果的、イベント階層関係などのイベント意味関係の推論を必要とするQAモデルを開発する試みが行われています。イベントは様々な意味関係を形成し、既存のイベント中心QAデータセットは段落、質問、回答でイベントトリガーに注釈を付けています。"
+  
+  gap_or_challenge: "イベント中心QAの主要な課題は、与えられたコンテキストでイベント意味関係の推論を実行する必要があることです。これは通常質問エンティティとテキスト内のエンティティ間の統計的相関に依存するエンティティ中心QAと比較してより困難です。PLMは自己教師ありでエンティティ知識を容易に学習できますが、PLMに複雑なイベント意味知識を符号化することははるかに困難です。"
+  
+  research_objective: "この研究では、イベントトリガー注釈から抽出されたイベント知識を事後正則化を通じて組み込み、イベント中心QAのための主流QAモデルのイベント推論能力を改善する単純だが効果的な戦略を提案します。このアプローチはイベントトリガー注釈に基づいてイベント関連知識制約を定義し、それらを使用して事後回答出力確率を正則化します。"
+  
+  significance: "提案されたアプローチは既存の事前訓練言語モデルにイベント知識を効果的に注入し、2つのイベント中心QAデータセット、TORQUEとESTERでの回答評価において既存QAモデルと比較して強い性能を達成します。"
+
+tasks:
+  - task_name: "Event-Centric Extractive Question Answering"
+    
+    task_overview: "イベント意味関係の推論を必要とするイベント中心質問のためのテキスト段落からの回答抽出。このタスクは質問イベントと指定された意味関係（時間的、因果的、階層的など）を持つイベントトリガーを含む回答スパンの特定を含みます。モデルはイベント関係を理解し、コンテキストで関連する回答イベントを特定しなければなりません。"
+    
+    input_description: "イベント中心質問とペアになったテキスト段落。段落、質問、回答でイベントトリガーが注釈。ESTER：段落（3-4文）、関係タイプラベル付き質問。TORQUE：段落（2文）、時間的イベント質問。RoBERTaでは{<s>質問</s></s>段落}として入力フォーマット。"
+    
+    output_description: "各トークンが回答スパンの一部かどうかを示す'I'または'O'タグでラベル付けされたシーケンス。TORQUE：イベントトリガーのリスト。ESTER：段落からのテキストスパン。"
+  
+  - task_name: "Event-Centric Generative Question Answering"
+    
+    task_overview: "自由形式テキストでイベント中心質問の回答を生成。このタスクは質問イベントと指定された意味関係を持つ回答イベントを含むテキストの生成を要求します。モデルはイベント関係を理解し、適切な回答テキストを生成しなければなりません。"
+    
+    input_description: "イベント中心質問とペアになったテキスト段落。ESTERのみ（生成的TORQUEなし）。関係タイプをプロンプトとしてT5では{t:質問\\n段落}として入力フォーマット。"
+    
+    output_description: "回答イベントを含む生成テキスト。';'トークンで分離された複数回答。フォーマット：{回答1; 回答2; ...}"
+
+methodology:
+  method_name: "Posterior Regularization for Event-Centric QA"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "このフレームワークはイベント知識制約を注入するために事後正則化を使用します。抽出的QA：文が回答イベントを含むかを評価する文レベルイベント知識制約f(xs,y)を定義。g'(ek)=σ(Wg*ek+bg)を使用してイベントekが回答イベントかを予測。注意を使用したイベント分類結果の重み付き集約により文正則化スコアf'(xs,y)を計算。回答確率を更新：p(Y^|x)=p(Y0|x)exp{f'(x,Y)}。生成的QA：回答イベントに報酬τ1、無関係イベントに罰則τ2を持つトークンレベル制約f(yi)を定義。直接確率調整の代わりに、報酬＆罰則項rtと関連損失LRPを定義。全体的損失は主要QA損失とハイパーパラメータλ1（抽出的）およびλ2（生成的）で重み付けされた制約損失を組み合わせ。"
+  
+  base_models:
+    - "RoBERTa-large (extractive QA)"
+    - "UnifiedQA-T5-large (generative QA)"
+  
+  key_innovations:
+    - "抽出的QAのための文レベルイベント知識制約"
+    - "生成的QAのためのトークンレベル報酬と罰則メカニズム"
+    - "階層制約設計（トークンレベルg(ek)と文レベルf(xs,y)）"
+    - "イベント分類結果の注意重み付き集約"
+    - "生成的QAのための追加損失項による間接正則化"
+
+datasets:
+  - dataset_name: "ESTER"
+    characteristics: "3-4の連続文を持つ1.9k TempEval3ニューススニペット、スニペットあたり少なくとも7つのイベントトリガー。6kクラウドソース回答可能イベント中心質問。5つのイベント関係タイプ：因果（43.1%）、条件（21.3%）、反実仮想（7.1%）、サブイベント（15.6%）、共参照（12.9%）。サブイベント除き質問あたり平均1-2回答（サブイベント3+回答）。"
+    usage: "抽出的・生成的QA評価の両方"
+    size: "4,547 training, 301 development, 1,170 test instances"
+    domain: "news"
+    is_new: false
+    new_dataset_contribution: null
+  
+  - dataset_name: "TORQUE"
+    characteristics: "TE3コーパスからの3.2kニュース段落に対する30.4k時間的イベント中心質問。2文スニペット。'過去'、'進行中'、'将来'イベントについてのハードコード質問とユーザー生成時間関係質問。回答は単一イベントトリガーのリスト。"
+    usage: "抽出的QA評価のみ"
+    size: "24,523 training, 1,483 development, 4,468 test instances"
+    domain: "news"
+    is_new: false
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "利用できないテストセット正解により開発セットでの評価。ESTERのメトリック：FT1（ユニグラム重複）、HIT@1（トップ回答が左端ゴールドと同じトリガーを含む）、EM（完全一致）。TORQUEのメトリック：トークンレベルマクロF1、EM、一貫性C（F1≥80%のコントラストグループの割合）。バランス重みを持つ統一I-Oタギングスキーマ。微調整ベースラインとTranCLR（ESTER最先端）との比較。"
+  
+  main_results: "抽出的QA - ESTER：PRはFT1=74.0%、HIT@1=81.7%、EM=18.3%を達成（ベースライン73.7%、77.4%、15.3%に対し）。TORQUE：PRはF1=76.2%、EM=50.8%、C=37.5%を達成（ベースライン75.8%、50.8%、36.1%に対し）。生成的QA - ESTER：PRはFT1=71.4%、HIT@1=86.7%、EM=26.0%を達成（ベースライン66.8%、87.2%、24.4%に対し）。抽出的QAのHIT@1でTranCLRを上回る。"
+  
+  metrics_used:
+    - "FT1 (token F1)"
+    - "HIT@1"
+    - "Exact Match (EM)"
+    - "Macro F1"
+    - "Consistency metric C"
+  
+  human_evaluation_summary: null  # No human evaluation reported
+
+results_analysis:
+  key_findings:
+    - "I-OタギングスキーマがESTERで4.9% FT1と10.7% HIT@1改善をもたらす"
+    - "PRはメトリックとデータセット全体で一貫した改善を提供"
+    - "文レベル制約はトークンレベルアプローチよりも高レベル言語情報を組み込む"
+    - "短い単一トークン回答によりTORQUEでは限界的改善"
+    - "アブレーションは推論時にイベントトリガー位置あり/なしで類似性能を示す"
+    - "温度パラメータτ1とτ2が生成的QA性能に影響"
+  
+  ablation_summary: "推論時にイベントトリガー情報を除去するRo-L PR（-trig）アブレーションはほぼ同一性能を示し（ESTER：17.6 vs 18.3 EM、TORQUE：37.7 vs 37.5 C）、モデルがイベントを独立して特定することを学習することを示す。τ1とτ2パラメータのグリッドサーチは付録で報告。"
+
+contributions:
+  main_contributions:
+    - "イベント中心QAにイベント知識で事後正則化を適用する初の研究。"
+    - "トークンレベルと文レベルコンポーネントを持つ階層設計を使用した抽出的QAのための新しい文レベルイベント知識制約。"
+    - "回答生成確率を間接的に正則化する生成的QAのためのトークンレベル報酬と罰則メカニズム。"
+    - "推論時に不要でもイベントトリガー注釈がQA性能を効果的に改善できることの実証。"
+  
+  limitations:
+    - "統一フレームワークにもかかわらず抽出的・生成的設定に別々のG関数が必要"
+    - "単一トークン回答を持つTORQUEデータセットでの限界的改善"
+    - "モデルは明示的に注釈されたイベントトリガーのみを考慮、暗示的イベント情報は考慮せず"
+    - "将来の研究ではイベント引数と関係、外部イベント知識グラフを探求可能"
+    - "強化学習はメタG関数を自動的に学習可能"
+
+narrative_understanding_aspects:
+  - "Narrative QA"  # Event-centric QA with temporal, causal, hierarchical relations
+  - "other"  # Event semantic relation reasoning
+
+keywords:
+  - "event-centric question answering"
+  - "posterior regularization"
+  - "event knowledge incorporation"
+  - "event triggers"
+  - "sentence-level constraints"
+  - "token-level constraints"
+  - "extractive QA"
+  - "generative QA"
+  - "event semantic relations"
+
+notes: "Code and models available at https://github.com/LuJunru/EventQAviaPR. Evaluation performed on development sets as test set ground truth unavailable. Event trigger annotations required during training but not inference."

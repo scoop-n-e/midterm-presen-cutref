@@ -1,0 +1,146 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Event Temporal Relation Extraction with Bayesian Translational Model"
+  authors:
+    - "Xingwei Tan"
+    - "Gabriele Pergola"
+    - "Yulan He"
+  year: 2023
+  venue: "EACL 2023"
+  paper_url: "https://aclanthology.org/2023.eacl-main.80/"
+
+problem_statement:
+  background: "イベントとそれらが時間的にどのように進化するかを理解することは、自然言語理解と多数の関連タスクにとって有益です。イベントは様々な時間的関係を通じて複雑な構造を形成することが多く、これは人間にとっても追跡が困難です。異なるコンテキストにわたる時間的関係の幅広い言語表現が、この複雑さをさらに増しています。"
+  
+  gap_or_challenge: "イベント時間関係抽出のための既存のモデルは、外部知識を組み込むための原理的な方法を欠いています。ほとんどのアプローチは、常識的知識の使用が限定的なエンドツーエンドのニューラルアーキテクチャです。多くの時間的関係は言語的な類似性を共有していますが、時間的情報がどのように表現されるかを決定する暗黙の知識によって特徴付けられており、これはドメイン間で大きく異なります。現在の方法は知識の特徴でイベント表現を更新しますが、モデルの信念を更新する原理的な方法を欠いています。"
+  
+  research_objective: "この研究は、時間関係表現を潜在変数としてモデル化し、ベイズ推論と変換関数を介してその値を推論するベイズ学習ベースの方法であるBayesian-Transを導入します。このアプローチは、ATOMICなどの外部ソースからの事前時間知識を組み込みながら、予測に関する不確実性をエンコードおよび表現するモデルの能力を強化することを目的としています。"
+  
+  significance: "提案されたアプローチは、常識的知識を組み込み、イベント時間関係のアノテーション付きデータの不足を緩和するための原理的な方法論を提供します。ベイズ学習と変換モデルを組み合わせることにより、この方法はより良い一般化と不確実性の定量化を可能にし、分布外のコンテキストでの過度に自信のある予測を回避します。"
+
+tasks:
+  - task_name: "Event Temporal Relation Extraction"
+    
+    task_overview: "このタスクは、テキストで与えられた2つのイベント間の時間関係タイプを予測するモデルの能力を評価します。タスクでは、あるイベントが別のイベントの前、後、または同時に発生するか、またはそれらの関係が曖昧であるかを判断する必要があります。トリガーベースの抽出とは異なり、イベントは特定のトリガー単語なしでイベントペアとして表されます。タスクは、正しく解釈するために常識的知識を必要とする複雑な言語構造と暗黙の時間情報のために困難です。"
+    
+    input_description: "モデルは、2つのイベント（ヘッドイベントとテールイベント）を含むコンテキストを受け取ります。イベントはテキスト文からエンコードされ、それらのコンテキスト表現は事前学習済み言語モデルを使用して抽出されます。入力は、言語的複雑さが異なる複数の文にまたがる場合があります。"
+    
+    output_description: "システムは、事前定義されたセット（BEFORE、AFTER、EQUAL/SIMULTANEOUS、VAGUE）から時間関係タイプを出力します。予測は、変換されたイベント埋め込みの距離ベースの関数を使用して各関係タイプのスコアを計算することによって行われます。"
+
+methodology:
+  method_name: "Bayesian Translational Model (Bayesian-Trans)"
+  
+  approach_type: "neural"
+  
+  core_technique: "提案手法は、時間関係抽出のためにベイジアンニューラルネットワークと変換モデルを組み合わせています。イベント表現は、ATOMIC知識グラフでファインチューニングされたBARTモデルであるCOMET-BARTを使用してエンコードされます。変換パラメータ（関係行列と変換ベクトル）は、ガウス分布に従う潜在変数として扱われます。これらのパラメータは、償却変分推論を通じて推論され、事後分布は入力イベントに条件付けられ、事前分布は外部知識グラフから導出されます。モデルは変換モデルとしてMuRE（Multi-Relational Poincaré Embeddings）を使用し、イベント埋め込みに関係固有の変換を適用します。安定した推論を確保し、事後崩壊を防ぐために、最大平均差異（MMD）が正則化として使用されます。"
+  
+  base_models:
+    - "COMET-BART"
+    - "MuRE (Multi-Relational Embeddings)"
+    - "RGCN (for prior learning)"
+  
+  key_innovations:
+    - "不確実性定量化のためのベイジアンフレームワークで変換パラメータを潜在変数として扱う"
+    - "ATOMIC知識グラフから学習された事前分布を通じて常識的知識を組み込む"
+    - "エンドツーエンドの微分可能学習のための再パラメータ化トリックを用いた変分推論の使用"
+    - "安定した事後推論のための正則化として最大平均差異（MMD）を採用"
+    - "知識認識コンテキストエンコーディング（COMET-BART）とベイジアン変換モデルの組み合わせ"
+
+datasets:
+  - dataset_name: "MATRES"
+    
+    characteristics: "主要な時間軸に焦点を当てたMulti-Axis Temporal RElations for Start-pointsデータセット。イベント間の時間関係は、それらの終点によって決定され、一貫したアノテーター間の合意をもたらします。密にアノテーションされた時間関係を含みます。"
+    
+    usage: "時間関係抽出モデルのトレーニングと評価のための主要データセット"
+    
+    size: "12,740 event relation pairs"
+    
+    domain: "news"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "TCR (Temporal and Causal Reasoning)"
+    
+    characteristics: "MATRESと同じアノテーションスキームに従いますが、イベント関係ペアの数ははるかに少ないです。一般化をテストするためのクロスデータセット評価に使用されます。"
+    
+    usage: "モデルの一般化をテストするための評価データセット"
+    
+    size: "2,646 event relation pairs"
+    
+    domain: "news"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "TimeBank-Dense (TBD)"
+    
+    characteristics: "最も顕著なイベントに焦点を当てて密にアノテーションされたデータセット。他のデータセットには存在しないINCLUDEおよびISINCLUDED関係を含む6つのイベント時間関係を提供します。"
+    
+    usage: "異なるアノテーションスキームを持つ追加の評価データセット"
+    
+    size: "12,715 event relation pairs"
+    
+    domain: "news"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "モデルはMATRESトレーニングセットでトレーニングされ、MATRESテストセット、TCR、およびTimeBank-Denseで評価されます。評価は、特定の定義に従ってMATRESとTCRにF1スコアを使用し、TimeBank-Denseにマイクロ-F1を使用します。モデルは、常識的知識の組み込みがあるベースラインとないベースラインと比較されます。追加の分析には、アブレーション研究、事前分布の比較、およびエントロピーと相互情報量メトリクスを使用した不確実性定量化が含まれます。"
+  
+  main_results: "Bayesian-TransはMATRESで82.7％のF1を達成し、以前の最高のモデル（HGRU +知識）を2.2％上回りました。TCRでは86.1％のF1を獲得し、最高のベースラインを2.4％上回りました。TimeBank-Denseでは65.0％のマイクロ-F1を達成し、UASTを0.7％改善しました。モデルは、特にATOMICからRGCN学習事前分布を組み込むときに大幅な向上を示します（MATRESで標準ガウス事前分布の81.2％に対して82.7％）。アブレーション研究により、ベイジアン学習が非ベイジアンバリアントよりも0.9-2.5％の改善を提供することが確認されました。"
+  
+  metrics_used:
+    - "F1-score"
+    - "Micro-F1"
+    - "Precision"
+    - "Recall"
+    - "Entropy (uncertainty)"
+    - "Mutual Information (model uncertainty)"
+  
+  human_evaluation_summary: null
+
+results_analysis:
+  key_findings:
+    - "COMET-BARTエンコーディングは、時間関係に対してRoBERTaよりも優れたコンテキスト表現を提供"
+    - "ベイジアン学習は自然に事前知識を組み込み、非ベイジアンバリアントよりも0.9-2.5％パフォーマンスを改善"
+    - "ATOMICからのRGCN学習事前分布は、標準ガウスまたはMuRE事前分布と比較して最高の活性化と最高のパフォーマンスを示す"
+    - "モデルは合理的な不確実性定量化を示し、より単純な言語構造でより高い信頼度を示す"
+    - "イベントが異なる文に存在する場合、エラー率が19％増加"
+  
+  ablation_summary: "ベイジアン学習を削除すると、MATRESでF1が0.9-1.8％、TBDで0.2-2.5％減少します。COMET-BARTはコンテキストエンコーダーとしてRoBERTaを上回ります。ベイジアンフレームワークなしのMuRE単独では、単純なMLPよりも改善を示しません。RGCN学習事前分布は標準ガウス事前分布を大幅に上回ります。"
+
+contributions:
+  main_contributions:
+    - "イベント時間関係抽出のための新しいベイジアン変換モデルを定式化し、変換パラメータを変分推論を通じて推論される潜在変数として扱います。これにより、原理的な不確実性定量化と知識の組み込みが可能になります。"
+    - "ベイジアンフレームワークの下で3つの異なる事前分布（標準ガウス、MuREベース、RGCNベース）を考案および探索し、効果的な知識組み込みを研究します。ATOMICからのRGCN学習事前分布は優れたパフォーマンスを示します。"
+    - "3つのベンチマークでの実験結果は最先端のパフォーマンスを示しています。モデルはMATRESで82.7％のF1、TCRで86.1％、TimeBank-Denseで65.0％のマイクロ-F1を達成し、不確実性定量化と事前分布の有効性の包括的な分析を行いました。"
+  
+  limitations:
+    - "アプローチはイベントペアを入力として取ります。異なる文のイベントではエラー率が19％増加"
+    - "現在の作業は時間関係のみを処理します。因果関係または階層関係に拡張可能"
+    - "知識ソースとしてATOMICに限定。複数のソースに拡張可能"
+    - "すべての変換モデルが徹底的に調査されたわけではない"
+
+narrative_understanding_aspects:
+  - "Reading Comprehension"  # Understanding temporal relations between events in text
+  - "Narrative Consistency Check"  # Ensuring temporal consistency in event sequences
+  - "Plot / Storyline Extraction"  # Extracting temporal structure of events
+
+keywords:
+  - "event temporal relation"
+  - "Bayesian learning"
+  - "translational models"
+  - "variational inference"
+  - "commonsense knowledge"
+  - "ATOMIC"
+  - "uncertainty quantification"
+  - "MuRE"
+  - "COMET-BART"
+
+notes: "この研究は、時間関係抽出のためにベイジアン学習と変換モデルをユニークに組み合わせています。このアプローチは、学習された事前分布を通じた常識的知識の原理的な組み込みと、予測の不確実性を定量化する能力で特に注目に値します。"

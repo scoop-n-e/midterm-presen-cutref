@@ -1,0 +1,225 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Generating Contrastive Narratives Using the Brownian Bridge Process for Narrative Coherence Learning"
+  authors:
+    - "Feiteng Mu"
+    - "Wenjie Li"
+  year: 2024
+  venue: "ACL 2024"
+  paper_url: "https://aclanthology.org/2024.acl-long.353/"
+
+problem_statement:
+  background: "物語推論は、これらのイベントがどのように、なぜ起こったかの説明とともに、イベントの発展の説明であり、常識的因果推論と仮説推論を含む様々な応用を引き起こしています。物語推論の主要な課題は物語の一貫性を評価することです。"
+  
+  gap_or_challenge: "既存の手法は主に、大規模な実際の物語からの肯定的サンプルとサンプリングベースの戦略で作成された否定的サンプルを用いた自己教師ありタスクの考案に焦点を当てています。しかし、これらの戦略は一般的に粗粒度で表面的で、シャッフル、マスキング、モデル完成シーケンスの使用などです。結果として生じる否定的サンプルは、無関係であったり反復的であったりするなど品質が低く、代表性が低く容易に区別可能という問題に直面しています。"
+  
+  research_objective: "我々は、(1) 物語とその対比的変形の交錯、(2) イベントレベル置換を含む、困難な否定的サンプルを採掘するための2つの戦略を考案します。対比的変形を取得するために、我々は生成された対比的物語の品質を保証するためにブラウン橋過程を利用します。"
+  
+  significance: "この研究は、実際の物語に類似しているが実際はより一貫性の低い高品質の困難な否定的サンプルを生成することで、物語一貫性学習における重要な制限に対処します。この手法は物語推論タスクのためのより効果的な対比学習を可能にします。"
+
+tasks:
+  - task_name: "Multi-Choice Narrative Reasoning Tasks"
+    
+    task_overview: "これらのタスクは、COPA、e-Care、αNLI、Cloze、Swag、HellaSwagを含む様々なデータセットにわたって物語一貫性学習を評価します。モデルはコンテキストが与えられた複数の選択肢から最も一貫性のある選択肢を選択しなければなりません。これらのタスクは常識推論、因果推論、物語理解能力をテストします。"
+    
+    input_description: "モデルはコンテキストと複数の選択肢候補を受け取ります。COPAなどのデータセットでは、入力には前提と因果関係を持つ2つの代替案が含まれます。Swag/HellaSwagでは、部分的な文と複数の完成選択肢が含まれます。"
+    
+    output_description: "システムは訓練された一貫性評価器（CohEval）を使用して最も一貫性のある選択肢を選択します。出力は最高一貫性スコアを持つ選択された選択肢です。性能は正解率で測定されます。"
+  
+  - task_name: "TimeTravel (Counterfactual Story Generation)"
+    
+    task_overview: "このタスクは、修正されたコンテキストとの一貫性を維持しながら元の結末を最小限に編集する反事実的物語結末を生成することを要求します。元の物語と文脈への反事実的修正が与えられると、モデルは適切な代替結末を生成しなければなりません。"
+    
+    input_description: "モデルは事象を持つ元の物語、コンテキストへの反事実的修正（1つの事象の変更）、新しいコンテキストに適合するように書き直す必要がある元の結末を受け取ります。"
+    
+    output_description: "システムはCohEvalを一貫性ガイダンスとしてMCMCベースサンプリングを使用して反事実的結末を生成します。出力はBLEU4、BertScore、ENTScore、および流暢性、一貫性、最小編集の人間評価を使用して評価されます。"
+
+methodology:
+  method_name: "Contrastive Narrative Learning with Brownian Bridge Process"
+  
+  approach_type: "neural"
+  
+  core_technique: "この手法は2つの主要コンポーネントで構成されます：(1) 物語進化を潜在空間での連続軌跡としてモデル化するブラウン橋過程を使用した対比的物語の生成。開始と終了イベントが与えられると、この手法はブラウン橋密度分布から異なる中間軌跡をサンプリングし、次にそれらをBARTで物語にデコードします。マスクプロンプト（85%マスク比率）は元のものに類似したイベントの生成を促進します。(2) 2つの戦略による困難な否定的サンプルの作成：交錯（物語とその対比的変形の接頭辞/接尾辞の交換）とイベントレベル置換（事前計算されたイベントプールからの類似代替案による個々のイベントの置換）。一貫性評価器（CohEval）はRoBERTaをバックボーンとする対比学習を使用して訓練されます。"
+  
+  base_models:
+    - "BART (for contrastive narrative generation)"
+    - "RoBERTa (for coherence evaluation)"
+    - "SimCSE (for event similarity computation)"
+  
+  key_innovations:
+    - "同じ開始/終了点を持つ高品質対比的物語を生成するためのブラウン橋過程"
+    - "物語セグメントを交換して困難な否定的サンプルを作成する交錯戦略"
+    - "補完的摂動戦略としてのイベントレベル置換"
+    - "多様性を確保しながら類似性を維持するための生成中のマスクプロンプト"
+    - "潜在空間での軌跡サンプリングに続く条件付きデコードの2段階アプローチ"
+
+datasets:
+  - dataset_name: "RocStories"
+    
+    characteristics: "5文物語を持つ豊富なイベント常識知識を含むデータセット。肯定的サンプルセットD+としてランダムに選択された20kサンプルを持つ訓練コーパスとして使用。"
+    
+    usage: "対比的物語生成と一貫性学習のための主要訓練データ"
+    
+    size: "完全データセットから選択された20kサンプル"
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "COPA"
+    
+    characteristics: "前提と2つの代替結果/原因を持つ常識的因果推論をテストするChoice of Plausible Alternativesデータセット。"
+    
+    usage: "多肢選択物語一貫性の評価データセット"
+    
+    size: "1000例（500テスト）"
+    
+    domain: "mixed"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "e-Care"
+    
+    characteristics: "コンテキストと因果関係選択肢を持つ説明可能因果推論を探索するためのデータセット。"
+    
+    usage: "評価データセット（テストセットが公開されていないため検証セットをテストセットとして使用）"
+    
+    size: "指定なし"
+    
+    domain: "mixed"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "αNLI"
+    
+    characteristics: "最も妥当な説明の選択を要求するAbductive Natural Language Inferenceデータセット。"
+    
+    usage: "仮説推論の評価データセット"
+    
+    size: "指定なし"
+    
+    domain: "mixed"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "Cloze"
+    
+    characteristics: "2つの選択肢から正しい物語結末の選択を要求するStory Cloze Test。"
+    
+    usage: "物語完成の評価データセット"
+    
+    size: "指定なし"
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "Swag"
+    
+    characteristics: "根拠のある常識推論のためのSituations With Adversarial Generationsデータセット。"
+    
+    usage: "常識推論の評価データセット"
+    
+    size: "指定なし"
+    
+    domain: "mixed"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "HellaSwag"
+    
+    characteristics: "敵対的にフィルタリングされた間違った答えを持つSwagのより挑戦的バージョン。"
+    
+    usage: "評価データセット（テストセットが公開されていないため検証セットをテストセットとして使用）"
+    
+    size: "指定なし"
+    
+    domain: "mixed"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "TimeTravel"
+    
+    characteristics: "コンテキスト変更に基づく物語結末への最小編集を要求する反事実的物語書き直しデータセット。"
+    
+    usage: "一貫性ガイダンス付きテキスト生成の評価データセット"
+    
+    size: "指定なし"
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "ゼロショット設定での複数タスクにわたる包括的評価。多肢選択タスクでは、正解率が測定される。TimeTravel生成では、自動メトリクス（BLEU4、BertScore、ENTScore、HMean）と人間評価（流暢性、最小編集、一貫性）が使用される。アブレーション研究は異なる否定的サンプリング戦略の貢献を検証（イベント置換のみのMER、交錯のみのMCC）。1ショットプロンプトを使用するLLMや他の対比手法との比較。"
+  
+  main_results: "多肢選択タスクで、CohEvalはCOPAで77.8%、e-Careで71.9%、αNLIで67.6%、Clozeで77.6%、Swagで67.4%、HellaSwagで44.9%を達成し、すべての対比訓練ベースラインを上回る。TimeTravelでは、HMean 39.77を達成し、EDUCAT（37.82）を上回る。人間評価では、EDUCATに対して流暢性（27.0%）、一貫性（33.7%）で勝利し、最小編集では同等。"
+  
+  metrics_used:
+    - "Accuracy (multi-choice tasks)"
+    - "BLEU4"
+    - "BertScore"
+    - "ENTScore"
+    - "HMean"
+    - "Human evaluation (Fluency, Min-Edits, Coherence)"
+  
+  human_evaluation_summary: "TimeTravelの100ケースを3人の注釈者が評価。CohEvalはEDUCATに対して勝利：流暢性27.0% vs 13.7%、一貫性33.7% vs 4.7%、最小編集23.0% vs 24.7%。Fleiss's kappa：0.488（流暢性）、0.507（最小編集）、0.428（一貫性）。対比的物語品質について、BB手法はChatGLM2と同等の性能を示し、アブレーション変形より優れる。"
+
+results_analysis:
+  key_findings:
+    - "交錯戦略（MCC）は一般的にイベントレベル置換（MER）単独を上回る"
+    - "両方の否定的サンプリング戦略を組み合わせると最良の性能を達成"
+    - "マスクプロンプト比率0.85が類似しつつ多様な対比的物語を生成するのに最適"
+    - "生成された否定的サンプルは肯定的サンプルの94.6に対してENTScore 65.9（交錯）と54.5（置換）"
+    - "例あたり60の保持された対比的物語が最適性能を提供"
+    - "t-SNE可視化はCohEvalが肯定的・否定的例を成功裏に分離することを示す"
+  
+  ablation_summary: "プロンプトなし：-4.6%の平均低下；軌跡なし：-5.1%低下；埋め込みベースライン：-7.1%低下。MER単独はMCCより高いBLEU4だが低いENTScoreを達成し、類似性と一貫性評価間のトレードオフを示す。ランダム物語との交錯はBB生成対比的物語と比較して大幅に劣化。"
+
+contributions:
+  main_contributions:
+    - "我々は、元の物語と同じ開始・終了点を維持しながら異なる中間イベントを持つ高品質対比的物語を生成するためにブラウン橋過程の使用を提案します。"
+    - "我々は物語とその対比的変形の交錯とイベントレベル置換という困難な否定的サンプルを作成する2つの補完的戦略を考案し、これらが合わさって物語一貫性学習を改善します。"
+    - "我々は複数の下流タスクにわたって強力な性能を達成する完全に自己教師あり対比学習で訓練された一般的物語一貫性評価器CohEvalを開発します。"
+  
+  limitations:
+    - "対比的物語が元と同じ開始・終了イベントを持つ必要があると仮定するが、これは現実を反映しない可能性"
+    - "リソース制限によりChatGPT性能を上回ることができない"
+    - "手法は識別的であるのに対しLLMは生成的で、異なる利点につながる"
+    - "計算制約により小さな事前訓練モデルに制限"
+
+narrative_understanding_aspects:
+  - "Narrative Consistency Check"  # Core focus on coherence evaluation
+  - "Story Generation"  # Counterfactual story generation via TimeTravel
+  - "Free-Form QA"  # Abductive and causal reasoning tasks
+  - "Reading Comprehension"  # Story completion and understanding tasks
+
+keywords:
+  - "contrastive learning"
+  - "narrative coherence"
+  - "Brownian Bridge process"
+  - "hard negatives"
+  - "counterfactual generation"
+  - "crisscrossing"
+  - "event-level replacement"
+  - "coherence evaluation"
+  - "self-supervised learning"
+
+notes: "この研究は物語一貫性学習のための困難な否定的サンプルを生成する革新的アプローチを導入します。潜在空間で物語軌跡をモデル化するためのブラウン橋過程の使用は特に新規で、人間注釈なしで高品質対比的例の生成を可能にします。"

@@ -1,0 +1,147 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "PARROT: Zero-Shot Narrative Reading Comprehension via Parallel Reading"
+  authors:
+    - "Chao Zhao"
+    - "Anvesh Rao Vijjini"
+    - "Snigdha Chaturvedi"
+  year: 2023
+  venue: "EMNLP 2023 Findings"
+  paper_url: "https://aclanthology.org/2023.findings-emnlp.895/"
+
+problem_statement:
+  background: "物語は長い間、言語的、科学的、文化的、社会的学習のための価値あるリソースとして認識されてきました。物語理解は人間の知能の基本的側面であり、認知発達と意味生成のための重要なツールと考えられています。この動機により、以前の研究は与えられた物語を自動的に理解し、それに関連する質問に回答することを含む物語読解タスクに取り組んできました。"
+  
+  gap_or_challenge: "固有名詞や事実情報の理解に典型的に焦点を当てる一般的テキスト理解と比較して、物語理解は独特の課題を提示します。それは時間的・因果的つながりとともにイベントを含む基本的な物語要素の理解；時間、場所、環境などの設定；キャラクターの動機、欲求、感情、関係を含むキャラクターの理解を要求します。一般的テキスト読解のための広範囲に注釈されたデータが利用可能にも関わらず、現在物語ドメインでは十分な注釈データが不足しており、一般的テキストデータで訓練されたモデルを物語読解に直接使用することは最適ではありません。"
+  
+  research_objective: "我々は同じ物語を語る2つの並列物語を含む並列読書を通じて物語読解のゼロショットアプローチPARROTを提示します。一つの物語を他方の理解を導く監督信号のソースとして活用することで、PARROTはテキスト内容を抽象化し、真の物語理解を発達させます。このアプローチは物語要素の選択的スパンマスキングと並列読書を用いたマスク言語モデリングを使用して、深い理解スキルを促進します。"
+  
+  significance: "この研究は、広範囲な注釈データを要求することなく物語読解のためのデータ効率的学習アプローチを可能にします。このアプローチは並列読書がいかに理解能力を向上させるかの理解を進歩させ、完全教師ありモデルに匹敵する性能を達成するゼロショット物語理解のフレームワークを提供します。"
+
+tasks:
+  - task_name: "Zero-Shot Narrative Reading Comprehension"
+    
+    task_overview: "このタスクはタスク固有のファインチューニングデータなしで物語を理解し質問に回答するモデルの能力を評価します。モデルはキャラクター、イベント、時間的・因果的関係、設定、キャラクターの動機を含む様々な物語要素を理解しなければなりません。このタスクは抽出能力（完全一致、パラフレーズ理解）と抽象的推論（マルチホップ推論、キャラクター動機の理解、イベント因果性）の両方を要求します。質問は単純な事実問い合わせから深い物語理解を要求する複雑な推論まで範囲します。"
+    
+    input_description: "モデルは物語テキスト（本のプロットサマリーや子どもの物語）と物語に関する自然言語質問を受け取ります。事前訓練中、モデルは異なるレンダリングスタイルで同じ物語を語る2つの並列物語と、質問から派生したマスクされた文を受け取ります。物語は平均150-659トークンの長さです。"
+    
+    output_description: "システムはエンティティ言及から説明的フレーズまでの質問への簡潔な回答を生成します。事前訓練中、モデルはマスクされた物語要素を予測します。推論時、質問はマスクされた文に変換され、モデルはマスクを埋めて回答を生成します。回答は参照回答に対するROUGEスコアを使用して評価されます。"
+
+methodology:
+  method_name: "PARROT (Parallel Reading for Zero-Shot Narrative Comprehension)"
+  
+  approach_type: "neural"
+  
+  core_technique: "PARROTは2段階アプローチを採用します。第一に、選択的スパンマスキングが一つの物語で重要な物語要素を特定しマスクします：(1) 固有名詞（9タイプ：Person、Location、GPE、Facility、Organization、Time、Date、Event、Products）でキャラクターと設定を特定；(2) 意味役割（5タイプ：Direction、Location、Time、Purpose、Cause、Manner）でイベント関連情報を捉える；(3) 動詞と形容詞句でイベントと特徴づけを理解。第二に、並列読書は短い物語のマスクされたスパンを予測するための証拠として、より長い並列物語を使用します。モデルはマスク言語モデリング損失でT5-baseを使用して事前訓練されます。推論時、質問は特別トークン（who、what、when、where、why、how）を通じて質問タイプ情報を保持しながらQA2Dを使用してマスクされた文に変換されます。これは事前訓練と推論フォーマット間の一貫性を維持し、ゼロショット適用を可能にします。"
+  
+  base_models:
+    - "T5-base (Raffel et al., 2020)"
+    - "T5-large, T5-XL, T5-XXL, UL2-20B (for scaling experiments)"
+  
+  key_innovations:
+    - "ランダムマスキングではなく多様な物語要素をターゲットとする選択的スパンマスキング"
+    - "抽象化のために同じ物語の2つの物語を使用する並列読書戦略"
+    - "質問タイプ情報を保持する質問からマスクされた文への変換"
+    - "並列物語からの回答可能性を保証する文とスパンレベルでのフィルタリング"
+    - "一貫したフォーマットのための質問タイプとマスクされたスパンタイプ間のマッピング"
+
+datasets:
+  - dataset_name: "NarraSum"
+    
+    characteristics: "映画とTVエピソードのプロット記述から取得した122Kの並列物語ペアのデータセット。処理後、57.4Kのペア物語と154.5Kの質問回答ペアを産出。短い物語と長い物語の平均長はそれぞれ125と926トークン。各物語ペアは平均2.7のマスクされたスパンを含む。"
+    
+    usage: "並列読書でPARROTの事前訓練に使用"
+    
+    size: "57.4Kのペア物語、154.5KのQAペア"
+    
+    domain: "mixed"  # movies and TV shows
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "NarrativeQA"
+    
+    characteristics: "本と映画スクリプトからのプロットサマリー。評価では、事前訓練データとの重複を避けるために本由来インスタンスのみを使用。平均物語長は659トークン。深い理解を要求する複雑な質問を含む。"
+    
+    usage: "評価のみ（テストセット）"
+    
+    size: "10,557質問回答ペア（テストセット）"
+    
+    domain: "mixed"  # books and movies
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "FairytaleQA"
+    
+    characteristics: "物語要素のために注釈された質問を持つ子どもの物語から派生した物語。平均物語長は150トークン。質問はタイプ（who、what、when、where、why、how）と物語要素（character、setting、action、causal、prediction、outcome、feeling）で分類。"
+    
+    usage: "評価のみ（テストセット）"
+    
+    size: "1,007質問回答ペア（テストセット）"
+    
+    domain: "children_stories"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "ファインチューニングなしでの2つの物語理解ベンチマークでのゼロショット評価。予測回答と正解回答間のROUGEスコア（ROUGE-1、ROUGE-2、ROUGE-L）を使用して性能を測定。Amazon Mechanical Turkで各データセットあたり100テストインスタンス、3人の注釈者による1-5リッカート尺度での人間評価を実施。IRベースライン、自動生成QAモデル（AE-QG）、大規模言語モデル（ChatGPT、Vicuna-13B）、上限としての完全教師ありモデルと比較。一つのデータセットで教師ありモデルを訓練し他でテストするドメイン外評価を実行。"
+  
+  main_results: "PARROTはFairytaleQAでROUGE-L 48.10（教師あり性能の89.0%）、NarrativeQAで55.32（85.8%）を達成。すべてのゼロショットベースラインを有意に上回る（p<0.01）。ドメイン外設定で、PARROTはFairytaleQAで競争的性能（48.10 vs 49.10教師あり）とNarrativeQAで優れた性能（55.32 vs 44.59教師あり）を示す。人間評価でPARROTはChatGPTの2.49と2.86に対して2.71（FairytaleQA）と3.10（NarrativeQA）をスコア。より大きなモデル（UL2-20Bまで）へのスケーリングは、ファインチューニングベースラインに接近・超越する段階的改善を示す。"
+  
+  metrics_used:
+    - "ROUGE-1"
+    - "ROUGE-2"
+    - "ROUGE-L"
+    - "Human evaluation (1-5 Likert scale)"
+    - "Inter-annotator agreement (Gwet's gamma: 0.7003)"
+  
+  human_evaluation_summary: "各データセットあたり100テストインスタンスを3人のAMTマスター注釈者が1-5尺度で評価。PARROTは一貫してベースラインを上回り、2.71（FairytaleQA）と3.10（NarrativeQA）をスコア。0.7003の注釈者間一致は実質的一致を示す。注釈者は時給14ドルで報酬。"
+
+results_analysis:
+  key_findings:
+    - "並列読書は性能を大幅改善：PARROTはPARROTsingleをFairytaleQAで8%、NarrativeQAで5.7%上回る"
+    - "性能改善は深い理解を要求する抽象的質問で最も顕著"
+    - "多様なマスキング戦略が重要：固有名詞のみでは不十分、意味役割と構成要素句が実質的向上を提供"
+    - "モデルはキャラクター識別（who）と活動（what）で競争的性能、感情状態と結果予測でより大きなギャップ"
+    - "抽象性が増加すると、単一と並列読書間のギャップが広がり、並列読書の価値を実証"
+  
+  ablation_summary: "増分マスキングが示す：ランダムマスキングは改善なし；固有名詞のみで35.1/48.7 ROUGE-L達成；意味役割追加で45.6/54.8到達；構成要素句付き完全モデルで48.6/55.7達成。質問タイプ分布：what（41.7%）、who（25.6%）、when（13.4%）、where（10.4%）、why（5.6%）、how（3.3%）。固有名詞はPERSON（72%）とORG（16.1%）が支配。"
+
+contributions:
+  main_contributions:
+    - "我々は同じ物語を語る2つの物語の並列読書を活用して、注釈された訓練データを要求することなく真の理解を発達させる物語読解の新しいゼロショットアプローチPARROTを提示します。"
+    - "我々は従来の事実情報抽出を超えて、物語理解のために特別に設計された多様な物語要素（固有名詞、意味役割、構成要素句）をターゲットとする選択的スパンマスキング戦略を導入します。"
+    - "我々は並列読書がモデルにテキスト内容を抽象化し基本的物語意味を理解させることを実証し、2つのベンチマークで教師あり性能の89%と86%を達成し、ドメイン外設定で教師ありモデルを上回ります。"
+  
+  limitations:
+    - "選択的マスキングはイベント予測やユーザー感情のような複雑な要素を適切に包含しない可能性"
+    - "スパン識別と質問変換のための特定のNLPモジュールへの依存"
+    - "要約などの他のタスクでは広範囲に探索されず、物語質問回答に焦点が制限"
+    - "実験は英語データセットでのみ実施"
+
+narrative_understanding_aspects:
+  - "Narrative QA"  # Core task of narrative question answering
+  - "Character / Entity Understanding"  # Understanding characters, motivations, relationships
+  - "Reading Comprehension"  # Deep comprehension of narrative content
+  - "Plot / Storyline Extraction"  # Understanding events and causal connections
+  - "Free-Form QA"  # Open-ended question answering requiring inference
+
+keywords:
+  - "zero-shot learning"
+  - "narrative comprehension"
+  - "parallel reading"
+  - "masked language modeling"
+  - "selective span masking"
+  - "narrative elements"
+  - "question transformation"
+  - "T5"
+  - "semantic roles"
+  - "constituency parsing"
+
+notes: "この研究は人間の並列読書戦略を模倣する物語理解への革新的アプローチを導入します。物語固有要素の選択的マスキングと並列読書の組み合わせは、注釈データなしで真の理解を可能にし、remarkable なゼロショット性能を達成します。"

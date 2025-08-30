@@ -1,0 +1,119 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Cascading Large Language Models for Salient Event Graph Generation"
+  authors:
+    - "Xingwei Tan"
+    - "Yuxiang Zhou"
+    - "Gabriele Pergola"
+    - "Yulan He"
+  year: 2025
+  venue: "NAACL"
+  paper_url: "https://github.com/Xingwei-Tan/CALLMSAE"
+
+problem_statement:
+  background: "イベントは人間のコミュニケーションの基盤を形成する基本的な言説単位であり、階層的、時間的、または因果的関係を通じて相互接続されています。イベント関係グラフは、ノードをイベント、エッジを関係として、複雑なイベント物語を表現し理解します。高品質のイベント関係グラフは質問応答や推論などの下流タスクを強化します。"
+  
+  gap_or_challenge: "文脈化イベントグラフ生成に関する既存研究は、CAEVOからの遠隔教師ありに依存しており、これはしばしば非顕著イベントで満たされたスパースで低品質なイベントグラフをもたらします。CAEVOは「say」や「think」などの些細なものを含むすべての動詞をイベントとして特定し、これらは最小限の接続を持ち物語理解にほとんど貢献しません。以前の方法は物語を理解するために重要な顕著なイベントを区別できません。"
+  
+  research_objective: "この研究では、高価な人間注釈を排除するためにLLMを活用する、SAlient Event graph生成のためのCAscading Large Language Modelフレームワーク「CALLMSAE」を提案します。この手法は最初にLLMに要約を生成させることで顕著なイベントを特定し、次にイベント関係グラフを生成するための反復的コード洗練プロンプト戦略を開発し、幻覚関係を除去し欠損エッジを回復します。"
+  
+  significance: "CALLMSAEは顕著でより正確なイベントグラフを生成する新しいフレームワークを導入し、競争的ベースラインを上回ります。この研究では遠隔教師あり信号として機能する大規模自動注釈イベントグラフデータセットNYT-SEGを提示します。NYT-SEGでのモデル微調整はCAEVOデータで訓練されたモデルを上回ります。"
+
+tasks:
+  - task_name: "Salient Event Graph Generation"
+    
+    task_overview: "ノードが顕著なイベントを表し、エッジが関係（階層的、時間的、因果的）を示す長い文書からイベント関係グラフを生成。このタスクは物語理解に重要な顕著なイベントを特定し、次にイベント関係を表す有向非循環グラフを構築することを要求します。このアプローチは顕著なイベントを特定するための要約テストとグラフ生成のためのコードベースプロンプトを使用します。"
+    
+    input_description: "ニュース記事（New York Timesコーパス）からの長い文書。文書はスポーツや国際政治などのドメインでイベント物語を記述する平均8-10段落。入力にはイベント抽出と関係特定が必要な生テキストが含まれます。"
+    
+    output_description: "顕著なイベントをノードとし、3つのタイプのエッジを持つイベント関係グラフ：階層的（サブイベント関係）、時間的（happened_before関係）、因果的（caused_by関係）。グラフはPythonコードを伴うNetworkX形式の有向非循環グラフとして表現されます。"
+
+methodology:
+  method_name: "CALLMSAE - Cascading LLMs Framework"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "CALLMSAEは様々なプロンプトをパイプライン方式で組み合わせます。段階1：要約テストを使用した顕著なイベント生成 - LLMは最初に要約を生成してからそこからイベントを抽出。段階2：コード完成としてのグラフ生成 - NetworkXパッケージを使用したPythonコードとしてプロンプトを策定し、各関係タイプ（階層的、時間的、因果的）を別々のDAGで生成。段階3：幻覚グレーダーによる反復的洗練 - 各生成エッジの文書での根拠を評価し、低信頼度エッジを除去してから欠損エッジを反復的に回復（最大5回）。段階4：関係タイプの補完 - 最初に階層的を予測し、それを時間的予測に使用し、次に両方を因果的予測に使用。実装はtemperature=0でLlama3-70Bをバックボーンとして使用。評価は意味的埋め込み（SFR-Embedding-Mistral）とハンガリアン割り当てアルゴリズムに基づく新しいHungarian Graph Similarity（HGS）メトリックを使用。"
+  
+  base_models:
+    - "Llama3-70B-instruct (primary)"
+    - "GPT-4-1106-preview"
+    - "GPT-3.5-turbo"
+    - "Mixtral-8x7B-instruct"
+    - "Flan-T5-base (fine-tuned)"
+    - "BERT/Longformer (baselines)"
+  
+  key_innovations:
+    - "顕著性のための要約とコードベースグラフ生成を組み合わせたカスケーディングLLMフレームワーク"
+    - "精度と再現率のバランスを取るための幻覚グレーダーによる反復的洗練"
+    - "効率的な単一パス関係生成のためのコードプロンプト戦略"
+    - "抽象的グラフの意味的ベース評価のためのHungarian Graph Similarity メトリック"
+    - "階層的→時間的→因果的順序を活用した依存関係生成"
+
+datasets:
+  - dataset_name: "NYT-SEG"
+    characteristics: "New York Timesコーパスからの大規模イベントグラフデータセット。総10,347文書（10,231 LLM生成訓練、100人間注釈テスト）。イベント物語を示す記述子（スポーツ、国際政治）に基づいて文書を選択。文書あたり平均8-10段落。人間注釈は顕著なイベント特定と3つの関係タイプを含む。"
+    usage: "顕著なイベントグラフ生成の訓練と評価のための主要データセット"
+    size: "10,347 documents with 757 human-annotated relations in test set"
+    domain: "news"
+    is_new: true
+    new_dataset_contribution: "3つの主要関係タイプを持つ顕著なイベントグラフに焦点を当てた初の大規模データセット。すべての動詞をイベントとして抽出するCAEVOとは異なり、NYT-SEGは物語に重要な顕著なイベントに焦点を当てる。LLM生成遠隔教師ありと、イベントでF1=0.819、関係でF1=0.677の評価者間一致を持つ人間注釈テストセットの両方を含む。"
+
+evaluation:
+  evaluation_strategy: "顕著性メトリック、グラフ品質評価、人間評価を組み合わせた多面的評価。顕著性は頻度、最初の出現、ストレッチサイズ特徴を使用して評価。グラフ品質は精度指向と再現率指向の変形を持つHungarian Graph Similarity（HGS）を使用して評価。CAEVO、微調整モデル（Madaan et al.、Tan et al.）、LLMベースラインとの比較。精度評価のための50文書での人間評価。制約違反チェックのための形式エラーとサイクル検出。"
+  
+  main_results: "顕著性：LLM生成イベントは人間注釈と類似の顕著性を示す（頻度0.09-0.10 vs 人間0.11）、CAEVOは低顕著性（0.05）。グラフ品質：CALLMSAEは最良の全体的HGSを達成（階層的0.334、時間的0.327、因果的0.295）。CALLMSAEデータでの微調整T5はすべてのCAEVOベースモデルを上回る（全体的HGS 0.348 vs CAEVO最良0.131）。人間評価は優位性を確認（0.69 vs ベースライン0.60）。Llama3はゼロ形式エラーとサイクルを示し、GPT-3.5は10.67%のサイクルを持つ。"
+  
+  metrics_used:
+    - "Hungarian Graph Similarity (HGS)"
+    - "Precision-oriented HGS (PHGS)"
+    - "Recall-oriented HGS (RHGS)"
+    - "Event saliency features (frequency, first appearance, stretch size)"
+    - "Inter-annotator agreement F1"
+    - "Human evaluation precision scores"
+    - "Format error and cycle rates"
+  
+  human_evaluation_summary: "Prolificから採用された3人の注釈者が100文書に注釈。顕著なイベントでF1=0.819、関係でF1=0.677の評価者間一致。50文書での追加評価はCALLMSAE精度0.69 vs ベースライン0.60を示す。注釈者はMixtral生成イベントがCAEVOより大幅に顕著であることを確認（F1 52.59% vs 3.49%）。"
+
+results_analysis:
+  key_findings:
+    - "LLM生成イベントはCAEVOイベントより大幅に顕著（2倍の頻度、より良いストレッチ）"
+    - "コードプロンプトはベースラインプロンプトのO(n²)に対してO(1)複雑度を達成"
+    - "幻覚グレーダーは再現率を維持しながら精度を効果的に増加"
+    - "依存関係生成は精度を改善（時間的0.211 vs 階層的なしで0.153）"
+    - "CALLMSAEデータでの微調整T5はCALLMSAE自体を上回り、効果的パターン学習を示す"
+    - "Llama3はゼロサイクルで優れた制約理解を実証"
+  
+  ablation_summary: "反復的洗練なし：すべての関係で低い精度。依存関係なし：時間的HGSは0.341から0.283に低下、因果的は類似のまま。コード形式なしのベースラインプロンプト：高い再現率だがずっと低い精度（階層的0.076 vs 0.196）。幻覚グレーダーなしのコードプロンプト単独：高い再現率だが低い精度。"
+
+contributions:
+  main_contributions:
+    - "CALLMSAE：文脈化モデルのための遠隔信号生成器として機能する顕著なイベントグラフ生成のための初のカスケーディングLLMフレームワーク。"
+    - "意味的埋め込みに基づく顕著なイベントグラフを比較するための新しい文脈化評価メトリック（Hungarian Graph Similarity）。"
+    - "NYT-SEG：10,231訓練文書と100人間注釈テスト文書を持つ大規模LLM生成顕著なイベントグラフデータセット。"
+    - "顕著なイベントグラフが文脈化グラフ生成を大幅に改善し、微調整モデルがCAEVOベースアプローチを上回ることの実証。"
+  
+  limitations:
+    - "計算コスト：NYT-SEGデータセット生成に2,200壁時計時間"
+    - "広範な最近の文献により、すべてのプロンプト組み合わせは探索されていない"
+    - "訓練データに基づくLLM顕著性好みでの潜在的バイアス"
+    - "コードテンプレート長がプロンプトでの実演例を制限"
+    - "ユーザー生成コンテンツに適用された場合のプライバシー懸念のリスク"
+
+narrative_understanding_aspects:
+  - "Plot / Storyline Extraction"
+  - "other"  # Salient event graph generation
+
+keywords:
+  - "salient event graphs"
+  - "cascading LLMs"
+  - "event relation extraction"
+  - "code prompting"
+  - "hallucination grading"
+  - "iterative refinement"
+  - "Hungarian graph similarity"
+  - "distant supervision"
+  - "narrative understanding"
+
+notes: "Code and data available at https://github.com/Xingwei-Tan/CALLMSAE. Work demonstrates effective use of LLMs for generating high-quality distant supervision without human annotation."

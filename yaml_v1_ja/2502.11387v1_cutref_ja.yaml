@@ -1,0 +1,162 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "RoleMRC: A Fine-Grained Composite Benchmark for Role-Playing and Instruction-Following"
+  authors:
+    - "Junru Lu"
+    - "Jiazheng Li"
+    - "Guodong Shen"
+    - "Lin Gui"
+    - "Siyu An"
+    - "Yulan He"
+    - "Di Yin"
+    - "Xing Sun"
+  year: 2025
+  venue: "arXiv"
+  paper_url: "https://github.com/LuJunru/RoleMRC"
+
+problem_statement:
+  background: "ロールプレイは大規模言語モデル（LLM）が役割アイデンティティと役割の事前定義能力制限を維持しながら多様な指示に従うために重要です。現代のLLMは特定のロールプレイ設定の下で人間ユーザーと相互作用し、AIアシスタント、パーソナライズエージェント、レジャーパートナー、コンテンツクリエイター、社会実験シミュレーターとして機能するよう設計されています。"
+  
+  gap_or_challenge: "既存のロールプレイデータセットは主に役割スタイルと知識境界の制御に貢献していますが、指示従う シナリオでのロールプレイを見落としています。現在のデータセットはネストされた優先順位付けされた要求などの細粒度・多層指示ではなく、ロールプレイの単一側面に焦点を当てています。細粒度指示従う能力でのロールプレイに焦点が欠けています。"
+  
+  research_objective: "この研究では、LLMの多様なロールプレイと指示従う能力の向上と評価を目的とした細粒度ロールプレイと指示従う複合ベンチマークRoleMRCを導入します。データセットは自由チャット、場面対話、ネストされた、多ターン、優先順位付けされた指示を持つルール付きチャットをカバーします。"
+  
+  significance: "RoleMRCは10.2kの構造化役割プロファイルを持つ最も包括的なロールプレイデータセットを提供します。既存のアプローチと直交する細粒度ロールプレイと指示従う能力を評価するフレームワークを提供し、RoleMRCで微調整されたモデルが一般的なロールプレイと推論能力を損なうことなく指示従うを強化することを実証します。"
+
+tasks:
+  - task_name: "Free Chats"
+    
+    task_overview: "標準化された役割プロファイルに基づく役割と想像ユーザー間の多ターン開放ドメイン会話。固定トピックや特定制約なしに役割とユーザーが自由に相互作用する最も単純な形のロールプレイ対話。ナレーション（全知視点からの役割の話す状態の鮮明な記述）あり/なしと異なる初期話者の変形を含みます。"
+    
+    input_description: "7つのコンポーネント（役割名/記述、能力/スキル、話し方、性格、経験/背景、知識境界、話し方例）を持つ標準化役割プロファイル。オプションのナレーション制御フラグ。"
+    
+    output_description: "平均9.47ターンと返答あたり38.62語の多ターン対話。キャラクター一貫性、話し方、有効時の適切なナレーション挿入を維持する役割応答。"
+  
+  - task_name: "On-scene MRC Dialogues"
+    
+    task_overview: "機械読解理解パッセージに焦点を当てたロールプレイ会話。関連パッセージについての多ターン対話と、役割がスタイル化回答、回答不可能質問への拒否、または境界外質問への試行を提供する単一ターンQAを含みます。回答可能性と知識境界に基づく8タイプ。"
+    
+    input_description: "役割プロファイル、MRCトリプレット（パッセージ、質問、回答）、関連性カテゴリ（役割に最も/最も関連性が少ない）。多ターンの場合：パッセージコンテキスト。単一ターンの場合：特定QAシナリオタイプ。"
+    
+    output_description: "多ターン対話（平均9.2ターン）または単一ターン応答：スタイル化回答（回答可能で境界内の場合）、拒否（回答不可能の場合）、または試行（知識境界外の場合）。返答あたり平均39-48語。"
+  
+  - task_name: "Ruled Chats"
+    
+    task_overview: "On-scene MRC Dialoguesに追加ルールが適用される複雑な指示従うシナリオ。3つのルールタイプ：多ターン（拒否後の回答強制）、ネストされたフォーマット（絵文字、大文字化、句読点、語数）、優先順位付け（システム対役割能力指示の対立）。高レベル制約への順守をテスト。"
+    
+    input_description: "On-scene MRC対話設定プラス特定ルール指示。多ターン：回答を強制するユーザープロンプト。ネストされた：フォーマット要件。優先順位付け：システムからの大域拒否指令。"
+    
+    output_description: "キャラクターを維持しながら指定ルールに従う役割応答。多ターン：拒否維持または試行変換での平均2ターン。ネストされた/優先順位付け：フォーマット準拠または対立解決での単一ターン。返答あたり平均42-46語。"
+
+methodology:
+  method_name: "RoleMRC Construction and Evaluation Pipeline"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "3段階パイプライン：（1）メタプール作成 - PersonaHubから10.5kペルソナをサンプル、GPT-4oで7コンポーネントを持つ標準化役割プロファイルに拡張、10.2k最終プロファイルにフィルタ。（2）MRCマッチング - MS-MARCOから808.7k MRC検索プールを作成、SFR-Embeddingを内積検索に使用して役割あたり最も/最も関連性の少ないMRCトリプレットを発見。（3）多段階対話合成 - 自由チャット（4変形）、場面対話（5kチャット + 8k単一ターンQA）、ルール付きチャット（3ルールタイプ）で38k指示を生成。評価：参照ベースメトリック（BLEU、ROUGE、METEOR、BERTScore）と5次元（知識境界、役割スタイル、多ターン/ネストされた/優先順位付け指示従う）での参照フリーLLM-as-judge。後調整：単一ラベルデータでSFT、ペアラベルデータでDPO。アライメント税を特定・制約するニューロンレベル分析。"
+  
+  base_models:
+    - "GPT-3.5-turbo"
+    - "GPT-4o (synthesis and baseline)"
+    - "LLaMA3.1-8B/70B-Instruct"
+    - "Qwen2.5-7B/72B-Instruct"
+    - "CharacterGLM-6B"
+    - "Humanish-Llama-3.1-8B"
+    - "Peach-9B-Roleplay"
+  
+  key_innovations:
+    - "初の大規模細粒度ロールプレイ指示従うデータセット"
+    - "7つの標準化コンポーネントを持つ10.2k構造化役割プロファイル"
+    - "知識境界テストのためのMRCとロールプレイの統合"
+    - "3カテゴリ対話合成（自由/場面/ルール付き）"
+    - "単一ラベルと並んで好み最適化のためのペアラベルデータ"
+    - "5次元LLM-as-judge評価フレームワーク"
+    - "アライメント税軽減のためのニューロンレベル分析と標的制約"
+
+datasets:
+  - dataset_name: "RoleMRC"
+    characteristics: "10.2k役割プロファイルを持つ37.9kロールプレイ指示。3カテゴリ：自由チャット（5k、9.47ターン）、場面MRC対話（5kチャットと8k単一ターンを含む13k）、ルール付きチャット（多ターン/ネストされた/優先順位付けルールで5.6k）。SFT用24k単一ラベル、HPO用14kペアラベル。平均3.5ターン、返答あたり40.6語。"
+    usage: "ロールプレイ指示従うの訓練と評価"
+    size: "37.9k instructions, 1.4k test samples"
+    domain: "mixed"
+    is_new: true
+    new_dataset_contribution: "細粒度ロールプレイと指示従うシナリオ、MRC統合、構造化役割プロファイル"
+  
+  - dataset_name: "RoleMRC-mix"
+    characteristics: "RoleMRCを外部データと組み合わせたロバストバージョン。RoleBench（16k）、RLHFlow（40k）、UltraFeedback（14kペアラベル）を含む。総107.7k指示。微調整中の破滅的忘却を防止。"
+    usage: "ロールプレイと一般指示を組み合わせたロバスト訓練"
+    size: "107.7k total (80k single-label, 28k pair-label)"
+    domain: "mixed"
+    is_new: true
+    new_dataset_contribution: "ロールプレイと一般指示データの統合"
+  
+  - dataset_name: "MS-MARCO"
+    characteristics: "役割-知識マッチングのための808.7k MRCトリプレットの検索プール作成に使用される機械読解理解データセット"
+    usage: "MRCパッセージと質問のソース"
+    size: "808.7k triplets used"
+    domain: "general"
+    is_new: false
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "参照ベースメトリックとLLM-as-judgeを組み合わせた多面的評価。参照ベース：1.4kテストセットでのBLEU、ROUGE-1/2/L/Lsum、METEOR、BERTScore F1。参照フリーLLM-as-judge（GPT-4-turbo）：5次元での二分評価 - 知識境界（回答対拒否）、役割スタイル（キャラクター維持）、多ターン/ネストされた/優先順位付け指示従う。RoleBench、CharacterLLM、9つの一般ベンチマークでの外部検証。SFTとDPOモデル間の活性化パターンのニューロンレベル分析。"
+  
+  main_results: "RoleMRC-SFTモデルはベースモデルより8倍のBLEU改善を達成（0.1782-0.1963 vs 0.02）。DPOモデルはLLM-as-judgeで優秀（97%役割スタイル精度）だが参照ベーススコアは低い。GPT-4oはGPT-3.5をわずかに上回る。大きなモデルが一貫して良い。外部RoleBenchで：RoleMRCモデルは最高ROUGEスコアを達成（0.4442 ROUGE-1）。CharacterLLM OOD：6.53最高スコア。一般ベンチマーク：維持または改善された性能（平均+1-11%向上）。ニューロン制約は多ターンを1.6%改善。"
+  
+  metrics_used:
+    - "BLEU"
+    - "ROUGE-1/2/L/Lsum"
+    - "METEOR"
+    - "BERTScore F1"
+    - "LLM-as-judge accuracy (5 dimensions)"
+    - "OOD evaluation scores"
+  
+  human_evaluation_summary: null  # No human evaluation reported
+
+results_analysis:
+  key_findings:
+    - "SFTモデルは参照ベースメトリックで優秀（8倍BLEU改善）"
+    - "DPOモデルは指示従うで優れる（97%役割スタイル精度）"
+    - "語彙マッチングと指示準拠間のトレードオフ"
+    - "RoleMRC訓練はロールプレイと一般能力の両方を強化"
+    - "過学習なし：モデルはOOD CharacterLLMデータセットで良い性能"
+    - "多ターン指示従うでアライメント税を特定"
+    - "ニューロンレベル制約がアライメント税を1.6%軽減"
+    - "レイヤー12-31がSFT/DPO間で著しい活性化差を示す"
+  
+  ablation_summary: "ニューロンレベル分析により、レイヤー3-11はSFT/DPO間で最小限の変化を示す一方、レイヤー12-31（特にレイヤー19）は実質的活性化差を示すことが明らかに。最も変化したニューロンを因子（1-10^-6）で制約すると知識境界（+2.66%）、役割スタイル（-2.5%トレードオフ）、多ターン（+1.6%）が改善し、他の次元を維持。"
+
+contributions:
+  main_contributions:
+    - "RoleMRC：37.9k指示と10.2k役割プロファイルを持つ初の大規模細粒度ロールプレイ指示従うデータセット。"
+    - "参照ベースメトリックと5次元LLM-as-judgeフレームワークを組み合わせた包括的評価パイプライン。"
+    - "体系的知識境界テストのためのMRCとロールプレイの統合。"
+    - "RoleMRC訓練が一般能力を損なうことなく指示従うを強化することの実証。"
+    - "アライメント税を特定し軽減のための標的制約手法を提供するニューロンレベル分析。"
+  
+  limitations:
+    - "合成指示でのシステムレベルプロンプトがやや類似で、汎化可能性を制限"
+    - "GPT-4o合成データへの依存がモデルバイアスを導入する可能性"
+    - "アライメント税のためのニューロンレベル制約が他の能力に負の影響の可能性"
+    - "データセットは個人中心ではなくキャラクター中心のロールプレイに焦点"
+    - "アライメント制約理解のためのさらなる解釈可能性研究が必要"
+
+narrative_understanding_aspects:
+  - "Character / Entity Understanding"  # Role profiles and character consistency
+  - "Free-Form QA"  # MRC-based question answering in role context
+  - "other"  # Role-playing instruction-following
+
+keywords:
+  - "role-playing"
+  - "instruction-following"
+  - "fine-grained evaluation"
+  - "machine reading comprehension"
+  - "LLM alignment"
+  - "neuron-level analysis"
+  - "preference optimization"
+  - "character consistency"
+  - "knowledge boundaries"
+  - "multi-turn dialogue"
+
+notes: "Code and data available at https://github.com/LuJunru/RoleMRC. Dataset features novel integration of role-playing with MRC and complex instruction scenarios. Neuron-level analysis provides insights into alignment tax phenomenon."

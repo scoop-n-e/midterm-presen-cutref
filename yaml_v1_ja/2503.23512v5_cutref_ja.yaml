@@ -1,0 +1,135 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "SCORE: Story Coherence and Retrieval Enhancement for AI Narratives"
+  authors:
+    - "Qiang Yi"
+    - "Yangfan He"
+    - "Jianhui Wang"
+    - "Xinyuan Song"
+    - "Shiyao Qian"
+    - "Xinhang Yuan"
+    - "Li Sun"
+    - "Yi Xin"
+    - "Jingqun Tang"
+    - "Keqin Li"
+    - "Kuan Lu"
+    - "Menghao Huo"
+    - "Jiaqi Chen"
+    - "Tianyu Shi"
+  year: 2025
+  venue: "arXiv"
+  paper_url: "https://jianhuiwemi.github.io/SCORE"
+
+problem_statement:
+  background: "大規模言語モデル（LLM）はユーザー指定入力から創造的で魅力的な物語を生成できますが、これらのAI生成ストーリーを通じて一貫性と感情的深みを維持することは課題のままです。LLMは大規模アーキテクチャと膨大な訓練データを活用して長編物語生成で重要な能力を実証していますが、特にキャラクター発展と感情的一貫性に関して拡張テキストでの物語一貫性の維持は主要な課題のままです。"
+  
+  gap_or_challenge: "LLMはキャラクターや重要なプロット項目が適切な説明なしに再登場するときの非一貫性にしばしば苦労し、全体的な物語構造を混乱させます。テーマ的一貫性の達成と動的プロット状態の管理は論理的流れを維持するために重要です。キャラクター行動や感情的調子の非一貫性は読者の関与に負の影響を与える可能性があります。これらの課題は物語生成でのより構造化されたアプローチの必要性を示しています。"
+  
+  research_objective: "この研究では、物語の非一貫性を検出し解決するよう設計されたStory Coherence and Retrieval Enhancement のフレームワークSCOREを提案します。重要な項目状態を追跡しエピソード要約を生成することで、SCOREは検索拡張生成（RAG）アプローチを使用し、TF-IDFとコサイン類似性を組み込んで関連エピソードを特定し全体的ストーリー構造を強化します。"
+  
+  significance: "SCOREはベースラインGPTモデルと比較して物語一貫性の一貫性と安定性を大幅に改善し、AI生成物語を評価し洗練するためのより堅牢な方法を提供します。このフレームワークは連続性エラーの検出と全体的物語一貫性の維持でベースラインを上回ります。"
+
+tasks:
+  - task_name: "Narrative Coherence Evaluation"
+    
+    task_overview: "複数エピソードにわたる物語一貫性、キャラクター一貫性、感情的信頼性、重要なプロット要素の論理的追跡についてAI生成ストーリーを評価。このフレームワークは物語の非一貫性を検出し、項目状態を追跡し、エピソード的物語全体で連続性を保証します。"
+    
+    input_description: "LLMによって生成され、対話、イベント記述、物語要素を含む複数エピソードに分割されたエピソード的ストーリー。各エピソードは様々なジャンル（サイエンスフィクション、ドラマ、ファンタジー）をカバーする言語モデルからの生出力を含みます。"
+    
+    output_description: "一貫性スコア、一貫性評価、重要項目状態追跡、修正的推奨を伴う連続性エラーの特定を含む詳細評価レポート。"
+  
+  - task_name: "Story Question Answering"
+    
+    task_overview: "検索拡張生成を使用してストーリー内容についての複雑なクエリに回答。システムは意味的類似性と感情的一致に基づいて関連エピソードを検索し、プロット、キャラクター、またはイベントについてのユーザー質問に文脈的に正確な応答を提供します。"
+    
+    input_description: "要約と重要項目追跡情報を持つエピソードに分割された完全なストーリー内容とともに、ストーリー要素についてのユーザークエリ。"
+    
+    output_description: "関連エピソードからの支持文脈を持つユーザークエリへの詳細回答、応答で物語一貫性を維持。"
+
+methodology:
+  method_name: "SCORE (Story Coherence and Retrieval Enhancement)"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "3コンポーネントフレームワーク：（1）連続性分析と重要項目状態修正 - エピソード全体で項目状態Si(t) ∈ {active, lost, destroyed}を追跡、説明なしで項目が再登場するときに連続性エラーにフラグ。（2）重要項目相互作用分析 - キャラクター行動Ac(t)、関係、感情的変化、重要項目との相互作用Ii(t)を捉えるエピソード要約を生成。（3）類似性ベースエピソード評価と感情分析 - FAISSベクトル埋め込みとコサイン類似性S(ec, ep)を使用して関連エピソードを検索。感情的一貫性を保証するために0-1の範囲の感情スコアリングσ(e)を適用。キーワード抽出にTF-IDF、強化コンテキスト検索にRAGを統合。"
+  
+  base_models:
+    - "GPT-4"
+    - "GPT-4o"
+    - "GPT-4o-mini"
+    - "OpenAI embeddings (for vector space)"
+  
+  key_innovations:
+    - "エピソード全体での自動重要項目状態追跡"
+    - "プロット発展追跡のためのエピソードレベル要約生成"
+    - "意味的・感情的類似性の両方を使用するRAGベース検索"
+    - "体系的連続性エラー検出と修正"
+    - "エピソードマッチングのためのTF-IDFとコサイン類似性の統合"
+
+datasets:
+  - dataset_name: "LLM-Generated Story Corpus"
+    characteristics: "複数ジャンル（サイエンスフィクション、ドラマ、ファンタジー）をカバーする様々なGPTモデルによって生成された多様なストーリーセット。各ストーリーは対話、イベント記述、物語要素を含むエピソードに分割。"
+    usage: "物語一貫性フレームワークの評価"
+    size: null  # Not specified in paper
+    domain: "fiction"
+    is_new: true
+    new_dataset_contribution: "一貫性評価のためのエピソード的AI生成ストーリーのコレクション"
+
+evaluation:
+  evaluation_strategy: "強化メカニズムなしのベースラインGPTモデル（GPT-4、GPT-4o、GPT-4o-mini）に対してSCOREフレームワークを比較。ベースラインにはChatGPTプレイグラウンドに完全エピソードをアップロードし「Please evaluate episode n」プロンプトでの直接評価。SCORE評価は重要項目追跡、FAISS類似性スコアを介したRAGベースエピソード検索、GPTプロンプトの豊富なコンテキストで前処理されたファイルを使用。メトリックは物語一貫性、キャラクター一貫性、プロット進行、感情的信頼性に焦点。"
+  
+  main_results: "一貫性：GPT-4o-mini 78.2→82.6（+4.4）、GPT-4o 86.78→88.68（+1.9）、GPT-4 83.21→85.61（+2.4）。一貫性：GPT-4o-mini 76.7→77.5（+0.8）、GPT-4o 82.21→89.91（+7.7）、GPT-4 84.32→86.9（+2.58）。項目状態：すべてのベースライン0→80.5-98（大幅改善）。複雑質問：GPT-4o-mini 24.56→63.0（+38.44）、GPT-4o 76.32→88.75（+12）、GPT-4 82.34→89.45（+7.11）。分析精度で90%全体的改善。"
+  
+  metrics_used:
+    - "Narrative Coherence (logic and story flow)"
+    - "Character Consistency (behavior and development)"
+    - "Item Status Tracking (continuity error detection)"
+    - "Complex Question Answering (contextual accuracy)"
+    - "Sentiment consistency scores"
+  
+  human_evaluation_summary: null  # No human evaluation reported
+
+results_analysis:
+  key_findings:
+    - "SCOREは分析精度で90%改善を達成"
+    - "項目状態追跡はゼロベースラインから80-98ポイント改善を示す"
+    - "複雑質問応答は7-38パーセンテージポイント改善"
+    - "RAGベース検索は関連コンテキストを効果的に提供"
+    - "感情分析は感情的一貫性の維持に役立つ"
+    - "フレームワークは連続性エラーの検出と修正に成功"
+  
+  ablation_summary: null  # No ablation study reported
+
+contributions:
+  main_contributions:
+    - "SCORE：AI生成ストーリーでの物語の非一貫性を検出するための新しいLLMベース評価フレームワーク。"
+    - "改善された物語一貫性のためのエピソード要約と重要項目追跡を持つRAGアプローチの統合。"
+    - "感情分析と類似性ベース検索を通じた強化されたストーリー一貫性の実証。"
+    - "連続性エラー検出でのベースラインGPTモデルに対する重要な性能改善。"
+  
+  limitations:
+    - "検索精度への依存 - 類似性計算のエラーが重要なコンテキストを除外する可能性"
+    - "感情的ニュアンス捕捉の課題 - 感情分析が微妙な変化を見逃す可能性"
+    - "リソース集約的 - 類似性計算に相当な計算リソースを要求"
+    - "汎化可能性の懸念 - 主にGPT-4生成ストーリーでテスト"
+
+narrative_understanding_aspects:
+  - "Narrative Consistency Check"  # Core focus on detecting inconsistencies
+  - "Character / Entity Understanding"  # Character behavior and development tracking
+  - "Plot / Storyline Extraction"  # Episode summaries and plot tracking
+  - "Narrative Assessment"  # Evaluation of story quality and coherence
+
+keywords:
+  - "story coherence"
+  - "retrieval-augmented generation"
+  - "narrative consistency"
+  - "episode summarization"
+  - "key item tracking"
+  - "continuity error detection"
+  - "TF-IDF"
+  - "cosine similarity"
+  - "sentiment analysis"
+  - "FAISS"
+
+notes: "Project page: https://jianhuiwemi.github.io/SCORE. Framework achieves 90% improvement in analysis accuracy. Mathematical proof provided for continuity analysis using Markov property and narrative entropy."

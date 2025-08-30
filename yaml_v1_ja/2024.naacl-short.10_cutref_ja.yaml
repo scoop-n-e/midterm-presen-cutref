@@ -1,0 +1,135 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Returning to the Start: Generating Narratives with Related Endpoints"
+  authors:
+    - "Anneliese Brei"
+    - "Chao Zhao"
+    - "Snigdha Chaturvedi"
+  year: 2024
+  venue: "NAACL (Short Paper)"
+  paper_url: "https://aclanthology.org/2024.naacl-short.10/"
+
+problem_statement:
+  background: "人間の作家は、満足のいく物語を構成し「輪を閉じる」ために、始まりの文に関連する終わりの文で自分の作品を「ブックエンド」することがよくあります。自動ストーリー生成は最近大幅に進歩していますが、満足のいく一貫したストーリーを終結性とともに生成することに苦労しています。"
+  
+  gap_or_challenge: "現在の自己回帰ストーリー生成手法は、満足のいく一貫したストーリーを物語的終結性とともに生成することに苦労しています。ストーリーには、物語によって顕著に提起されたすべての問題が答えられたときに生成される終わりの現象学的感覚が欠けています。モデルは終わりが始まりに関連するブックエンド（循環構造）を通じて終結性を達成できません。"
+  
+  research_objective: "本研究では、RENARGEN（Related Endpoint Narrative Generator）を提案します。これは、最初と最後の文が関連していることを保証してから中間の文を埋めることによって物語を生成する制御可能なストーリー生成パラダイムです。この研究は、物語学からの様々なブックエンド手法がストーリーの言語モデリングにどのように影響するかを探求します。"
+  
+  significance: "RENARGENは、ブックエンド技術を導入することで自動ストーリー生成における物語的終結性の課題に対処します。これは現在の自己回帰モデルと比較して、より良い物語的終結性とより満足のいくストーリーを提供します。"
+
+tasks:
+  - task_name: "Related Endpoint Story Generation"
+    
+    task_overview: "このタスクは、ブックエンドを通じて物語的終結性を達成するために関連する最初（開始）と最後（停止）の文でストーリーを生成します。システムは最初に入力開始文が与えられたときに関連する終点を生成し、次に左右両方の文脈を考慮して中間の文を埋めます。意味的類似性、物語的質問への回答、ストーリー要素のマッチング、論理的含意関係を含む様々な関連性の手法が探求されます。"
+    
+    input_description: "ROCStoriesコーパスからの初期開始文またはユーザー提供テキスト。LMの場合、開始文は顕著な単語の句リストを生成するために処理されます。LLMの場合、開始文は様々なプロンプト手法で直接使用されます。"
+    
+    output_description: "最初と最後の文が様々なブックエンド手法を通じて関連している完全な5文ストーリー（またはユーザー指定の長さ）。ストーリーは終点を一貫して接続するすべての中間文とともに物語的終結性を示します。"
+
+methodology:
+  method_name: "RENARGEN (Related Endpoint Narrative Generator)"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "RENARGENはLMとLLMに対して異なる戦略を採用します。LMの場合：（1）Phrase GeneratorはGPT-2を使用してBERT埋め込み類似性（閾値γ=0.7）を用いて開始文から顕著な単語/句を抽出、（2）Stop Generatorは開始文と句リストから関連する停止文を生成するためにGPT-2を使用、（3）Story InfillerはPosition Classifier（BERT）を使用して最適な埋め込み場所を特定し、Infill Generator（GPT-2）を使用して両方の文脈を考慮して文を反復的に生成。LLMの場合：Endpoint Generatorは6つのプロンプト手法を使用 - 句リスト生成、直接関連性、物語的質問への回答、ストーリー要素のマッチング、論理的含意、逆含意。Story Infillerはすべての中間文を一度に生成。両方のアプローチはビーム探索と制御生成を使用。"
+  
+  base_models:
+    - "GPT-2"
+    - "BERT (uncased)"
+    - "Llama2-7b-chat"
+    - "Llama2-70b-chat"
+    - "Sentence-BERT (fine-tuned on STR-2022)"
+  
+  key_innovations:
+    - "言語モデリングにおけるブックエンドが物語生成にどのように影響するかの初の研究"
+    - "文脈のニーズに基づいて埋め込み位置を動的に決定する新しい反復埋め込み戦略"
+    - "終結性の複数の物語学的定義の統合（意味的、疑問的、マッチング、含意）"
+    - "制御可能な生成のための編集可能な句リストを通じたユーザー相互作用性"
+    - "固定の埋め込み要件なしの柔軟なストーリー長生成"
+
+datasets:
+  - dataset_name: "ROCStories"
+    
+    characteristics: "5文の人間が書いたストーリーのコレクション。98,161ストーリーを訓練/検証用に80:20に分割（Spring 2016とWinter 2017セットの結合）。Cloze Spring 2016からの3,742ストーリーが評価に使用。"
+    
+    usage: "GPT-2とBERTモデルの微調整のための訓練コーパス、評価ベンチマーク"
+    
+    size: "98,161 train/val, 3,742 test"
+    
+    domain: "mixed"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "STR-2022"
+    
+    characteristics: "関連性スコアを持つ5,500の英語文ペア。終点関連性測定のためのSentence-BERTの微調整に使用。"
+    
+    usage: "意味的類似性評価のためのSentence-BERT訓練"
+    
+    size: "5,500 sentence pairs"
+    
+    domain: "mixed"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "自動メトリックは終点関連性（Dice係数による語彙重複、Sentence-BERTによるコサイン類似性、FastKASSAMによる構文類似性）と全体的品質（多様性のためのDistinct n-grams、一貫性のためのBLEU）を評価。AMTでの人間評価では、関連性、終結性、一貫性、全体的好みを評価するモデルあたり100ペア比較。50ストーリーでの句リスト編集による8人の社内テスターでの相互作用性評価。"
+  
+  main_results: "RENARGEN-LM：語彙重複0.329、コサイン類似性0.653、構文類似性0.594、Distinct n-grams 0.524、BLEU 3.35。GPT-2ベースライン（0.183、0.458、0.533、0.420、3.14）を大幅に上回る。RENARGEN-LLM-7b最高：0.589、0.854、0.252、0.748、1.579。RENARGEN-LLM-70b最高：0.594、0.870、0.199、0.787、1.576。人間評価：RENARGEN-LM対GPT-2で66%好まれる、RENARGEN-LLM-7b対Llama-7bで56%好まれる、RENARGEN-LLM-70b対Llama-70bで56%好まれる。ユーザーの80%が相互作用性を通じてより良いストーリーを生成でき、62.5%が有用性を4/5と評価。"
+  
+  metrics_used:
+    - "Lexical Overlap (Dice Coefficient)"
+    - "Cosine Similarity (Sentence-BERT)"
+    - "Syntax Similarity (FastKASSAM)"
+    - "Distinct n-grams"
+    - "BLEU score"
+    - "Human preference (relatedness, closure, coherency, overall)"
+  
+  human_evaluation_summary: "米国ベースのマスターワーカー（98%承認、5000以上のHIT）でのAMTでの100ペア比較。RENARGENはすべての基準で一貫して好まれる。相互作用性評価：8テスター、50ストーリー、開始あたり平均3回の句リスト編集、80%が編集を通じてより良いストーリーを生成。"
+
+results_analysis:
+  key_findings:
+    - "RENARGENはベースラインより大幅に関連性の高い終点を持つストーリーを生成"
+    - "Phrase GeneratorとPosition ClassifierがLM性能に重要"
+    - "Endpoint GeneratorとStory InfillerがLLM性能に不可欠"
+    - "手法（4）ストーリー要素のマッチングがLLMで最高性能（0.589語彙重複）"
+    - "ユーザーは句リスト編集をストーリー制御と改善に価値があると感じる"
+  
+  ablation_summary: "Phrase Generator除去（w/out PG）はコサイン類似性を0.653から0.622に減少。Position Classifier除去（w/out PC）はdistinct n-gramsを0.524から0.435に、BLEUを3.35から2.93に減少。LLMの場合、Endpoint GeneratorとStory Infillerの除去はすべてのメトリックを大幅に減少。"
+
+contributions:
+  main_contributions:
+    - "関連する終点と物語学からのブックエンドが物語生成にどのように影響するかを調査し、「良い執筆実践」が言語モデリングにどのように影響するかの初期展望を提供する初の研究。"
+    - "左右両方の文脈を考慮した新しい反復埋め込み戦略を使用して関連する終点文で物語を生成するLMとLLMの両方に適応可能なRENARGENパラダイム。"
+    - "RENARGENが現在の自己回帰モデルよりもより良い物語的終結性を持つより一貫したストーリーを生成することを実証する自動・人間評価。"
+    - "制御可能なストーリー生成を可能にする編集可能な句リストを通じたユーザー相互作用性の導入。"
+  
+  limitations:
+    - "訓練データのため英語生成に限定"
+    - "ストーリー物語生成に制限"
+    - "先行研究で指摘されているようにROCStoriesコーパスからの潜在的な性別バイアス"
+    - "実験で比較的短いストーリー長に固定"
+
+narrative_understanding_aspects:
+  - "Story Generation"
+  - "Narrative Consistency Check"
+  - "other"  # Narrative closure and bookending
+
+keywords:
+  - "narrative closure"
+  - "bookending"
+  - "circular construction"
+  - "story generation"
+  - "endpoint relatedness"
+  - "controllable generation"
+  - "iterative infilling"
+  - "narratology"
+  - "erotetic closure"
+
+notes: "Code and resources available at https://github.com/adbrei/RENarGen. Work demonstrates importance of narratological theory for improving automatic story generation."

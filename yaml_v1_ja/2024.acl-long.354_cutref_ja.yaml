@@ -1,0 +1,155 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "A Causal Approach for Counterfactual Reasoning in Narratives"
+  authors:
+    - "Feiteng Mu"
+    - "Wenjie Li"
+  year: 2024
+  venue: "ACL 2024"
+  paper_url: "https://aclanthology.org/2024.acl-long.354/"
+
+problem_statement:
+  background: "物語における反事実推論（CRN）は一般に、実際に起こったこととは異なる代替的イベントが、いかに異なる結果をもたらした可能性があるかを予測することとして知られています。それは知的システムの重要な構成要素と考えられているにも関わらず、CRNに注力したリソースはほとんどありません。"
+  
+  gap_or_challenge: "現在のアプローチは、最小編集などの独特なパターンを悪用するデータセット固有のヒューリスティックに依存し、一般性を制限するか、またはアーティファクトを悪用する代わりに堅固に反事実について推論することを学習することで悪名高い条件分布p(y'|c,x',S)を学習するためにPLMをファインチューニングします。モデルは反事実条件を認識することなく、しばしば元の結果を直接コピーまたはパラフレーズし、反事実条件と対立する反事実結果を予測します。"
+  
+  research_objective: "我々は物語における反事実推論のための基本VAEモジュールを提案します。我々はさらに、VAEアプローチにおける事後崩壊問題を緩和し、反事実条件と生成された反事実結果間の因果性を改善するために、事前訓練された分類器と外部イベント常識を導入します。"
+  
+  significance: "この研究は複数のタスクに適用可能な物語における反事実推論のための一般的フレームワークを提供し、データセット固有手法の限界に対処し、生成された反事実結果における因果性保持を改善します。"
+
+tasks:
+  - task_name: "TimeTravel (Counterfactual Story Rewriting)"
+    
+    task_overview: "このタスクは、元の結末に対する最小編集を維持しながら、反事実条件と一致するように物語の結末を書き換えることを要求します。c がコンテキスト、xが条件、yが結果である物語S=(c,x,y)が与えられると、モデルはxがx'に摂動されたときのy'を生成しなければなりません。主要な課題は、自然な物語を生成することと最小編集で元の結末を修正することとのトレードオフです。"
+    
+    input_description: "モデルは元の物語（コンテキストc、元の条件x、元の結果y）と反事実条件x'を受け取ります。コンテキストは最初の文、条件は2番目の文、結果は5文のROCStoriesからの文3-5です。"
+    
+    output_description: "システムは元の結果yを最小限に編集しながら反事実条件x'と一致する反事実結果y'を生成します。性能はBLEU、BertScore、ENTScore、HMeanメトリクスを使用して測定されます。"
+  
+  - task_name: "PossibleStories"
+    
+    task_overview: "このタスクは、同じコンテキストに対して、現在の状況が異なる場合、最終的な結果が異なる可能性があることを考慮します。元は多肢選択データセットでしたが、モデルが反事実質問に基づいて反事実結末を生成する必要があるテキスト生成のために適応されています。"
+    
+    input_description: "モデルは元のコンテキストc、元の結末y、反事実質問x'を受け取ります。元の条件xは生成適応のために「最も可能性の高い物語結末は何ですか？」として設定されます。"
+    
+    output_description: "システムは（c,x,y,x'）に従って反事実結末y'を生成します。性能はBLEU、BertScore、ENTScoreメトリクスを使用して評価されます。"
+
+methodology:
+  method_name: "Causal VAE with Classifier and Event Commonsense"
+  
+  approach_type: "neural"
+  
+  core_technique: "この手法は、潜在変数zが未観測の背景知識を表現する構造因果モデル（SCM）を使用します。VAEフレームワークはq(z|·)で事後分布p(z|c,x',y',S)を近似します。基本VAE目的は2つの戦略で強化されます：(1) データセット固有の肯定的/否定的例で訓練され、生成訓練中に凍結されるf([c,x,y])事前訓練分類器。勾配逆伝播にGumbel-softmaxを使用。(2) イベントグラフでのマルチホップ推論を通じて関連イベントを検索・選択し、反事実生成に明示的背景を提供するCOMeTからの外部イベント因果性。BARTがバックボーンとして使用され、zが生成のためにコンテキストベクトルに連結されます。"
+  
+  base_models:
+    - "BART (backbone for generation)"
+    - "RoBERTa-large (for classifier)"
+    - "COMeT (for event commonsense)"
+  
+  key_innovations:
+    - "反事実シナリオの暗黙的背景知識を学習する変分フレームワーク"
+    - "生成された結果がその条件を含意することを保証する事前訓練分類器"
+    - "明示的因果背景のためのイベント因果性検索とマルチホップ推論"
+    - "事後崩壊を避けるための循環KLアニーリング"
+    - "p(c,x'|z,S)のためのバッチ内対比学習"
+
+datasets:
+  - dataset_name: "TimeTravel"
+    
+    characteristics: "ROCStoriesコーパス上に構築された反事実物語書き換えデータセット。s1がコンテキスト、s2が条件、s3:5が結果の5文物語を含む。人間注釈者が条件xをx'に書き換え、結果yをy'に最小編集。"
+    
+    usage: "反事実物語生成の主要評価データセット"
+    
+    size: "データ拡張実験のためのx'のみでy'のない97kの追加例"
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "PossibleStories"
+    
+    characteristics: "ROCStoriesに基づいて構築、異なる状況での同じコンテキストに対する異なる結果を考慮。元は多肢選択、コンテキスト、元の結末、反事実質問、候補選択肢での生成のために適応。"
+    
+    usage: "反事実生成の二次評価データセット"
+    
+    size: "詳細には指定されていない"
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "ROCStories"
+    
+    characteristics: "TimeTravelとPossibleStoriesデータセットの両方の基盤として使用される5文常識物語の大きなセット。"
+    
+    usage: "反事実データセットの基礎コーパス"
+    
+    size: "大きなセット（正確なサイズは指定されていない）"
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "自動メトリクスと人間評価を使用した包括的評価。TimeTravelについて：BLEU、BertScore、ENTScore、HMeanメトリクス。PossibleStoriesについて：BLEU、BertScore、ENTScore。手動評価は最小編集と一貫性（TimeTravel）または類似性と一貫性（PossibleStories）のペアワイズ比較を使用。アブレーション研究で分類器とイベント因果性の貢献を検証。データ拡張実験で生成された反事実物語の実用性をテスト。"
+  
+  main_results: "TimeTravelで：HMean 61.1を達成し、BART（58.3）を上回りLlama2(7B)（60.9）と競争的。ENTScore 56.2で因果性の改善を示す。PossibleStoriesで：ENTScore 46.9を達成し、BART（42.9）とLlama2(7B)（45.1）を上回る。人間評価で一貫性において勝利するが最小編集では混合結果。97k疑似例でのデータ拡張によりBARTをENTScore 70.1に改善。"
+  
+  metrics_used:
+    - "BLEU"
+    - "BertScore"
+    - "ENTScore"
+    - "HMean (2·BLEU·ENTScore/(BLEU+ENTScore))"
+    - "Human evaluation (Minimal-Edits, Coherence, Similarity)"
+    - "Fleiss's kappa (inter-rater agreement)"
+  
+  human_evaluation_summary: "3人の注釈者によるペアワイズ比較のために100ケースをサンプル。TimeTravel：アブレーション変形に対して一貫性で勝利（28.0% vs w/o Clas、37.3% vs w/o Event）するが最小編集で敗北。ChatGPTに対して：最小編集で52.3%勝利するが一貫性で47.0%敗北。Fleiss's kappa：0.43-0.56。PossibleStories：アブレーション変形より良い一貫性、チャットモデルと競争的。"
+
+results_analysis:
+  key_findings:
+    - "VAE モジュール単独でBARTベースラインに対して2.1 ENTScoreの向上を提供"
+    - "因果性改善において、事前訓練分類器がイベント知識より重要"
+    - "事前/事後zの線形補間で事後情報が生成に重要であることを示す"
+    - "生成された疑似例はデータ拡張に効果的：完全疑似セットで70.1 ENTScore"
+    - "手法は類似性（BLEU）と一貫性（ENTScore）間の最良のトレードオフを達成"
+    - "元の結果をパラフレーズする問題は依然存在するがベースライン手法より少ない"
+  
+  ablation_summary: "w/o Classifier: TimeTravelで-1.6 ENTScore、PossibleStoriesで-1.3。w/o Event: TimeTravelで-1.0 ENTScore、PossibleStoriesで-0.9。VAE のみ：BARTベースラインに対して+2.1 ENTScore。分類器がイベント因果性より多く貢献。"
+
+contributions:
+  main_contributions:
+    - "我々は未観測の反事実シナリオの暗黙的背景知識を学習する変分フレームワークで物語における反事実推論を定式化します。"
+    - "我々は生成された結果がその条件を含意することを保証する事前訓練分類器を導入し、反事実条件と結果間の因果性を改善します。"
+    - "我々はイベントグラフでのマルチホップ推論を通じて外部イベント因果性を組み込み、生成のために明示的因果背景を提供します。"
+    - "我々はデータ拡張実験を通じて生成された反事実物語の実用性を実証し、疑似訓練データとして使用された際の大幅改善を示します。"
+  
+  limitations:
+    - "小規模データセットとモデル（BART）に基づき、大規模言語モデルを上回ることができない"
+    - "露出バイアスと限られたモデル規模によりパラフレーズ問題が依然存在"
+    - "緩和戦略にも関わらず事後崩壊問題が完全には排除されない"
+    - "手法はタスク固有の分類器訓練を要求"
+
+narrative_understanding_aspects:
+  - "Story Generation"  # Core task of counterfactual story generation
+  - "Narrative Consistency Check"  # Ensuring causality between conditions and outcomes
+  - "Free-Form QA"  # Counterfactual reasoning about alternative scenarios
+
+keywords:
+  - "counterfactual reasoning"
+  - "narrative generation"
+  - "variational autoencoder"
+  - "causal mechanism"
+  - "structural causal model"
+  - "event commonsense"
+  - "posterior collapse"
+  - "minimal edits"
+  - "data augmentation"
+
+notes: "この研究は反事実物語生成への原理的因果アプローチを提供し、妥当な代替結果を生成しながら因果性を維持する際の重要な課題に対処します。分類器と常識強化を持つVAEフレームワークは複数のタスクに適用可能な一般的解決策を提供します。"

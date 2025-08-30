@@ -1,0 +1,150 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Multi-level Contrastive Learning for Script-based Character Understanding"
+  authors:
+    - "Dawei Li"
+    - "Hengyuan Zhang"
+    - "Yanran Li"
+    - "Shiping Yang"
+  year: 2023
+  venue: "EMNLP 2023"
+  paper_url: "https://aclanthology.org/2023.emnlp-main.366/"
+
+problem_statement:
+  background: "キャラクター理解は文学、心理学、教育研究における人気の研究トピックです。キャラクターを完全に理解するために、個人は個人的経験に基づいてキャラクターに共感し、キャラクターのアイデンティティに従ってプロフィールを構築し、キャラクターの将来の行動について推論しなければなりません。脚本ベースのキャラクター理解は、脚本（演劇、映画、放送の書面テキスト）からキャラクターを学習することに焦点を当てています。"
+  
+  gap_or_challenge: "脚本ベースのキャラクター理解は2つの主要な課題に直面しています。第一に、テキストタイプ - 脚本は主に複数のキャラクターが相互作用する多者間会話で構成されており、PLMが細粒度の会話情報に基づいてキャラクターを理解することは自明ではありません。第二に、テキスト長 - 脚本は通常数十億語と非常に長く、キャラクター情報が脚本全体にわたってグローバルに分散しています。PLMはコンテキストモデリングの敏感性と入力長制限により、このようなグローバル情報を捉えることができません。"
+  
+  research_objective: "この研究は、キャラクターのグローバル情報を細粒度で捉えるマルチレベル対照学習フレームワークを提案します。このフレームワークは、テキストタイプの課題（要約-会話対照学習を通じて）とテキスト長の課題（クロスサンプル対照学習を通じて）の両方に対処し、脚本から包括的なキャラクター表現を学習します。"
+  
+  significance: "この研究は脚本におけるキャラクター理解を進歩させ、これは物語理解、教育応用、および長文テキストにおける複雑な多者間相互作用の理解に不可欠です。この研究はChatGPT-3.5を含む強力なベースラインに対して大幅な改善を示し、グローバルで深いキャラクター理解タスクにおける現在のLLMの限界を明らかにしています。"
+
+tasks:
+  - task_name: "Coreference Resolution"
+    
+    task_overview: "複数の発話とキャラクター言及エンティティを含む脚本の会話が与えられたとき、目的は同じキャラクターを指すすべての言及エンティティをクラスターに組み立てることです。このタスクは、脚本全体で異なる言及が同じキャラクターを指すときを識別するモデルの能力を評価します。"
+    
+    input_description: "n個のキャラクター言及エンティティ（c1, c2, ..., cn）を含む複数の発話からなる脚本の会話。言及は、同じキャラクターを指すために異なる名前、代名詞、または記述を使用する場合があります。"
+    
+    output_description: "各クラスターが同じキャラクターを指すすべての言及を含む言及エンティティのクラスター。出力はB3、CEAFφ4、BLANCなどのクラスタリングメトリクスを使用して評価されます。"
+  
+  - task_name: "Character Linking"
+    
+    task_overview: "このタスクは、各言及エンティティを事前定義されたキャラクターセット内のキャラクターに正確に分類することを要求します。言及をクラスタリングする共参照解決とは異なり、キャラクターリンキングは各言及を特定の既知のキャラクターアイデンティティにマップします。"
+    
+    input_description: "共参照解決と同じ - 複数のキャラクター言及エンティティを持つ会話。さらに、脚本内の既知のキャラクターを表す事前定義されたキャラクターセットZ = {z1, z2, ..., zm}。"
+    
+    output_description: "事前定義されたセット内のキャラクターへの各言及エンティティの分類。MacroとMicro F1スコアを使用して評価されます。"
+  
+  - task_name: "Character Guessing"
+    
+    task_overview: "このタスクは、話者名がマスクされた脚本で各発話の話者を識別することに焦点を当てています。シーン内の各発話は話者がマスクされ、特別なトークンに置き換えられてセグメント化されます。シーン内の同じ話者は同じ特別なトークンを使用します。"
+    
+    input_description: "話者名が特別なトークン（P0, P1, P2など）に置き換えられてセグメント化された発話を持つ脚本シーン。同じ話者はシーン内で同じトークンで表現されます。"
+    
+    output_description: "話者を表す各特別なトークンの予測されたキャラクターアイデンティティ。MacroとMicro F1スコアを使用して評価されます。"
+
+methodology:
+  method_name: "Multi-level Contrastive Learning Framework"
+  
+  approach_type: "neural"
+  
+  core_technique: "このフレームワークは、細粒度とグローバルの両方のキャラクター情報を捉えるために2つの新しい対照損失を組み合わせます。第一に、要約-会話対照損失は、異なるテキストフィールド（要約と会話）からの同じキャラクターの表現を、同じターゲットの異なるビューとして扱って整列します。これは補助的要約データを活用してテキストタイプの課題に対処します。第二に、クロスサンプル対照損失は、バッチ内の異なるサンプル間で同じキャラクターの表現を整列し、入力長制限を克服してグローバルキャラクター情報を学習します。このフレームワークは事前訓練済み言語モデル（SpanBERT、Longformer、BigBird）をエンコーダーとして使用し、キャラクターレベル情報を共有するためにアテンションベースの層を使用します。2段階の訓練パラダイムが採用されます：段階1は教師あり損失と両方の対照損失を組み合わせて事後訓練を行い、段階2はタスク固有のファインチューニングのために教師あり損失のみを使用します。"
+  
+  base_models:
+    - "SpanBERT (base and large)"
+    - "Longformer (base and large)"
+    - "BigBird (base and large)"
+    - "C2 (combines coreference and linking)"
+    - "ChatGPT-3.5 (baseline comparison)"
+  
+  key_innovations:
+    - "複数のテキスト視点から細粒度キャラクター情報を捉える要約-会話対照学習"
+    - "入力長制限を克服し、グローバルキャラクター表現を学習するクロスサンプル対照学習"
+    - "マルチタスク学習とタスク固有ファインチューニングを組み合わせた2段階訓練パラダイム"
+    - "アテンションベースのキャラクター情報共有層"
+    - "複数のPLMアーキテクチャと互換性のあるフレームワーク"
+
+datasets:
+  - dataset_name: "Character Identification"
+    
+    characteristics: "共参照解決とキャラクターリンキングタスクのためのTVショーデータセット。注釈されたキャラクター言及と参照を持つTVショーからの多者間会話を含む。"
+    
+    usage: "共参照解決とキャラクターリンキングタスクの訓練と評価に使用"
+    
+    size: "最新リリースバージョン（論文には具体的な数値は記載されていません）"
+    
+    domain: "scripts"  # TV show scripts
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "TVSHOWGUESS"
+    
+    characteristics: "キャラクター推測タスクのためのTVショーデータセット。マスクされた話者アイデンティティを持つ「ビッグバン★セオリー」と「フレンズ」を含むTVショーのシーンを含む。脚本は非常に長く（TBBTの例では528,832トークン）、キャラクター情報がグローバルに分散している。"
+    
+    usage: "キャラクター推測タスクの訓練と評価に使用"
+    
+    size: "元のデータセット分離に従うtrain/dev/testスプリットを持つ複数のTVショー"
+    
+    domain: "scripts"  # TV show scripts
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "タスク固有のメトリクスを使用した3つのキャラクター理解タスクにわたる包括的評価。共参照解決については、CoNLL'12共有タスクからのクラスタリングメトリクス（B3、CEAFφ4、BLANC）が使用される。キャラクターリンキングと推測については、分類メトリクス（MacroとMicro F1）が採用される。統計的有意性検定（p ≤ 0.01）が実行される。追加分析には、アブレーション研究、証拠タイプ分析、T-SNEを使用したキャラクター埋め込みの可視化、ケーススタディが含まれる。"
+  
+  main_results: "フレームワークはすべてのタスクとモデルにわたって大幅な改善を達成。共参照解決において：SpanBERT-largeは85.42% B3 F1を達成（ベースライン83.69%に対して）、C2-largeは86.24%に到達（85.94%に対して）。キャラクターリンキングにおいて：MicroとMacro F1の両方で1-2%の改善。キャラクター推測において：BigBird-P-largeは77.68% Micro F1を達成（75.43%に対して）、Longformer-P-largeは78.92%に到達（77.58%に対して）。ChatGPT-3.5はすべてのタスクで最悪の性能（例：キャラクター推測で44.05 Macro F1）で、現在のLLMがグローバルキャラクター理解に苦戦していることを示している。"
+  
+  metrics_used:
+    - "B3 (precision, recall, F1)"
+    - "CEAFφ4 (precision, recall, F1)"
+    - "BLANC (precision, recall, F1)"
+    - "Micro F1"
+    - "Macro F1"
+  
+  human_evaluation_summary: null  # No human evaluation reported
+
+results_analysis:
+  key_findings:
+    - "両方の対照損失が性能に貢献し、要約-会話損失がクロスサンプル損失よりも大きな個別影響を示す"
+    - "2段階訓練は1段階マルチタスク訓練を上回り、タスク固有ファインチューニングの重要性を確認"
+    - "フレームワークは特にGlobal & In-depth証拠を必要とするサンプルに効果的（2.4-2.7%改善） vs Local & Textual証拠（1.1-1.6%）"
+    - "可視化により、フレームワークでキャラクター埋め込みのより密なクラスタリングが示される"
+    - "ChatGPT-3.5はキャラクター理解、特にグローバル理解タスクで劇的に失敗"
+  
+  ablation_summary: "要約-会話損失の除去は、クロスサンプル損失の除去よりも大きな性能低下を引き起こす。両方の損失を併用すると最良の結果を達成。2段階訓練は1段階を1-2%上回る。最適タスク比率：教師あり、要約-conv、クロスサンプル損失に対してλ=1.0、α=1.0、β=1.0。"
+
+contributions:
+  main_contributions:
+    - "脚本におけるキャラクター理解の2つの重要な課題（テキストタイプとテキスト長）を特定し、これらを効果的に対処するマルチレベル対照学習フレームワークを提案しました。"
+    - "複数のデータセットとタスクにわたって大幅な性能改善を実証し、フレームワークの有効性と様々なPLMアーキテクチャとの互換性を示しました。"
+    - "証拠タイプ分析、埋め込み可視化、ケーススタディを含む広範な分析を通じて、脚本ベースキャラクター理解への洞察を提供し、この分野における現在のLLMの限界を明らかにしました。"
+  
+  limitations:
+    - "フレームワークはパラメータ調整のための勾配情報を必要とする事前訓練済み大規模言語モデルに依存"
+    - "3B+エンコーダー・デコーダーPLMやデコーダーのみのLLMにフレームワークがどの程度適合するかは不明"
+    - "要約付きの整理されたスクリプトデータセットが必要（ただし自動生成要約も機能することが示されている）"
+    - "キャラクター理解タスクにはまだ改善の余地がある"
+
+narrative_understanding_aspects:
+  - "Character / Entity Understanding"  # Core focus on character comprehension
+  - "Reading Comprehension"  # Understanding character relationships and identities from text
+  - "Narrative Consistency Check"  # Coreference resolution ensures consistent character tracking
+
+keywords:
+  - "script-based character understanding"
+  - "multi-level contrastive learning"
+  - "coreference resolution"
+  - "character linking"
+  - "character guessing"
+  - "multi-party conversation"
+  - "long document understanding"
+  - "summary-conversation contrastive"
+  - "cross-sample contrastive"
+
+notes: "この研究は、グローバルキャラクター理解タスクにおける現在のLLM（ChatGPT-3.5を含む）の重要な限界を強調しており、すべての特化モデルよりも悪い性能を示しています。提案されたフレームワークは、複数レベルでの対照学習の革新的使用を通じて、脚本ベースキャラクター理解の独特な課題を効果的に対処しています。"

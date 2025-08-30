@@ -1,0 +1,122 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Reading Subtext: Evaluating Large Language Models on Short Story Summarization with Writers"
+  authors:
+    - "Melanie Subbiah"
+    - "Sean Zhang"
+    - "Lydia B. Chilton"
+    - "Kathleen McKeown"
+  year: 2024
+  venue: "TACL"
+  paper_url: "https://doi.org/10.1162/tacl_a_00702"
+
+problem_statement:
+  background: "物語は私たちがコミュニケーションを取り、経験を理解する方法の基本的な部分です。物語を理解することは、大規模言語モデルが人間の経験とコミュニケーションの微妙さに関わるために必要なスキルです。フィクション短編小説は、明確な形式に従わない、非線形タイムラインを使用する可能性がある、抽象的にほのめかす、読者を意図的に誤解させる、創造的な言語バリエーションを使用するという課題を提示します。"
+  
+  gap_or_challenge: "長い文書での物語要約の現在の評価は以下の理由で稀です：1）物語テキストがパブリックドメイン（LLM訓練データに含まれている可能性が高い）または著作権下のどちらかである、2）信頼できる自動メトリックの欠如と人間評価の複雑さ（高価で時間がかかる）。ほとんどのLLM評価はテーマと行間の意味の解釈的理解よりも字面の理解に焦点を当てています。"
+  
+  research_objective: "この研究では、経験豊富な創作作家によって提供された未発表短編小説での要約について、最近のLLM（GPT-4、Claude-2.1、LLama-2-70B）を評価します。この研究では、プロットの捕捉に加えてテーマと意味の解釈に焦点を当て、物語理論に基づいた定量的・定性的分析を通じて物語理解を検討します。"
+  
+  significance: "作家と直接協力することで、ストーリーがモデルに見られていないことを保証し、著者自身からの情報に基づいた評価を可能にします。このアプローチは、価値あるデータを持つコミュニティとの協力の相互利益を実証し、オンラインコンテンツの増加する量がモデルによって消費または生成される中で有用です。"
+
+tasks:
+  - task_name: "Short Story Summarization"
+    
+    task_overview: "このタスクは、長大（最大10,000トークン）で、微妙な行間の意味、混乱したタイムライン、創造的な言語を含む可能性があるフィクション短編小説でLLMを評価します。モデルはプロットポイントを捕捉し、ストーリーへの忠実性を維持し、一貫した物語の流れを提供し、潜在的にテーマと意味を分析する要約を生成しなければなりません。このタスクは明示的な内容と暗示的な行間の意味の両方の理解を要求します。"
+    
+    input_description: "経験豊富な創作作家からの未発表短編小説。ストーリーは1,854から8,126トークンの範囲（平均4,327）で、短編（3,300トークン未満）、中編（3,300-6,600トークン）、長編（6,600-9,900トークン）に分類されます。ストーリーは信頼できない語り手、非線形タイムライン、詳細なサブプロット、様々な読解レベルを含む可能性があります。"
+    
+    output_description: "重要なプロットポイントのカバレッジ、ストーリー詳細への忠実性、一貫した物語の流れ、テーマ/要点の分析を実証すべき約400語の長さの要約。モデルは異なるアプローチを使用して要約を生成：長いコンテキストモデルには直接要約、短いコンテキストウィンドウにはchunk-then-summarize。"
+
+methodology:
+  method_name: "Writer-Based Evaluation Framework"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "このフレームワークは複数の評価アプローチを組み合わせます。要約生成について：GPT-4とClaude-2.1は長いコンテキストウィンドウを活用した単一プロンプト要約を使用。Llama-2-70Bは長いストーリーに階層的chunk-then-summarizeアプローチを使用（長さに基づいて1-4チャンク）。評価について：作家はスパンレベルエラー分類（7人参加、75要約中69に注釈）、4つの属性（カバレッジ、忠実性、一貫性、分析）にわたる要約レベルリッカート評価（1-4スケール）、3つのモデル要約のランキングを提供。物語理論に基づくエラーカテゴリには以下が含まれます：カバレッジ（重要でない、曖昧）、忠実性（感情、キャラクター、因果関係、行動、設定）、一貫性（矛盾、急激な転換、文脈欠如、繰り返し）、分析（根拠なし）。Genetteの物語モデル（語り、ストーリー、談話）とFlesch-Kincaid読みやすさスコアを使用したストーリーレベルスタイル効果分析。"
+  
+  base_models:
+    - "GPT-4 (November 2023 update)"
+    - "Claude-2.1"
+    - "Llama-2-70B-chat"
+  
+  key_innovations:
+    - "訓練中に見られていない未発表ストーリーでのLLM物語要約の初の評価"
+    - "物語理論に基づくスパンレベル、要約レベル、ストーリーレベル評価"
+    - "忠実性とテーマ分析の迅速で情報に基づいた評価を可能にする専門作家評価"
+    - "字面の理解を超えた物語解釈の探求"
+    - "物語要素（信頼できない語り手、非線形プロット）が要約品質にどのように影響するかの分析"
+
+datasets:
+  - dataset_name: "Unpublished Short Stories Collection"
+    
+    characteristics: "9人の経験豊富な創作作家からの25の原創短編小説（8/9人が文学学位取得、7/9人が以前に出版）。ストーリーは平均4,327トークンで、困惑度スコア9.2-21.6（モデルに馴染みがないことを示す）。信頼できない語り手、フラッシュバック、詳細なサブプロットを含む多様な物語スタイル。作家はそれぞれ1-5ストーリーを提出し、自分の作品の要約を評価。"
+    
+    usage: "物語要約能力評価のための主要データセット"
+    
+    size: "25 stories"
+    
+    domain: "fiction"
+    
+    is_new: true
+    
+    new_dataset_contribution: "専門著者評価を持つ未発表フィクションストーリーの初のデータセット。パブリックドメインテキスト（LLMによって記憶されている可能性が高い）や最近の書籍（訓練データで議論されている可能性がある）を使用する既存データセットとは異なり、これは真の分布外評価を保証します。物語要素の著者検証ラベルと複数次元にわたる要約品質の専門評価を含みます。"
+
+evaluation:
+  evaluation_strategy: "作家の判断を自動メトリックと組み合わせた多面的評価。作家はカバレッジ、忠実性、一貫性、分析について4点リッカートスケールで要約を評価。スパンレベルエラー注釈は物語理論ベースカテゴリを使用。3つのモデル要約のペア比較ランキング。テストされた自動メトリックにはROUGE、BERTScore、AlignScore、UniEval、MiniCheck、BooookScore、FABLESが含まれます。GPT-4とClaudeを判定者として使用するLLMベース評価。Wilcoxon符号付き順位検定とPearson相関を使用した統計分析。"
+  
+  main_results: "GPT-4は最高平均スコア（3.38/4）を達成するが完全スコアは54%のみ。忠実性が最も困難 - GPT-4で44%完全、Claude 30%、Llama 8%のみ。すべてのモデルが50%以上の要約で忠実性エラーを犯す。Llamaは平均2.54/4で有意に劣る（p<.05）。GPT-4とClaudeはスコア差にもかかわらず作家によって同等にランク付け。モデルは特異性と行間の意味解釈に苦労。GPT-4要約の56%がいくらかのテーマ分析能力を示す。自動メトリックは作家スコアとの相関が低い（GPT-4判定者 r=.46 カバレッジ、r=.37 忠実性；Claude判定者は相関なし）。"
+  
+  metrics_used:
+    - "Likert scale ratings (1-4) for four attributes"
+    - "Span-level error counts by category"
+    - "Pairwise preference rankings"
+    - "ROUGE, BERTScore for reference-based evaluation"
+    - "AlignScore, UniEval, MiniCheck for faithfulness"
+    - "BooookScore, FABLES for LLM-based evaluation"
+    - "Perplexity scores for training data similarity"
+  
+  human_evaluation_summary: "9人の経験豊富な作家（8人が文学学位取得、7人が出版経験）が75要約を評価。作家は1ストーリーあたり5-10分で評価完了（非著者の60-90分に対して）。エラーカテゴリで中程度の評価者間一致（忠実性カテゴリでFleiss-Kappa 0.51）。作家はモデル全体で352の総エラーを特定。定性的フィードバックは行間の意味、規範的仮定、独特の句のコピーの問題を強調。"
+
+results_analysis:
+  key_findings:
+    - "GPT-4とClaudeが優秀な要約を生成するのは約50%のみ"
+    - "曖昧さ（64エラー）と根拠のない分析（104エラー）がモデル全体で主要な問題"
+    - "ほとんどの忠実性エラーはキャラクターの感情（23）と行動（39）に関わる"
+    - "信頼できない語り手はすべてのモデルで有意に困難（平均スコア低下）"
+    - "長いコンテキストモデルではストーリー長と要約品質の間に相関なし"
+    - "読解レベル（Flesch-Kincaid）は要約品質に影響しない"
+    - "LLM判定者は熟練した人間評価者を置き換えることはできない - 作家スコアとの相関が低い"
+  
+  ablation_summary: "スタイル分析は信頼できない語り手がすべてのモデルでスコアを下げることを示す（GPT-4: 3.45→3.28、Claude: 3.29→2.89、Llama: 2.60→2.45）。Chunk-then-summarizeアプローチはLlamaでキャラクター混同エラーを引き起こす。Claudeでカバレッジエラーがより一般的（サブプロット欠如）。GPT-4はより多くの独特の句をコピー（最長共通部分文字列平均5.72 vs Claude 4.16）。"
+
+contributions:
+  main_contributions:
+    - "訓練データ汚染を避けて創作作家との協力を通じて真に見られていないフィクションストーリーでのLLM物語要約の初の評価。"
+    - "物語理論に基づくスパンレベルエラー分類、要約レベル評価、ストーリーレベルスタイル分析を組み合わせた包括的評価フレームワーク。"
+    - "最良のLLMでも50%以上の要約で重大なエラーを犯し、特に行間の意味解釈、信頼できない語り手、キャラクターの感情/行動に苦労するという証拠。"
+    - "LLMベース評価は物語タスクにおいて専門的人間判断を置き換えることができず、モデルと作家スコア間の相関が低いことの実証。"
+  
+  limitations:
+    - "コストと入手可能性の制約により9人の作家からの25ストーリーに限定"
+    - "モデルコンテキストウィンドウに合わせるため10,000トークンに制限されたストーリー"
+    - "評価は英語フィクションのみに焦点"
+    - "広範なプロンプトエンジニアリングなしの単純なプロンプト戦略"
+    - "評価における個々の作家バイアスの可能性"
+
+narrative_understanding_aspects:
+  - "other"  # Narrative summarization with theme/subtext interpretation
+
+keywords:
+  - "narrative summarization"
+  - "fiction understanding"
+  - "subtext interpretation"
+  - "unreliable narrators"
+  - "writer evaluation"
+  - "faithfulness errors"
+  - "theme analysis"
+  - "narrative theory"
+  - "out-of-distribution evaluation"
+
+notes: "Code and evaluation data available at https://github.com/melaniesubbiah/reading-subtext. Study demonstrates importance of collaborating with domain experts for authentic evaluation beyond training data."

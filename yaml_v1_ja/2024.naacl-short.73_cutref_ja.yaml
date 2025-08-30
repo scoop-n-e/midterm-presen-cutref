@@ -1,0 +1,109 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "On Narrative Question Answering Skills"
+  authors:
+    - "Emil Kalbaliyev"
+    - "Kairit Sirts"
+  year: 2024
+  venue: "NAACL (Short Paper)"
+  paper_url: "https://aclanthology.org/2024.naacl-short.73/"
+
+problem_statement:
+  background: "物語質問応答は、人間と機械の両方における読解能力を評価し改善するための重要なタスクです。物語を理解するには、明示的に述べられているだけでなく、テキストに暗示されている基本的な物語要素の理解が必要であり、これは「行間を読む」ことを必要とします。"
+  
+  gap_or_challenge: "物語質問応答の様々な側面の体系的で包括的な評価と学習を可能にするスキル分類法について合意が欠如しています。既存のタスクレベルスキルビューはタスクの多次元的性質を過度に単純化し、質問レベル分類法は評価と方法論に問題を抱えています。一部の分類法は困難なスキルのみに集中し、他のスキルを省略しています。他の分類法では、同じ次元内の複数のスキルに質問を帰属させることができる方法でスキルをグループ化し、スキル評価時に課題を生じさせています。"
+  
+  research_objective: "この研究では、既存の分類法から物語理解スキルを統合・再定義し、回答の観点から生成スキル次元を含む、より包括的なスキル分類法を導入します。この分類法は物語質問応答スキルの体系的で包括的な評価を可能にすることを目指しています。"
+  
+  significance: "提案された分類法は、暗示的・明示的質問の正確な定義を提供し、スキル次元内で明確に区別可能なスキルを組み込み、回答生成スキルを導入することで、既存の分類法の問題に対処します。これにより、焦点を絞った公正な多次元スキル評価が可能になります。"
+
+tasks:
+  - task_name: "Narrative Question Answering Skill Assessment"
+    
+    task_overview: "物語質問応答は物語的文脈に基づいて質問に回答することを含みます。このタスクは基本的な物語要素の理解、抽象的表現の形成、文書全体での情報統合、一貫した回答の生成を要求します。このタスクは構造化されたスキル分類法を通じて様々な複雑な読解能力を評価します。"
+    
+    input_description: "明示的・暗示的情報、局所的・大域的文脈、物語要素（キャラクター、イベント、設定）の理解、そして抽出的・生成的回答の生成を必要とする質問とペアになった物語テキスト（ストーリー、寓話など）。"
+    
+    output_description: "4つの次元にわたってスキルを実証する物語質問への回答：物語要素（キャラクター/イベント/設定）、表現範囲（局所/大域）、知識ギャップ埋め（明示/暗示）、生成（抽出/生成）。"
+
+methodology:
+  method_name: "Comprehensive Narrative QA Skill Taxonomy"
+  
+  approach_type: "other"  # Taxonomy development
+  
+  core_technique: "この分類法は以前の研究（Xu et al., 2022; Sang et al., 2022）からスキルを統合し、新しい次元を導入します。4つの直交する次元に沿ってスキルを構造化します：（1）物語要素 - キャラクター質問（アイデンティティ、特性、関係）、イベント質問（行動、因果/時間関係）、設定質問（場所、時間、環境）；（2）表現範囲 - 局所（単一ストーリーセクション）対大域（要約を必要とする複数セクション）；（3）知識ギャップ埋め - 明示（直接述べられた）対暗示（推論と常識を必要とする）；（4）生成 - 抽出（スパンベース）対生成（追加の単語を必要とする）。各質問は次元あたり正確に1つのスキルにマップされ、明確なスキル帰属と評価を可能にします。"
+  
+  base_models: null  # This is a taxonomy paper, not a modeling paper
+  
+  key_innovations:
+    - "物語QAの理解と回答スキルを組み合わせた初の包括的分類法"
+    - "回答形式ではなく伝達される情報に基づく明示/暗示の再定義"
+    - "抽出的回答と生成的回答を区別する生成スキル次元の導入"
+    - "各質問が次元あたり単一のスキルを持つことを保証する直交スキル次元"
+    - "既存分類法の限界に対処する以前の分類法の統合"
+
+datasets:
+  - dataset_name: "FairytaleQA"
+    
+    characteristics: "物語質問を含む例として言及されるデータセット。様々なスキル組み合わせを必要とする質問を持つ「おやゆび姫」などのストーリーを含みます。"
+    
+    usage: "スキル分類法適用を実証するための例示データセット"
+    
+    size: null  # Not specified in paper
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "この論文は実証評価ではなく、スキル評価のための理論的フレームワークを提示します。この分類法は各次元を単独で焦点を絞った評価と、各次元内のすべてのスキル特徴が等しい重要性を持つ公正な評価を可能にします。今後の作業には、既存データセットへの注釈付けと、焦点を絞った評価を実施するための分類法に基づく新しいデータセットの構築が含まれます。"
+  
+  main_results: "実証結果は提示されていません。この論文は、質問が異なるスキル組み合わせにどのようにマップされるかを示す例（例：「おやゆび姫の身長は？」はcharacter/local/explicit/extractiveにマップ、「なぜおやゆび姫は快適だと感じたのか？」はevent/global/implicit/generativeにマップ）とともに理論的分類法を提供します。"
+  
+  metrics_used: null  # No empirical evaluation
+  
+  human_evaluation_summary: null  # No human evaluation conducted
+
+results_analysis:
+  key_findings:
+    - "タスクレベルスキルは物語QAの多次元性を捉えることができない"
+    - "以前の分類法は重要なスキルを省略するか、重複するスキル定義を持つ"
+    - "物語理解分類法は一部の問題に対処するが2次元に限定される"
+    - "Xu et al.（2022）は情報タイプではなく回答形式に基づいて暗示/明示を誤って定義"
+    - "提案された分類法は各次元内で区別可能なスキルを可能にする"
+  
+  ablation_summary: null  # No ablation studies
+
+contributions:
+  main_contributions:
+    - "既存の分類法からスキルを統合・再定義しながら生成スキル次元を組み込む物語質問応答のための包括的スキル分類法の導入。"
+    - "回答形式ではなく物語で伝達される情報に基づく明示対暗示質問の再定義により、以前の研究の不正確さに対処。"
+    - "各質問が次元あたり単一のスキルにマップする4つの直交スキル次元（物語要素、表現範囲、知識ギャップ埋め、生成）を持つフレームワーク。"
+    - "焦点を絞った公正な多次元スキル評価とスキル学習方法開発の動機のための理論的基盤。"
+  
+  limitations:
+    - "言語スキルではなく、次元内での区別可能なスキルに焦点"
+    - "他の物語理解タスクではなく物語質問応答に限定"
+    - "主に英語研究からの参照だが、スキルは言語を超えて適用可能"
+    - "物語QAの自由形式の性質はテキスト生成の評価に課題をもたらす"
+
+narrative_understanding_aspects:
+  - "Narrative Question Answering"
+  - "Character / Entity Understanding"
+  - "other"  # Skill taxonomy and assessment framework
+
+keywords:
+  - "narrative question answering"
+  - "skill taxonomy"
+  - "reading comprehension"
+  - "narrative elements"
+  - "explicit vs implicit"
+  - "extractive vs generative"
+  - "representation scope"
+  - "knowledge gap filling"
+  - "skill assessment"
+
+notes: "Paper introduces theoretical taxonomy without empirical evaluation. Examples from 'Little Thumbelina' demonstrate skill mapping. Work supported by Estonian Research Council Grant PSG721."

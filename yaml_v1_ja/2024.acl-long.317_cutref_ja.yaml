@@ -1,0 +1,167 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Fine-Grained Modeling of Narrative Context: A Coherence Perspective via Retrospective Questions"
+  authors:
+    - "Liyan Xu"
+    - "Jiangnan Li"
+    - "Mo Yu"
+    - "Jie Zhou"
+  year: 2024
+  venue: "ACL 2024"
+  paper_url: "https://aclanthology.org/2024.acl-long.317/"
+
+problem_statement:
+  background: "大規模言語モデル（LLM）の出現以来、文書理解は単にエンドツーエンド生成パラダイムを採用することで大幅に改善されています。特に、位置補間、キャッシュされた効率的注意、コンテキスト圧縮や枝刈りなどの技術により長いコンテキストウィンドウが可能になることで、エンドツーエンドパラダイムは様々な文書での理解タスク（例：質問回答）に対して疑いなくシンプルで効果的と考えられています。"
+  
+  gap_or_challenge: "典型的なベンチマークがより先進的なLLMによって継続的に向上している一方で、エンドツーエンドパラダイムはすべての理解シナリオには十分でない可能性があります。物語内の個々の段落は孤立したものよりも結束的に関連している傾向があります。エンドツーエンドパラダイムはシーケンスモデリングを通してこれらのコンテキスト接続を暗黙的に把握しますが、一貫性を捉えるためのこれらの依存関係の明示的モデリングはありません。"
+  
+  research_objective: "我々はNARCOと呼ばれるグラフを定式化することで物語コンテキストの細粒度モデリングを提案し、様々な下流タスクに消費される準備ができているタスク非依存の一貫性依存関係を明示的に描写します。特に、NARCOのエッジは、先行コンテキストから関連するイベントを常に復活させる人間の認知的知覚に触発された、コンテキストスニペット間の自由形式の振り返り質問を包含します。"
+  
+  significance: "この研究は物語理解のためのエンドツーエンドパラダイムに直交する直接的に適用可能な代替パスを可能にします。コンテキスト依存関係の明示的モデリングは、下流タスクによって柔軟に利用できる新しいフレームワークを提供し、暗黙的シーケンスモデリングへの補完的アプローチを提供します。"
+
+tasks:
+  - task_name: "Recap Identification"
+    
+    task_overview: "このタスクは、現在のコンテキストに関して、特定の先行スニペットが視聴者への要約や前奏として機能できるかどうかを識別するモデルの能力を評価します。このタスクは、プロット進行の観点から現在のものと直接関連する先行スニペットを識別することを要求し、物語発展の文脈的理解を必要とします。"
+    
+    input_description: "モデルは小説やショースクリプトからの短いスニペットをターゲットとして受け取り、候補として提供された先行スニペットのリストと共に受け取ります。各ターゲットには60の候補スニペットが提供されます。"
+    
+    output_description: "システムは現在のスニペットと直接関連する先行スニペットを選択します。成功はF1@5（上位5選択候補のF1）で測定されます。出力は必要な背景や因果情報を提供する要約スニペットを識別すべきです。"
+  
+  - task_name: "Plot Retrieval"
+    
+    task_overview: "このタスクは、短いプロット記述のクエリが与えられたときに最も関連する物語スニペットを見つけるモデルの能力を評価します。クエリは読者の物語の全体的理解に基づいて抽象的であることが多く、候補に対して明確化される本質的背景情報を要求するため、これは脱文脈化の概念に類似した挑戦的なタスクです。"
+    
+    input_description: "モデルは短いプロット記述のクエリと、検索する物語からの候補スニペットのセットを受け取ります。データセットはtrain/dev/testスプリットで29484/1000/510のクエリと総計1288の候補スニペットを含みます。"
+    
+    output_description: "システムは与えられたクエリに関連するスニペットをランク付けし検索します。性能は異なるカットオフ（@1、@5、@10）でのnDCG（正規化割引累積利得）を使用して測定されます。"
+  
+  - task_name: "Long Document Question Answering (QuALITY)"
+    
+    task_overview: "このタスクは、主にProject Gutenbergからのフィクション物語である長い物語文書についての多肢選択質問に回答するモデルの能力を評価します。QuALITYはグローバル証拠を念頭に構築されました：質問は推論するために文書内の複数部分を要求する可能性があります。このタスクは、関連スニペットを最初に検索し、次にLLMに回答生成のために供給する検索拡張生成を要求します。"
+    
+    input_description: "モデルは長い物語文書（平均5k+トークン）、質問、複数の回答選択肢を受け取ります。完全な文書は検索ベース処理のために短いスニペットに分割されます。"
+    
+    output_description: "システムは複数選択肢から正しい回答を選択します。性能は正解率で測定されます。このアプローチはゼロショットQA推論のための短縮コンテキストとして検索された関連スニペットを使用します。"
+
+methodology:
+  method_name: "NARCO (Narrative Cognition Graph)"
+  
+  approach_type: "neural"
+  
+  core_technique: "NARCOは全体のコンテキストをグラフノードとして機能するチャンクに分割し、エッジは自由形式の振り返り質問を通じてノードペア間の関係を表現します。質問は後続ノード（後のコンテキスト）から生じ、先行ノード（前のコンテキスト）によって明確化できる必要な背景や原因を尋ねます。グラフは2段階のLLMプロンプトスキームを通じて実際に実現されます：(1) GPT-4が具体的接続をリストし、次にそれらを質問に変換する2ターンChain-of-Thoughtアプローチを使用して質問を生成する質問生成段階；(2) ChatGPTが先行コンテキストによって回答可能かどうかをチェックしてノイズの多い質問をフィルタリングする自己検証段階。下流タスクでは、エッジは一貫性評価のために直接利用されるか、注意機構を通じてローカル埋め込みを豊富化するために使用できます。"
+  
+  base_models:
+    - "GPT-4 (for question generation)"
+    - "ChatGPT (for self verification)"
+    - "BGE-Large encoder (for retrieval tasks)"
+    - "BERT-based encoder (for supervised learning)"
+    - "Llama2-7B/70B (for QA inference)"
+  
+  key_innovations:
+    - "固定分類法なしの自由形式振り返り質問をエッジ関係として使用"
+    - "高品質質問生成のためのChain-of-Thoughtを持つ2段階プロンプトスキーム"
+    - "精度重視のエッジフィルタリングのための自己検証段階"
+    - "ノードとして文ではなく段落/チャンクを使用する粗い粒度"
+    - "クエリに条件付けられたエッジ質問を使用する注意ベースノード拡張"
+    - "強化検索のためのクエリ-エッジ類似性の補間"
+
+datasets:
+  - dataset_name: "RECIDENT"
+    
+    characteristics: "複数の小説とショースクリプトを含む要約識別のためのデータセット。評価には、ノートルダム・ド・パリ（NDP）とゲーム・オブ・スローンズ（GOT）が使用される。NDPテストセットは169のターゲットスニペット、GOTは204を持つ。各ターゲットは平均5.6/4.9の肯定的候補を持つ60の候補スニペットを持つ。"
+    
+    usage: "Study Iでエッジ効果の評価に使用"
+    
+    size: "169ターゲット（NDP）、204ターゲット（GOT）、各60候補"
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "PlotRetrieval (adapted)"
+    
+    characteristics: "Xu et al. (2023b)から適応され、中国語のノートルダム・ド・パリを使用。グラフノードとしての短いスニペットと、元の肯定文から変換された肯定スニペット。関連する物語スニペットの検索を要求する短いプロット記述のクエリを含む。"
+    
+    usage: "Study IIでノード拡張の評価に使用"
+    
+    size: "1288候補スニペット、29484/1000/510クエリ（train/dev/test）"
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+  
+  - dataset_name: "QuALITY"
+    
+    characteristics: "Project Gutenbergからの物語文書での多肢選択QAデータセット。平均文書長5k+トークン。質問は文書の複数部分からのグローバル証拠を要求する。遠隔テキストセグメント間での推論を要求する理解をテストするように設計。"
+    
+    usage: "Study IIIでRAGを用いたより広い応用の評価に使用"
+    
+    size: "詳細指定なし"
+    
+    domain: "fiction"
+    
+    is_new: false
+    
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "3つの包括的研究がNARCOを異なる角度から評価。Study Iは要約識別を通じてエッジ効果を検証し、エッジ関係と度数を使用して候補をランク付け。Study IIは豊富化された埋め込みでゼロショットと教師あり設定を比較してプロット検索のノード拡張をテスト。Study IIIは検索拡張生成を使用した長文書QAでのより広い応用を評価。すべての評価はベースライン手法とNARCO拡張版を比較。"
+  
+  main_results: "Study I（要約識別）：NARCOはRECIDENTでGPT-4ベースラインに対してF1@5を最大4.7ポイント改善。Study II（プロット検索）：ゼロショット検索はnDCG@10で3.4%改善、教師ありモデルはnDCG@1で2.2%向上。Study III（QuALITY QA）：開発セットで異なるLLMにわたって一貫した2-5%精度改善、テストセットリーダーボードで2%改善。"
+  
+  metrics_used:
+    - "F1@5 (Recap Identification)"
+    - "Precision@5, Recall@5"
+    - "nDCG@1/5/10 (Plot Retrieval)"
+    - "Accuracy (QuALITY QA)"
+  
+  human_evaluation_summary: "人間評価は実施されず。このアプローチは自動メトリクスと人間注釈された正解を持つ既存ベンチマークに依存。"
+
+results_analysis:
+  key_findings:
+    - "NARCOエッジは一貫性依存関係を効果的に捉え、単独のエッジ関係がテキストベースベースラインと同等の性能を達成"
+    - "エッジ度数（質問数）は内容分析なしでも有用な一貫性信号として機能"
+    - "自己検証段階は最小の性能劣化でノイズの多い質問を成功裏にフィルタリング"
+    - "クエリ-エッジ類似性補間がゼロショットと教師あり設定にわたって検索を一貫して改善"
+    - "NARCOによる強化検索は特に小さなLLMに恩恵（Llama2-7Bで5%改善）"
+    - "生成された質問の大部分は what/why/howタイプ（それぞれ61.5%/26.5%/7.8%）"
+  
+  ablation_summary: "アブレーションが示す：(1) エッジ度数のみで要約識別でまともな性能達成；(2) 自己検証フィルタリングはノイズ削減しながら性能への影響は最小；(3) クエリ-エッジ補間係数λ=0.1が検索に最適；(4) 外出と内入両質問がノード拡張に貢献。"
+
+contributions:
+  main_contributions:
+    - "我々は物語理解を促進するための細粒度コンテキストモデリングの新しいパラダイムを提案し、エンドツーエンドパラダイムに直交します。"
+    - "我々は自由形式振り返り質問をエッジとするグラフフレームワークNARCOを導入し、人間注釈なしで2段階プロンプトスキームを通じてLLMによって実際に実現されます。"
+    - "我々は3つの物語タスクにわたるNARCOの有効性を実証します：要約識別のエッジ効果（4.7 F1改善）、プロット検索のローカルコンテキスト豊富化（3.4% nDCG改善）、長文書QAでのより広い応用（2-5%精度改善）。"
+  
+  limitations:
+    - "コンテキストチャンクが互いに無関係な場合、生成された質問にノイズが含まれる"
+    - "3つ以上のチャンク間の結合依存関係を処理できない（ペアワイズ関係に制限）"
+    - "指示従行が不十分なLLMに対してフィルタリング戦略が不適切な可能性"
+    - "品質は質問生成のための基礎LLM能力に依存"
+
+narrative_understanding_aspects:
+  - "Reading Comprehension"  # Core focus on understanding narrative context
+  - "Narrative QA"  # Question answering on long narratives
+  - "Plot / Storyline Extraction"  # Plot retrieval and recap identification
+  - "Narrative Consistency Check"  # Coherence dependencies between passages
+
+keywords:
+  - "narrative comprehension"
+  - "graph representation"
+  - "retrospective questions"
+  - "coherence modeling"
+  - "context dependencies"
+  - "retrieval-augmented generation"
+  - "chain-of-thought prompting"
+  - "fine-grained context modeling"
+  - "NARCO"
+  - "edge relations"
+
+notes: "この研究はエンドツーエンドアプローチを補完する物語理解の革新的パラダイムを導入します。振り返り質問をグラフエッジとして使用することは、人間注釈を必要とすることなく物語の一貫性を捉える直感的で実用的な方法を提供します。"

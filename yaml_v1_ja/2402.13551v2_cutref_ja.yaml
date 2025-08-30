@@ -1,0 +1,148 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "Fine-Grained Modeling of Narrative Context: A Coherence Perspective via Retrospective Questions"
+  authors:
+    - "Liyan Xu"
+    - "Jiangnan Li"
+    - "Mo Yu"
+    - "Jie Zhou"
+  year: 2024
+  venue: "arXiv"
+  paper_url: null  # Not provided in the paper
+
+problem_statement:
+  background: "LLMの登場以来、文書理解はエンドツーエンド生成パラダイムを通じて大幅に改善されました。様々な技術で可能になった長いコンテキストウィンドウにより、エンドツーエンドパラダイムは単純で効果的です。しかし、このパラダイムは特に段落が孤立したものではなく結束的に相互接続される傾向がある物語において、すべての理解シナリオに十分でない可能性があります。"
+  
+  gap_or_challenge: "エンドツーエンドパラダイムは系列モデリングを通じてコンテキスト接続を暗黙的に把握しますが、複数のキャラクター/イベント発展が長距離にわたって絡み合う物語の独特な性質を捉えられない可能性があります。現在のアプローチはコンテキスト断片間の依存関係を明示的にモデル化せず、物語の一貫性の高レベル理解を逃しています。"
+  
+  research_objective: "この研究では、コンテキスト断片間の関係を明示的に描写するNARCOと呼ばれるグラフを通じて、物語のための細粒度コンテキストモデリングフレームワークを提案します。このグラフは回顧的質問をエッジとして使用し、読書中に以前のコンテキストから関連イベントを絶えず復元する人間の認知認識にインスパイアされています。"
+  
+  significance: "NARCOはエンドツーエンドパラダイムと直交する直接適用可能な代替パスを提供し、一貫性依存関係を明示的に捉えます。このフレームワークは人間注釈なしにLLMによって実際に実現され、様々な下流物語理解タスクを効果的に促進します。"
+
+tasks:
+  - task_name: "Recap Identification"
+    
+    task_overview: "物語において現在のコンテキストへの要約や前奏曲として機能する先行断片を特定。このタスクは物語展開とプロット進行の理解を要求し、コンテキスト断片間の一貫性関係を認識します。NARCOエッジは回顧的質問に基づいて現在の断片を関連する先行断片にリンクするために使用されます。"
+    
+    input_description: "小説/番組脚本からの目標断片と先行候補断片のリスト。各候補について、NARCOは候補によって明確化できる原因/背景について尋ねる回顧的質問を生成します。"
+    
+    output_description: "高いスコアがより良い要約情報を示すランク付き候補リスト。エッジ関係スコア、エッジ次数、またはベースラインテキスト類似性との補間に基づく選択。"
+  
+  - task_name: "Plot Retrieval"
+    
+    task_overview: "短いプロット記述のクエリが与えられたときに最も関連するストーリー断片を見つける。クエリは全体的なストーリー理解に基づく抽象的なものであり、本質的背景情報を要求するため、このタスクは困難です。NARCOは強化された局所表現のためにエッジ質問でノード埋め込みを拡張します。"
+    
+    input_description: "プロット記述のクエリとグラフノードとしての候補ストーリー断片。NARCOエッジは補助的文脈情報を提供する隣接ノードからの回顧的質問を含みます。"
+    
+    output_description: "クエリ-エッジ類似性と補間されたクエリ-ノード類似性（ゼロショット）または注意メカニズムを介した拡張埋め込み（教師あり）に基づく検索候補のランク付きリスト。"
+  
+  - task_name: "Long Document Question Answering"
+    
+    task_overview: "検索拡張生成を使用した長い物語文書での多肢選択質問に回答。NARCOは物語コンテキスト全体で抽出された関係を通じてより関連する断片を認識することを支援し、強化された検索によってQA性能を改善します。"
+    
+    input_description: "断片に分割された長い文書（5k+トークン）、質問、断片間のNARCOエッジ。クエリ-エッジ類似性はクエリ-ノード類似性と検索のために補間されます。"
+    
+    output_description: "LLMによるゼロショットQA推論のための短縮コンテキストとして連結された検索関連断片、多肢選択回答を生成。"
+
+methodology:
+  method_name: "NARCO (NARrative COgnition graph)"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "ノードをコンテキストチャンク（最大240語）、エッジを自由形式の回顧的質問とするグラフ定式化。質問は後続ノードが先行ノードによって対処できるイベント/状況について明確化を求めることから生じます。2段階LLMプロンプト：（1）質問生成 - LLMが接続をリストしてから質問に変換する2ターンスキーム、自己回答可能問題を軽減；（2）自己検証 - オプションのフィルタリング段階で、生成質問を連結コンテキストでのQAによって検証し、以前のコンテキストによって橋渡しされない雑音質問を破棄。エッジ活用：直接関係スコアリング、エッジ次数ランキング、または注意メカニズムを介した埋め込み拡張。グラフエッジは固定分類法なしに因果/時間的一貫性を捉えます。"
+  
+  base_models:
+    - "GPT-4 (question generation)"
+    - "ChatGPT/GPT-3.5 (verification and inference)"
+    - "Llama2-7B/70B (QA inference)"
+    - "BGE-Large encoder (retrieval)"
+  
+  key_innovations:
+    - "人間の認知プロセスを反映する回顧的質問ベースエッジ"
+    - "精度重視エッジ生成のための2段階プロンプトスキーム"
+    - "固定関係分類法のないタスク非依存グラフ表現"
+    - "異なる下流タスクのための複数エッジ活用戦略"
+    - "人間注釈なしのLLMベースグラフ実現"
+
+datasets:
+  - dataset_name: "RECIDENT"
+    characteristics: "小説（ノートルダム・ド・パリ）とテレビ番組（ゲーム・オブ・スローンズ）での要約特定データセット。各目標断片は約60の候補先行断片を持ち、平均4.9-5.6の正要約を持ちます。テストセット：169断片（NDP）、204断片（GOT）。"
+    usage: "一貫性認識のためのエッジ有効性評価"
+    size: "373 target snippets total in test sets"
+    domain: "fiction"
+    is_new: false
+    new_dataset_contribution: null
+  
+  - dataset_name: "Plot Retrieval Dataset"
+    characteristics: "中国語でのノートルダム・ド・パリを使用してXu et al.（2023b）から適応。グラフノードとしての短い断片とプロット記述のクエリ。総1288候補断片、クエリは1-7の正断片を持つ可能性。"
+    usage: "局所コンテキスト拡張評価"
+    size: "29484/1000/510 queries for train/dev/test"
+    domain: "fiction"
+    is_new: false
+    new_dataset_contribution: null
+  
+  - dataset_name: "QuALITY"
+    characteristics: "Project Gutenbergからの物語文書での多肢選択QA。文書あたり平均5k+トークン。質問は文書の複数部分からの大域証拠を要求。"
+    usage: "より広範なRAG適用評価"
+    size: null  # Standard QuALITY dataset
+    domain: "fiction"
+    is_new: false
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "異なる角度からの3つの実証研究。研究I：エッジ関係/次数を使用したゼロショット要約特定、F1@5で評価。研究II：ゼロショット補間と教師ありリランキングでのプロット検索、nDCG@1/5/10で評価。研究III：強化検索での長文書QAのためのRAG、dev/testセットでの精度で評価。"
+  
+  main_results: "研究I：NARCOはRECIDENTでベースラインより最大4.7ポイント（21.7%相対）のF1@5改善。研究II：ゼロショット検索は3.4% nDCG@10改善；教師ありモデルはベースラインより2.2%向上。研究III：強化検索はすべてのLLMでQA精度を一貫して2-5%向上、QuALITYテストセットで72.8%。"
+  
+  metrics_used:
+    - "F1@5 (recap identification)"
+    - "nDCG@1/5/10 (plot retrieval)"
+    - "Accuracy (question answering)"
+    - "Edge statistics (what/why/how ratios)"
+  
+  human_evaluation_summary: null  # No human evaluation reported
+
+results_analysis:
+  key_findings:
+    - "エッジ関係のみでテキストベースベースラインと同等/より良い性能を達成"
+    - "エッジ次数は単純性にもかかわらず合理的なランキング信号を提供"
+    - "自己検証は最小限の劣化で雑音質問を効果的にフィルタリング"
+    - "クエリ-エッジ類似性は検索で正の情報利得を提供"
+    - "小さなモデルがNARCOからより多く利益（Llama2-7Bで5% vs 70Bで2%）"
+    - "3つの多様な評価設定すべてで一貫した改善"
+  
+  ablation_summary: "自己検証なし（Full-F）では性能劣化は最小限で、ロバスト性を示します。エッジ次数のみでもまともな性能を達成。What/why/how質問はそれぞれ58-62%、25-27%、8-14%を構成。エッジあたり平均3.4-3.5質問、検証後1.9-2.0に削減。"
+
+contributions:
+  main_contributions:
+    - "エンドツーエンドアプローチと直交する物語理解のための細粒度コンテキストモデリングの新しいパラダイム。"
+    - "タスク非依存一貫性依存関係を捉える回顧的質問をエッジとするNARCOグラフフレームワーク。"
+    - "人間注釈なしの2段階プロンプトを通じた実用的LLMベースグラフ実現。"
+    - "エッジ有効性、局所拡張、より広範なRAG適用を実証する3つの実証研究。"
+  
+  limitations:
+    - "生成質問には雑音が含まれ；GPT-4は無関係チャンクペアで苦労"
+    - "3+チャンク間の結合依存関係を処理できない（ペアワイズのみ）"
+    - "指示に従うのが苦手なLLMではフィルタリングが不十分"
+    - "品質生成にGPT-4が必要（コスト考慮）"
+    - "大きな文書でのグラフ生成計算オーバーヘッド"
+
+narrative_understanding_aspects:
+  - "Narrative Consistency Check"
+  - "Narrative QA"
+  - "Plot / Storyline Extraction"
+  - "other"  # Coherence modeling and retrieval
+
+keywords:
+  - "narrative comprehension"
+  - "coherence dependencies"
+  - "retrospective questions"
+  - "graph representation"
+  - "fine-grained context modeling"
+  - "LLM prompting"
+  - "retrieval augmentation"
+  - "plot retrieval"
+  - "recap identification"
+
+notes: "Code and data not yet released. Work demonstrates alternative to end-to-end paradigm through explicit coherence modeling. Edge questions inspired by human cognitive process of reinstating relevant events during reading."

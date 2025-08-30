@@ -1,0 +1,122 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "What Matters in Evaluating Book-Length Stories? A Systematic Study of Long Story Evaluation"
+  authors:
+    - "Dingyi Yang"
+    - "Qin Jin"
+  year: 2025
+  venue: "ACL"
+  paper_url: "https://github.com/DingyiYang/LongStoryEval"
+
+problem_statement:
+  background: "自動ストーリー評価は、人間が書いた、または機械が生成したストーリーの質を評価するために批評と評価を提供することを含みます。このプロセスは推薦システムと建設的フィードバックに重要です。流暢さと正確性に焦点を当てた単純な評価タスクとは異なり、ストーリー評価は多様な人間中心基準に基づく包括的評価を要求します。"
+  
+  gap_or_challenge: "本の長さのストーリー（>100Kトークン）の評価は3つの主要な課題をもたらします：（1）データ注釈制約 - 人間評価は時間集約的で認知的に要求が高く、100K+トークンストーリーの注釈スケーリングは非実用的。（2）一貫しない評価基準 - 以前の研究は実際の読者好みを反映する普遍的標準なしに事前定義された基準に依存。（3）長いストーリー処理 - 本の長さのストーリーはしばしばLLMの128Kトークンコンテキスト制限を超え、効率的な評価戦略を必要とする。"
+  
+  research_objective: "この研究では、どの評価側面が読者にとって最も重要かを理解し、長いストーリーを評価する効果的な方法を探求するための体系的研究を実施します。この研究はLongStoryEvalベンチマークを導入し、実際の読者好みを分析して階層的評価基準構造を開発し、本の長さのストーリー評価のための特化モデルNovelCritiqueを提案します。"
+  
+  significance: "600の新刊書籍（平均121Kトークン）を含む本の長さのストーリー評価のための初の大規模ベンチマーク。実際の読者好みに基づく評価基準構造を確立。集約ベースと要約ベース手法が増分アプローチを上回ることを実証。NovelCritiqueは商用LLMと比較して人間評価との優れた一致を達成。"
+
+tasks:
+  - task_name: "Book-Length Story Evaluation"
+    
+    task_overview: "指定された評価基準に基づいて本の長さのストーリーに対する側面固有の批評と評価を生成。このタスクは平均121Kトークン（最大397K）のストーリーを処理し、8つのトップレベル側面（プロット&構造、キャラクター、執筆&言語、世界構築&設定、テーマ、感情的影響、楽しさ&関与、期待充足）にわたって対応するスコアとともにレビューを生成する必要があります。"
+    
+    input_description: "タイトル、ジャンル、前提を含むメタデータを持つ本の長さのストーリー（100K-400Kトークン）。評価する側面を指定する評価基準リスト。集約/増分手法の場合：完全な章内容。要約ベース手法の場合：プロット要約、キャラクター分析、執筆抜粋。"
+    
+    output_description: "各評価基準の側面固有批評、長所と短所をまとめた全体的評価、個別側面と全体的品質の両方に対する評価スコア（1-5スケール）。"
+
+methodology:
+  method_name: "Multi-Method Evaluation Framework with NovelCritique"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "このフレームワークは3つの評価戦略を比較します。集約ベース：各章を個別に評価してから章レベルスコアを平均し、詳細な評価を提供するが計算コストが高い。増分更新：読みながら段階的に評価を更新し、理論的には有望だが指示の複雑さと蓄積する不一貫性に苦しむ。要約ベース：包括的要約（プロット、キャラクター、執筆抜粋）を生成してから評価し、効率性と早期評価の可能性を提供。NovelCritiqueモデルはLlama 3.1-8Bベースで要約ベースアプローチを使用し、176Kフィルタされたレビューで指示調整。レビューバイアス軽減は評価分布に一致するよう訓練データをフィルタ。スコア正規化はプラットフォーム全体統計を使用してユーザー評価傾向を調整。"
+  
+  base_models:
+    - "GPT-4o"
+    - "GPT-4o-mini"
+    - "DeepSeek-v2.5"
+    - "Mixtral 8×7B-Instruct"
+    - "Llama 3.1-70B-Instruct"
+    - "Llama 3.1-8B-Instruct"
+    - "NovelCritique-8B (proposed)"
+  
+  key_innovations:
+    - "本の長さのストーリー評価のための初の大規模ベンチマーク"
+    - "340K実読者レビューから派生したデータ駆動評価基準構造"
+    - "3つの長いストーリー処理手法の体系的比較"
+    - "レビューバイアス軽減とスコア正規化技術"
+    - "商用LLMを上回るNovelCritique特化モデル"
+
+datasets:
+  - dataset_name: "LongStoryEval"
+    
+    characteristics: "平均長121Kトークン（最大397K）の600の新刊書籍（2024-2025）。各書籍はGoodreadsからの平均評価スコアと複数読者レビューを含む。レビューは全体的評価と評価を伴う側面誘導批評に再フォーマット。多様なジャンルをカバー：ロマンス、ファンタジー、スリラー、ミステリー、歴史フィクション、サイエンスフィクション、ヤングアダルト。"
+    
+    usage: "本の長さのストーリー評価モデルの訓練と評価のための主要データセット"
+    
+    size: "600 books, 340K reviews (176K filtered for training)"
+    
+    domain: "fiction"
+    
+    is_new: true
+    
+    new_dataset_contribution: "100Kトークンを超える本の長さのストーリーのための初のベンチマーク。短いストーリー（100-2000トークン）に限定された以前のベンチマークとは異なり、評価基準の体系的分析とともに実世界読者レビューを提供。データ駆動アプローチは基準が事前定義側面ではなく実際の読者標準を反映することを保証。将来のパーソナライゼーション研究のためのレビュワーメタデータと評価分布を含む。"
+
+evaluation:
+  evaluation_strategy: "モデル生成スコアと人間割り当て平均評価間のKendall-Tau相関。8つのトップレベル側面と全体的スコア全体での評価。複数のバックボーンLLMを持つ3つの処理手法の比較。相関強度を通じた側面重要性分析。NovelCritiqueコンポーネントのアブレーション研究。生成批評の定性分析。"
+  
+  main_results: "NovelCritiqueは人間評価との最高全体相関（20.1）を達成。客観的側面について：プロット（21.4）とキャラクター（20.8）が最も影響力があり、執筆（15.1）と世界構築（11.2）が最も影響力が少ない。主観的側面について：感情的影響（21.1）、楽しさ&関与（22.8）、期待充足（20.5）すべてが重要。集約ベースと要約ベース手法が増分更新アプローチを上回る。要約ベースが最良の効率性-性能トレードオフを提供。集約を用いたGPT-4oは15.2相関を達成するが安定性のため5x平均が必要。"
+  
+  metrics_used:
+    - "Kendall-Tau correlation"
+    - "Aspect-specific correlations"
+    - "Computational cost analysis"
+    - "Stability across multiple runs"
+  
+  human_evaluation_summary: "Goodreadsプラットフォームの実読者からの平均評価。レビューを処理してユーザー言及側面を抽出（1000+固有側面を特定）。体系的分析を通じて8つのトップレベルと20のサブ側面を持つ階層構造に整理。"
+
+results_analysis:
+  key_findings:
+    - "プロットとキャラクターが評価にとって最も影響力のある客観的側面"
+    - "感情的影響、楽しさ、期待充足が重要な主観的側面"
+    - "集約ベース手法は詳細な評価を提供するが計算コストが高い"
+    - "要約ベース手法は同等の性能で効率性を提供"
+    - "増分更新手法は指示複雑性と不一貫性に苦しむ"
+    - "クローズドソースLLMは複数実行を要求する著しい変動性を示す"
+    - "レビューバイアス軽減とスコア正規化がモデル一致を改善"
+  
+  ablation_summary: "レビューバイアス軽減、スコア正規化、またはレビュー整理の除去はそれぞれNovelCritique性能を減少。128Kサブセットでの一回評価は低い相関（全体5.5）を示す。詳細要約は性能をわずかに改善するが計算コストを増加。GPT-4o-mini要約はGPT-4oの0.03%コストで品質を維持。"
+
+contributions:
+  main_contributions:
+    - "LongStoryEval：平均121Kトークンの600書籍と340K読者レビューを持つ本の長さのストーリー評価のための初の大規模ベンチマーク。"
+    - "8つのトップレベル側面と20のサブ側面を包含する、実読者好みの体系的分析から派生した階層的評価基準構造。"
+    - "3つの長いストーリー処理手法の包括的比較、集約と要約ベースアプローチが増分更新を上回ることを実証。"
+    - "NovelCritique：人間評価と20.1 Kendall相関を達成し、GPT-4oなどの商用LLMを上回る8B特化モデル。"
+  
+  limitations:
+    - "評価は不一貫性を起こしやすいスコア生成に依存"
+    - "変動性を軽減するため複数実行の平均化を要求"
+    - "パーソナライズされた好みより一般的評価に焦点"
+    - "要約ベース手法はストーリー詳細を見逃す可能性"
+    - "英語ストーリーに限定"
+
+narrative_understanding_aspects:
+  - "Narrative Assessment"
+  - "other"  # Book-length story evaluation
+
+keywords:
+  - "book-length story evaluation"
+  - "long-form narrative"
+  - "evaluation criteria"
+  - "reader preferences"
+  - "aggregation-based evaluation"
+  - "summary-based evaluation"
+  - "review processing"
+  - "NovelCritique"
+  - "LongStoryEval"
+
+notes: "Dataset verified absent from LLM pretraining to avoid contamination. Anonymized test set proposed for future evaluations. Review processing uses DeepSeek-v2.5 with GPT-4o fallback for ambiguous cases. Training uses LoRA with r=64, alpha=16 on 4 A6000 GPUs for 125 hours."

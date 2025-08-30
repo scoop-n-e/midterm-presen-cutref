@@ -1,0 +1,125 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "FACTTRACK: Time-Aware World State Tracking in Story Outlines"
+  authors:
+    - "Zhiheng Lyu"
+    - "Kevin Yang"
+    - "Lingpeng Kong"
+    - "Daniel Klein"
+  year: 2025
+  venue: "NAACL"
+  paper_url: "https://github.com/cogito233/fact-track"
+
+problem_statement:
+  background: "大規模言語モデルは多くのタスクで人間の性能を上回っていますが、長編テキストの生成は依然として困難です。数十万トークンのコンテキストウィンドウがあっても、モデルは長いコンテキストでの検索と推論に苦労します。先進的なモデルでも長いコンテキスト生成を改善の方向性として考えています。"
+  
+  gap_or_challenge: "既存の階層生成アプローチは、生成中の事実的一貫性の維持と幻覚の回避に苦労しています。高レベル計画段階での問題は下流タスクの性能を大きく損ないます。訓練コーパス文書は長さの制限と断片化されたソースに悩まされ、モデルの長距離・多状態接続を確立する能力を阻害します。現在の文レベル事実検証モデルは長いテキスト、特に多事実コンテキストと時間経過による動的・状態的内容に苦労します。"
+  
+  research_objective: "この研究では、ストーリーアウトラインでの原子事実の追跡と事実的矛盾への対処のための新しい手法FACTTRACKを提案します。FACTTRACKは各事実に時間認識有効性区間を維持し、時間経過による変化を許可します。この手法は世界状態データ構造を更新するための4段階パイプラインで構成されます：イベントを方向性原子事実に分解、有効性区間を決定、矛盾を検出、世界状態を更新。"
+  
+  significance: "LLaMA2-7B-Chatを使用するFACTTRACKはベースラインを大幅に上回り、GPT4と同等の性能を達成します。GPT4を使用する場合、FACTTRACKはGPT4ベースラインを含むすべてのベースラインを大幅に上回ります。このフレームワークは下流タスクに有用な構造化情報を提供し、長編生成に重要な時間認識矛盾検出を可能にします。"
+
+tasks:
+  - task_name: "Time-Aware Contradiction Detection in Story Outlines"
+    
+    task_overview: "階層生成されたストーリーアウトラインでの事実的矛盾とプロット冗長性を検出。このタスクはタイムライン上で有効性区間を持つ原子事実の追跡、時間を超えて事実が互いに矛盾する時期の特定、正当な矛盾と時間とともに単純に変化する事実の区別を要求します。システムは階層入力に適合するように非時系列で挿入できるイベントを処理しなければなりません。"
+    
+    input_description: "3層（深度3）のストーリーアウトライン、各イベントが3つのサブイベントを持ち、合計39イベント。LLaMA2-7B-Chatを使用してWritingPromptsデータセット前提から生成されたアウトライン。平均アウトライン長約4800トークン。イベントはキャラクター、設定、プロット展開についての事実的情報を含みます。"
+    
+    output_description: "矛盾詳細を含む矛盾イベントペアのリスト、以下を含む：対立する具体的原子事実、有効性区間、矛盾スコア（1-5スケール）、NLIスコア。システムは非矛盾事実とその時間認識有効性区間で更新された世界状態も維持します。"
+
+methodology:
+  method_name: "FACTTRACK"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "FACTTRACKは有効性区間を持つ前事実と後事実の2つのリストとして世界状態を維持します。各新しいイベントに対する4段階パイプライン：（1）イベント分解 - ゼロショットLLMプロンプトを使用してイベントを前事実（イベント前の真実）と後事実（イベント後の真実）に分解。（2）有効性区間決定 - 世界状態を使用して各原子事実の有効性区間を発見、前事実には（−inf, l]、後事実には[r, inf)のデフォルト。（3）矛盾検出 - 両チェックポイント（イベント境界）での矛盾を要求する最も厳格な制約を使用して重複と矛盾をチェック。（4）世界状態更新 - 既存事実の有効性区間を更新し新しい事実を追加。矛盾スコアリング（0-1）にはGPT4注釈出力で微調整されたNLIモデルを使用。検索モデルフィルタが計算コストを削減。タイムライン表現は[0,1]区間の再帰的細分化で階層的時間構造を処理。"
+  
+  base_models:
+    - "LLaMA2-7B-Chat (primary)"
+    - "GPT-4 (evaluation and comparison)"
+    - "GPT-3.5-Turbo (baseline)"
+    - "Custom NLI model (finetuned on GPT4 annotations)"
+  
+  key_innovations:
+    - "時間認識有効性区間を持つ方向性原子事実（前事実と後事実）"
+    - "任意の時点での非矛盾事実の最大セットとしての世界状態追跡"
+    - "両チェックポイントでの矛盾検出のための最も厳格な制約"
+    - "再帰的イベント分解のための階層的タイムライン表現"
+    - "事実分解と時間的有効性追跡の統合"
+
+datasets:
+  - dataset_name: "Story Outline Dataset"
+    characteristics: "WritingPromptsデータセット前提から生成された90ストーリーアウトライン。アウトラインあたり合計39イベントを持つ3層階層構造。アウトラインあたり平均4800トークン。アウトラインあたり推定3-5の真の矛盾。イベントはキャラクター、設定、プロット展開についての豊富な事実的情報を含みます。"
+    usage: "矛盾検出のための主要評価データセット"
+    size: "90 outlines with 39 events each"
+    domain: "fiction"
+    is_new: true
+    new_dataset_contribution: "有効性区間追跡を伴う階層的ストーリーアウトラインでの時間認識矛盾検出のために特別に設計された初のデータセット。"
+  
+  - dataset_name: "ContraDoc"
+    characteristics: "追加評価に使用される文書レベル矛盾検出データセット。文書内矛盾検出のための二分判断フレームワーク。"
+    usage: "FACTTRACKの汎化の拡張評価"
+    size: null  # Not specified
+    domain: "mixed"
+    is_new: false
+    new_dataset_contribution: null
+
+evaluation:
+  evaluation_strategy: "検出されたイベントペアに対する矛盾スコア（1-5スケール）のGPT-4注釈。2つのメトリック：PAIRWISE SCORE（GPT-4がイベントペアを直接評価）とCONTEXT SCORE（GPT-4が完全なアウトラインコンテキスト内で評価）。ベースライン検出カウントに合わせるためのダウンサンプリング適用。PAIRWISE DETECTION（LLaMA2-7B-Chat）およびFULL OUTLINE DETECTION（Chain of ThoughtでのGPTシリーズ）との比較。アブレーション研究は個別コンポーネントを検討。精度、再現率、F1メトリックによる二分判断を使用したContraDocデータセットでの拡張評価。"
+  
+  main_results: "FACTTRACK（LLaMA2-7B-Chat、トップ300）：PAIRWISE 2.393±0.164、CONTEXT 2.777±0.146。PAIRWISE DETECTIONベースライン（1.452±0.080、1.64±0.088）およびFULL OUTLINE DETECTION GPT-3.5（1.556±0.068、1.902±0.078）を上回る。GPT-4ベースライン（2.355±0.163、2.859±0.149）と同等。FACTTRACK（GPT-4）：2.599±0.148、3.133±0.123、すべてのベースラインを大幅に上回る。ContraDoc：FACTTRACKはベースライン10.48% F1に対して57.32% F1を達成。"
+  
+  metrics_used:
+    - "Contradiction Score (1-5 scale via GPT-4)"
+    - "PAIRWISE SCORE"
+    - "CONTEXT SCORE"
+    - "Precision, Recall, F1 (ContraDoc)"
+    - "NLI scores for contradiction detection"
+  
+  human_evaluation_summary: "矛盾の複雑さとコンテキスト依存性により直接的人間評価なし。GPT-4注釈は試行された人間ラベリングより高品質で雑音が少ないことが判明（付録C.1参照）。"
+
+results_analysis:
+  key_findings:
+    - "FACTTRACKはイベント分解と有効性区間維持を通じて矛盾検出を効果的に強化"
+    - "Decompose EventsとTrack Factsモジュールが性能に重要"
+    - "Detect Contradictionsモジュールは少数ショットLLMで改善可能（GPT-4: 2.212-2.216 vs NLI: 1.836）"
+    - "言語の曖昧さによりイベント分解が残るボトルネック"
+    - "ContraDocでより良いF1を達成するが境界線矛盾により精度は低下"
+    - "計算コストはアウトライン長とほぼ線形に増加"
+  
+  ablation_summary: "Decompose Eventsなし（CoT使用）：ベースライン性能を維持。Track Factsなし：大幅な低下（2.380 PAIRWISE、2.364 CONTEXT）。矛盾検出のための少数ショットGPT4：2.212 PAIRWISE、2.216 CONTEXT。少数ショットLLaMA-7B：2.186、2.196。デフォルトNLIモデル：1.836、2.046。"
+
+contributions:
+  main_contributions:
+    - "イベントをタイムライン上で時間認識有効性区間を持つ方向性原子事実に分解するフレームワーク。"
+    - "階層的ストーリーアウトラインでの時間認識事実的矛盾を検出するFACTTRACK手法。"
+    - "有効性区間の維持が矛盾検出性能を大幅に改善することの実証。"
+    - "より小さなモデル（LLaMA2-7B）を使用するFACTTRACKがより大きなモデル（GPT-4）と同等の性能を達成できる証拠。"
+  
+  limitations:
+    - "矛盾のゴールドラベル取得の困難さが評価を制限"
+    - "コンテキストウィンドウ制約が評価を約4800トークンアウトラインに制限"
+    - "厳密な検証なしの手動ハイパーパラメータ選択"
+    - "複雑な多方向シナリオではなく二分矛盾のみを検出"
+    - "性能はベースLLMの生成と指示従う能力に依存"
+    - "イベント分解の曖昧さが誤解を招く可能性"
+
+narrative_understanding_aspects:
+  - "Narrative Consistency Check"
+  - "Plot / Storyline Extraction"
+  - "other"  # Time-aware fact tracking
+
+keywords:
+  - "time-aware fact tracking"
+  - "atomic facts"
+  - "validity intervals"
+  - "contradiction detection"
+  - "story outlines"
+  - "world state tracking"
+  - "pre-facts and post-facts"
+  - "hierarchical generation"
+  - "factual consistency"
+
+notes: "Code and data available at https://github.com/cogito233/fact-track. Method inherits biases from base LLMs. Currently English-only but translatable in principle. All intermediate results saved for reproducibility."

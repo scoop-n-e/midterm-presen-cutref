@@ -1,0 +1,127 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "LLMLINK: Dual LLMs for Dynamic Entity Linking on Long Narratives with Collaborative Memorisation and Prompt Optimisation"
+  authors:
+    - "Lixing Zhu"
+    - "Jun Wang"
+    - "Yulan He"
+  year: 2025
+  venue: "COLING"
+  paper_url: null  # Not provided in the paper
+
+problem_statement:
+  background: "本の長さの物語やエピソード的ストーリーを読むとき、人々は通常、非連続的な日にわたって読書を広げ、以前のセクションを再訪するのではなく主要キャラクターとその記述の記憶を維持します。著者は明確な区分（章、場面）でこれを促進します。人間は階層化された処理を使用して長い物語を理解します：物語要素の特定には局所コンテキスト、記憶に保存されたキャラクターとのリンクには大域コンテキスト。"
+  
+  gap_or_challenge: "現在のモデルはこのエピソード的読書過程を完全に捉えていません。LLMの微調整はTransformerアテンションで二次的スケーリング課題に直面します。既存のアプローチは教師あり微調整や一回限りの予測に集中しており、長いコンテキストに課題をもたらします。ほとんどの手法は会話履歴を前置することでコンテキストを拡張することに依存し、高いトークン消費をもたらします。記憶化においてキャラクター記述を巻き戻し、強化するメカニズムが必要です。"
+  
+  research_objective: "この研究では、デュアル大規模言語モデルを展開することで、チャンク化された長い物語での照応解決のための動的アプローチを開発します。この研究では、特化LLMを局所固有表現認識と遠隔照応タスクに割り当てながら情報交換を確保します。新しい記憶化スキームは以前のメッセージを保存することと比較してトークン消費を削減し、自動プロンプト最適化はLLMの幻覚を軽減します。"
+  
+  significance: "LLMLINKは長い物語データセットで他のLLMベースモデルと微調整アプローチを上回る性能向上を達成し、推論と訓練に必要なリソースを大幅に削減します。このアプローチは特化記憶化戦略を持つ協力的デュアルLLMシステムの相互利益を実証します。"
+
+tasks:
+  - task_name: "Dynamic Entity Linking on Long Narratives"
+    
+    task_overview: "チャンク化された長い物語での結合エンティティ認識と照応解決。このタスクは物語テキストを増分的に処理し、各チャンクで固有エンティティ（固有名詞、名詞句、代名詞）を特定し、次にエンティティを以前に解決されたエンティティにリンクするか新しいシングルトンを作成することで照応を解決することを含みます。動的アプローチは章/セクションを順次処理し、チャンク間で記憶を維持します。"
+    
+    input_description: "自然境界（章、セクション）または固定長チャンク（8,192トークン）で分割された長い物語。各チャンクは特定され、リンクされるべきエンティティを持つ物語テキストを含みます。入力には上位レベル処理のためのユーザープロンプト、システムプロンプト、記述付きの以前に解決されたエンティティが含まれます。"
+    
+    output_description: "以下を含むJSON形式の出力：（1）記述付きでPROPER_NOUN、NOUN_PHRASE、またはPRONOUNSに分類された特定エンティティ、（2）言及とシングルトン間の照応リンクを示す解決エンティティ、（3）現在のチャンクからの新しい情報を組み込んだ更新エンティティ記述。"
+
+methodology:
+  method_name: "LLMLINK - Dual LLM Framework with Memorisation and APO"
+  
+  approach_type: "neural"
+  
+  core_technique: "LLMLINKは2層フレームワークでデュアル指示調整LLMを採用します。下位レベルNER LLMは固定システムプロンプト'You are an expert NER assistant'とエンティティタイプを指定するユーザープロンプトを使用してチャンク内でエンティティを特定します。上位レベルResolver LLMは補助要約とともにNER予測を受け取り、入力/出力のキャッシュを維持して照応予測を生成します。2つの記憶化スキーム：Prompt Cacheは有向非循環グラフを記録するJSON辞書として照応クラスタを保存、Conversation Memoはストーリー要約とともに会話履歴を追跡。カスタムLLM RankerでのAutomatic Prompt Optimisation（APO）は、NERに5スケールランキング、照応解決にカスタマイズランキングを使用してプロンプト品質を評価。アルゴリズムには固有名詞の前に言及されるキャラクターのフラッシュバックを処理する巻き戻しメカニズム（maxRewind=2）を含みます。実装はtemperature=0、コンテキストサイズ16,384トークンでMixtral-8x7B-Instructを使用。"
+  
+  base_models:
+    - "Mixtral-8x7B-Instruct-v0.1"
+    - "GPT-3.5-turbo (baseline)"
+    - "GPT-4 Turbo (for APO ranker)"
+    - "T5 (for LCA-LLM baseline)"
+    - "BERT (for DOC-ARC baseline)"
+    - "T0 (for Pure-Seq2seq baseline)"
+    - "Longformer (for Dual-Cache baseline)"
+  
+  key_innovations:
+    - "NERと照応解決のための特化モデルを持つデュアルLLMアーキテクチャ"
+    - "トークン消費を削減する2つの新しい記憶化スキーム（Prompt CacheとConversation Memo）"
+    - "物語タスクのための注釈を活用したカスタムLLM rankerによる自動プロンプト最適化の適応"
+    - "人間のエピソード的読書パターンに合致する動的増分処理"
+    - "物語のフラッシュバックとキャラクター紹介を処理する巻き戻しメカニズム"
+
+datasets:
+  - dataset_name: "Coreference-Annotated LitBank"
+    characteristics: "ACE形式でエンティティが注釈されたフィクションデータセット。固有名（PROP）、一般句（NOM）、代名詞（PRON）の照応を解決。各照応はシングルトンに基づく。訓練90文書、テスト10文書。文書あたり平均25.06章、102kトークン、291言及。"
+    usage: "文学テキストでの照応解決の主要評価"
+    size: "100 documents total"
+    domain: "fiction"
+    is_new: false
+    new_dataset_contribution: null
+  
+  - dataset_name: "WhoLink (refactored NarrativeQA)"
+    characteristics: "キャラクターを対象とするWho質問のために再構築されたNarrativeQAのサブセット。固有エンティティがテキストスパンに基づけることを保証するためにフィルタリング。シングルトンキャラクターへの参照を基づかせる401注釈。訓練133文書、テスト100文書。平均81.87/54.75章、177k/131kトークン、文書あたり3.76/2.86言及。"
+    usage: "キャラクター焦点質問での長期照応解決の評価"
+    size: "233 documents with 401 annotations"
+    domain: "mixed"
+    is_new: true
+    new_dataset_contribution: "キャラクター照応解決のために特別に再構築されたNarrativeQAの初回、長期照応能力の評価のためにすべてのエンティティがテキストスパンに基づくことを保証。"
+
+evaluation:
+  evaluation_strategy: "固有表現検出と照応解決のためのF1スコア、正確な文字列一致メトリック。自由形式LLM完了での幻覚問題により従来の照応メトリック（MUC、B³、CEAF、BLANC）は回避。計算コスト評価のためのトークン消費分析。アブレーション研究はデュアルLLM構造、記憶化スキーム、APOコンポーネントの貢献を検討。ケーススタディはAPOによるエラー修正と記憶化による改善された代名詞解決を実証。"
+  
+  main_results: "LLMLINKは最良の全体結果を達成：LitBank NER F1 98.4%、Coref F1 81.5%、Exact Match 73.0%；WhoLink NER F1 91.6%、Coref F1 78.2%、Exact Match 71.6%。照応でLCA-LLM（微調整T5）をLitBankで1.3%、WhoLinkで6.8%上回る。トークン消費32.73M（LitBank）と129.52M（WhoLink）、Mixtral-with-Memo（69.17M/417.33M）より大幅に少ない。Prompt CacheはConversation Memoより効率的で同等の性能を維持。"
+  
+  metrics_used:
+    - "Named Entity Recognition F1"
+    - "Coreference Resolution F1"
+    - "Exact String Match"
+    - "Cumulative Token Consumption"
+    - "Component-wise ablation metrics"
+  
+  human_evaluation_summary: null  # No human evaluation reported
+
+results_analysis:
+  key_findings:
+    - "デュアルLLM構造のみでわずかな向上（~0.5%）だが、効果的な記憶化を可能"
+    - "Prompt Cacheが2.4%改善をもたらし、Conversation Memoは1.6%向上を得る"
+    - "APOがLitBankで追加1%性能向上を提供"
+    - "指示調整モデルはスパース注釈（WhoLink）で優秀"
+    - "トークンタギングモデルは十分な注釈で高い性能を達成"
+    - "記憶化は長いコンテキストの処理、特に代名詞に重要"
+    - "LLM RankerはAPOに不可欠 - それなしで性能が大幅に低下"
+  
+  ablation_summary: "Dual-LLMsのみ：77.9%（LitBank）、75.8%（WhoLink）。Cacheあり：80.3%、77.6%。Memoあり：79.5%、76.9%。完全なLLMLINK：81.5%、78.2%。APOなし：80.6%、78.1%。LLM rankerなし：79.3%、76.0%。CacheはMemoより類似の性能向上を達成しながらトークン効率的。"
+
+contributions:
+  main_contributions:
+    - "動的物語設定での結合NERと照応解決のために局所・大域コンテキストに基づく異なる責任を割り当てる初のデュアルLLMフレームワーク。"
+    - "指示調整LLMのために調整された新しい記憶化戦略（DAG構造を保存するPrompt Cache、ストーリー要約を持つConversation Memo）、コンテキスト拡張手法と比較してトークン消費を大幅に削減。"
+    - "物語理解タスクでの幻覚を軽減するため注釈を活用したカスタマイズLLM rankerでの自動プロンプト最適化の適応。"
+    - "特化記憶化を持つ協力的デュアルLLMシステムが長い物語データセットで微調整モデルと単一LLMアプローチの両方を上回ることの実証。"
+  
+  limitations:
+    - "余分なトークンと複雑なプロンプトエンジニアリングを必要とする指示調整LLMの弱点を継承"
+    - "下層LLMは上層から信号を受け取らない（一方向情報フロー）"
+    - "maxRewindと巻き戻しタイミングを推論前に事前設定"
+    - "暫定読書過程中に焦点を後方に移すことの課題"
+    - "プロンプトエンジニアリングの複雑さと一貫しない生成の可能性"
+
+narrative_understanding_aspects:
+  - "Character / Entity Understanding"
+  - "other"  # Coreference resolution in long narratives
+
+keywords:
+  - "dual LLMs"
+  - "entity linking"
+  - "coreference resolution"
+  - "long narratives"
+  - "memorisation schemes"
+  - "prompt cache"
+  - "conversation memo"
+  - "automatic prompt optimisation"
+  - "dynamic processing"
+  - "episodic reading"
+
+notes: "Code available at https://github.com/somethingx1202/LlmLink. Work demonstrates importance of matching computational approaches to human reading patterns through episodic processing and specialized memorisation."

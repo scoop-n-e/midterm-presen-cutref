@@ -1,0 +1,125 @@
+# Narrative Understanding Survey - Paper Summary
+
+metadata:
+  title: "STORYSUMM: Evaluating Faithfulness in Story Summarization"
+  authors:
+    - "Melanie Subbiah"
+    - "Faisal Ladhak"
+    - "Akankshya Mishra"
+    - "Griffin Adams"
+    - "Lydia B. Chilton"
+    - "Kathleen McKeown"
+  year: 2024
+  venue: "EMNLP"
+  paper_url: "https://aclanthology.org/2024.emnlp-main.557/"
+  
+problem_statement:
+  background: "人間による評価は抽象的要約における忠実性をチェックする際のゴールドスタンダードとされてきました。しかし、物語のような挑戦的なソース領域では、複数の注釈者が要約は忠実だと合意している間に、指摘されて初めて明らかな誤りとなるような詳細を見逃すことがあります。"
+  
+  gap_or_challenge: "物語要約における不整合を検出する手法は、長い要約の評価（Krishna et al., 2023）や物語テキストに必要な微妙な解釈を含む課題に直面しています。これまでの研究はニュース要約における事実性に焦点を当ててきましたが、物語は注釈者が見逃しやすい微妙な意味や解釈の理解を必要とします。さらに、異なる注釈プロトコルが独自だが正当な不整合を捉えるため、基準真理の確立が困難です。"
+  
+  research_objective: "本研究は、局所化された忠実性ラベルと誤り説明を含むショートストーリーのLLM要約からなる新しいデータセット、STORYSUMMを導入します。このベンチマークは忠実性検出手法の評価用に設計されており、物語要約における挑戦的な不整合を検出できるかどうかをテストします。"
+  
+  significance: "このベンチマークは挑戦的な物語解釈誤りを導入することで評価手法を前進させます。この研究は、単一の人間注釈プロトコルは不整合を見逃す可能性が高いことを実証し、要約データセットの基準真理を確立する際に複数の手法を追求することを提唱しています。"
+
+tasks:
+  - task_name: "Faithfulness Evaluation in Story Summarization"
+    
+    task_overview: "このタスクは要約の情報がソースストーリーと一致しているかを評価します。このタスクは物語要約における明らかな誤りと微妙な誤解の両方を検出することを要求します。注釈者は主題的コメントを無視して、要約のすべての詳細がソースに忠実であるかを特定しなければなりません。このベンチマークは自動手法と人間手法が慎重な物語解釈を要求する誤りを捉える能力をテストします。"
+    
+    input_description: "入力はRedditのショートストーリー（通常1ページ未満）とLLM生成要約（約1段落の長さ）で構成されます。ストーリーはr/shortstoriesとr/shortscarystoriesサブレディットから、少なくとも3つのアップヴォートを持つものです。"
+    
+    output_description: "要約レベルと文レベルの両方での二進忠実/非忠実ラベル。非忠実要約については、不整合の書面による説明が提供されます。非忠実要約は、検出が容易（すべての注釈者が検出）または困難（一部の注釈者が見逃す）にさらに分類されます。"
+
+methodology:
+  method_name: "Multi-Protocol Evaluation Framework"
+  
+  approach_type: "hybrid"
+  
+  core_technique: "このフレームワークは基準真理を確立するために3つの異なる人間注釈プロトコルを採用します。第一に、Annotatorプロトコルは Upwork ワーカーを使用して、二進忠実性ラベルと非忠実文の書面による正当化を含む細粒度文レベル注釈を実行します（Fleiss-kappa 0.85）。第二に、Expertプロトコルでは3人の論文著者が要約を全体的にレビューし、議論を通じて不一致を裁定します。第三に、Hybridプロトコルは GPT-4 を使用して可能な不整合を生成し、新しい Upwork ワーカーがこれらを検証します。ラベルは全プロトコルにわたってマージされ拡張ゴールドセットが作成され、容易な誤りはすべての手法で検出され、困難な誤りは一部のみで検出されます。自動評価については、プロンプトベース（GPT-4、Claude-3、Mixtral を使用したバイナリと Chain-of-Thought）、クレームベース（FABLES、MiniCheck）、訓練済みモデル（UniEval、AlignScore）を含む様々な手法がテストされます。"
+  
+  base_models:
+    - "GPT-3.5"
+    - "GPT-4"
+    - "Claude-2"
+    - "Claude-3"
+    - "Davinci-3"
+    - "ChatGPT"
+    - "Mixtral-8x7B"
+    - "Flan-T5-Large (MiniCheck)"
+  
+  key_innovations:
+    - "複数の人間注釈プロトコルをマージしてより良い誤りカバレッジを達成する拡張ゴールドラベルの導入"
+    - "LLM生成の不整合を使用して人間注釈者をガイドする新しいハイブリッド注釈手法"
+    - "異なるプロトコルが公正な合意のみで独自だが正当な不整合を捉えることの実証"
+    - "自動メトリクスが最大70%のバランス精度を達成することを示す包括的ベンチマーキング"
+    - "不完全な注釈に対する評価がメトリクス性能を水増しすることを明らかにする分析"
+
+datasets:
+  - dataset_name: "STORYSUMM"
+    
+    characteristics: "Redditの96の短編小説と500以上の文レベル忠実性ラベルを含むLLM生成要約。ストーリーは通常1ページ未満で、他で要約されている可能性は低いです。要約は約1段落の長さで、GPTとClaudeシリーズモデルによって生成されました。"
+    
+    usage: "物語要約における忠実性検出手法を評価するための主要ベンチマークデータセット"
+    
+    size: "96のストーリー-要約ペア（検証33、テスト63）"
+    
+    domain: "fiction"
+    
+    is_new: true
+    
+    new_dataset_contribution: "物語要約における忠実性評価手法のベンチマーキングを特別に設計した初のデータセット。局所化されたラベルと説明を持つ挑戦的な解釈誤りを特徴とします。複数の注釈プロトコルからの拡張ゴールドラベルを含み、単一プロトコルが30-50%の誤りを見逃すことを示します。"
+
+evaluation:
+  evaluation_strategy: "3つの人間注釈プロトコルを比較し自動メトリクスをベンチマークするマルチレベル評価。人間プロトコルは注釈者間合意（Fleiss-kappa）、プロトコル間合意（Cohen's kappa）、誤り検出率で評価されます。自動メトリクスは標準的な注釈者ラベルと拡張ゴールドラベルの両方で評価され、不完全な注釈の影響を示します。メトリクスには、バランス精度、忠実要約の精度/再現率、検出された容易/困難誤りの割合が含まれます。"
+  
+  main_results: "人間注釈：Annotatorプロトコルは Fleiss-kappa 0.85 を達成しますが、他手法で見つかった誤りを見逃します。Expert プロトコルは困難誤りの52%を検出し、注釈者ラベルに対して Cohen's kappa 0.36。Hybrid 手法は困難誤りの76%を見つけますが精度は低いです。拡張ゴールドセットには40%の非忠実要約が含まれ、注釈者ラベル単体の36%と比較されます。自動メトリクス：FABLES が注釈者ラベルで67%のバランス精度で最高性能を達成しますが、拡張ゴールドで65%に低下。70%のバランス精度を超えるメトリクスはありません。MiniCheck は最も多くの困難誤り（71-80%）を検出しますが精度は低いです。不完全な注釈で評価すると性能が水増しされて見えます。"
+  
+  metrics_used:
+    - "Fleiss-kappa (inter-annotator agreement)"
+    - "Cohen's kappa (cross-protocol agreement)"
+    - "Balanced Accuracy"
+    - "Precision/Recall"
+    - "% Easy/Hard errors detected"
+  
+  human_evaluation_summary: "MTurk ワーカーは97%の要約を忠実とラベル（使用不可）、Upwork ワーカーは64%、専門家は45%。3人の専門家は裁定前に46%のみで初期合意。異なるプロトコルは公正な合意（Cohen's kappa 0.2-0.4）を持ちますが、相補的な誤りを捉えます。手動レビューはすべての検出された不整合が正当であることを確認します。"
+
+results_analysis:
+  key_findings:
+    - "単一の注釈プロトコルは重要な誤りを見逃します - 注釈者プロトコルは拡張セットの誤りの2/3のみを発見"
+    - "異なる人間プロトコルは公正な合意のみで独自だが正当な不整合を検出"
+    - "容易な誤りは通常コアストーリーイベントについて、困難な誤りは微妙な詳細や意味の転換について"
+    - "不完全な注釈で評価すると自動メトリクスの性能が水増しされる"
+    - "最高の自動手法（FABLES）でも困難な不整合の約50%を見逃す"
+  
+  ablation_summary: null  # No specific ablation study mentioned
+
+contributions:
+  main_contributions:
+    - "物語要約における忠実性評価手法をテストするための初のベンチマークSTORYSUMMの導入。挑戦的な解釈誤りに対する局所化されたラベルと説明を含みます。"
+    - "単一の人間注釈プロトコルが重要な不整合を見逃すことの実証。拡張ゴールドラベルがマルチプロトコルアプローチを通じて30-50%多くの誤りを明らかにします。"
+    - "最先端の自動メトリクスが最大70%のバランス精度を達成し、最高手法が困難不整合の約50%を見逃すことを示す包括的評価。"
+    - "人間評価のためのエビデンスベースの推奨事項：複数プロトコル、細粒度注釈、高品質注釈者プール、フィルタリング付き高カバレッジ手法を使用。"
+  
+  limitations:
+    - "手頃な実験を可能にするための比較的小さなデータセットサイズ（96のストーリー-要約ペア）"
+    - "ストーリーは曖昧さの可能性を持つRedditのアマチュア作品"
+    - "ラベルは小規模な注釈者と専門家のプールに依存"
+    - "文レベルの不整合検出は現在の範囲を超えている"
+
+narrative_understanding_aspects:
+  - "Narrative Consistency Check"
+  - "other"  # Faithfulness evaluation in narrative summarization
+
+keywords:
+  - "faithfulness evaluation"
+  - "narrative summarization"
+  - "story summarization"
+  - "inconsistency detection"
+  - "human evaluation"
+  - "automatic metrics"
+  - "annotation protocols"
+  - "ground truth"
+  - "LLM evaluation"
+
+notes: "データセットとコードは https://github.com/melaniesubbiah/storysumm で利用可能。この研究は物語理解における人間と自動評価能力の間の重要なギャップを強調しています。"
